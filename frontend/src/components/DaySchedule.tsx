@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Clock, AlertTriangle, Edit2, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { api, Schedule } from '@/lib/api';
+import { useTranslation } from '@/lib/translations';
 
 interface DayScheduleProps {
   date: Date;
@@ -26,6 +27,7 @@ const statusIcons: Record<string, React.ReactNode> = {
 };
 
 export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: DayScheduleProps) {
+  const { t } = useTranslation();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -94,14 +96,14 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: Da
           {format(date, 'EEEE, MMMM d, yyyy')}
         </h3>
         <p className="text-indigo-100 text-sm">
-          {schedules.length} {schedules.length === 1 ? 'schedule' : 'schedules'}
+          {schedules.length} {schedules.length === 1 ? t('schedule.title') : t('schedule.title')}
         </p>
       </div>
 
       {schedules.length === 0 ? (
         <div className="p-8 text-center">
           <Clock className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-          <p className="text-gray-500 dark:text-gray-400">No schedules for this day</p>
+          <p className="text-gray-500 dark:text-gray-400">{t('schedule.noSchedules')}</p>
         </div>
       ) : (
         <div className="divide-y divide-gray-100 dark:divide-slate-700 max-h-[400px] overflow-y-auto">
@@ -137,10 +139,10 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: Da
                       onChange={e => handleStatusChange(schedule, e.target.value)}
                       className={`text-xs px-2 py-1 rounded-full border cursor-pointer ${statusColors[schedule.status]}`}
                     >
-                      <option value="scheduled">Scheduled</option>
-                      <option value="checked_in">Checked In</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
+                      <option value="scheduled">{t('schedule.statuses.scheduled')}</option>
+                      <option value="checked_in">{t('schedule.statuses.checked_in')}</option>
+                      <option value="completed">{t('schedule.statuses.completed')}</option>
+                      <option value="cancelled">{t('schedule.statuses.cancelled')}</option>
                     </select>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       {schedule.pet_details.species} • {schedule.pet_details.temperament}
@@ -149,7 +151,7 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: Da
 
                   {schedule.conflicts?.length > 0 && (
                     <div className="mt-3 p-2 bg-amber-100 dark:bg-amber-900/40 rounded-lg">
-                      <p className="text-xs font-medium text-amber-800 dark:text-amber-200">Conflicts:</p>
+                      <p className="text-xs font-medium text-amber-800 dark:text-amber-200">{t('schedule.conflicts')}:</p>
                       {schedule.conflicts.map((conflict, i) => (
                         <p key={i} className="text-xs text-amber-700 dark:text-amber-300 mt-1">
                           • {conflict.conflicting_pet}: {conflict.reason}

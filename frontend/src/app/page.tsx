@@ -9,9 +9,12 @@ import MultiPetScheduleForm from '@/components/MultiPetScheduleForm';
 import DaySchedule from '@/components/DaySchedule';
 import WeekView from '@/components/WeekView';
 import ThemeToggle from '@/components/ThemeToggle';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { Schedule } from '@/lib/api';
+import { useTranslation } from '@/lib/translations';
 
 export default function Home() {
+  const { t } = useTranslation();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Schedule | undefined>();
@@ -46,27 +49,28 @@ export default function Home() {
                 <PawPrint className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-lg sm:text-2xl font-bold text-gray-800 dark:text-gray-100">Happy Pet Nursery</h1>
-                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:block">Schedule Management System</p>
+                <h1 className="text-lg sm:text-2xl font-bold text-gray-800 dark:text-gray-100">{t('app.name')}</h1>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:block">{t('app.tagline')}</p>
               </div>
             </div>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-2 lg:gap-3">
+              <LanguageSwitcher />
               <ThemeToggle />
               <Link
                 href="/owners"
                 className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors text-sm"
               >
                 <Users className="w-4 h-4 lg:w-5 lg:h-5" />
-                <span className="hidden lg:inline">Owners</span>
+                <span className="hidden lg:inline">{t('nav.owners')}</span>
               </Link>
               <Link
                 href="/pets"
                 className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-emerald-600 dark:bg-emerald-500 text-white rounded-lg hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors shadow-sm text-sm"
               >
                 <PawPrint className="w-4 h-4 lg:w-5 lg:h-5" />
-                <span className="hidden lg:inline">Pets</span>
+                <span className="hidden lg:inline">{t('nav.pets')}</span>
               </Link>
               <button
                 onClick={() => {
@@ -76,19 +80,20 @@ export default function Home() {
                 className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors shadow-sm text-sm"
               >
                 <CalendarDays className="w-4 h-4 lg:w-5 lg:h-5" />
-                <span className="hidden lg:inline">New Schedule</span>
+                <span className="hidden lg:inline">{t('nav.newSchedule')}</span>
               </button>
               <button
                 onClick={() => setShowMultiScheduleForm(true)}
                 className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-purple-600 dark:bg-purple-500 text-white rounded-lg hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors shadow-sm text-sm"
               >
                 <UsersRound className="w-4 h-4 lg:w-5 lg:h-5" />
-                <span className="hidden lg:inline">Multi-Pet</span>
+                <span className="hidden lg:inline">{t('nav.multiPet')}</span>
               </button>
             </div>
 
             {/* Mobile Navigation */}
             <div className="flex md:hidden items-center gap-2">
+              <LanguageSwitcher />
               <ThemeToggle />
               <button
                 onClick={() => {
@@ -118,7 +123,7 @@ export default function Home() {
                   className="flex items-center gap-3 px-4 py-3 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg"
                 >
                   <Users className="w-5 h-5" />
-                  Owners
+                  {t('nav.owners')}
                 </Link>
                 <Link
                   href="/pets"
@@ -126,7 +131,7 @@ export default function Home() {
                   className="flex items-center gap-3 px-4 py-3 bg-emerald-600 dark:bg-emerald-500 text-white rounded-lg"
                 >
                   <PawPrint className="w-5 h-5" />
-                  Pets
+                  {t('nav.pets')}
                 </Link>
                 <button
                   onClick={() => {
@@ -137,7 +142,7 @@ export default function Home() {
                   className="flex items-center gap-3 px-4 py-3 bg-indigo-600 dark:bg-indigo-500 text-white rounded-lg"
                 >
                   <CalendarDays className="w-5 h-5" />
-                  New Schedule
+                  {t('nav.newSchedule')}
                 </button>
                 <button
                   onClick={() => {
@@ -147,7 +152,7 @@ export default function Home() {
                   className="flex items-center gap-3 px-4 py-3 bg-purple-600 dark:bg-purple-500 text-white rounded-lg"
                 >
                   <UsersRound className="w-5 h-5" />
-                  Multi-Pet Schedule
+                  {t('multiPet.title')}
                 </button>
               </div>
             </div>
@@ -189,7 +194,7 @@ export default function Home() {
       <footer className="border-t border-gray-200 dark:border-slate-700 mt-8 sm:mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <p className="text-center text-gray-500 dark:text-gray-400 text-sm">
-            Happy Pet Nursery - Keeping your pets safe and happy
+            {t('app.footer')}
           </p>
         </div>
       </footer>

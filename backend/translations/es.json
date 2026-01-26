@@ -1,0 +1,169 @@
+{
+  "app": {
+    "name": "Guardería de Mascotas Feliz",
+    "tagline": "Sistema de Gestión de Horarios",
+    "footer": "Guardería de Mascotas Feliz - Manteniendo a tus mascotas seguras y felices"
+  },
+  "nav": {
+    "owners": "Dueños",
+    "pets": "Mascotas",
+    "newSchedule": "Nuevo Horario",
+    "multiPet": "Multi-Mascota",
+    "addPet": "Agregar Mascota",
+    "back": "Volver"
+  },
+  "calendar": {
+    "month": "Mes",
+    "week": "Semana",
+    "today": "Hoy",
+    "thisWeek": "Esta Semana",
+    "weekOf": "Semana del",
+    "days": {
+      "sun": "Dom",
+      "mon": "Lun",
+      "tue": "Mar",
+      "wed": "Mié",
+      "thu": "Jue",
+      "fri": "Vie",
+      "sat": "Sáb"
+    },
+    "daysShort": {
+      "sun": "D",
+      "mon": "L",
+      "tue": "M",
+      "wed": "M",
+      "thu": "J",
+      "fri": "V",
+      "sat": "S"
+    },
+    "more": "+{count} más"
+  },
+  "schedule": {
+    "title": "Horario",
+    "newSchedule": "Nuevo Horario",
+    "editSchedule": "Editar Horario",
+    "scheduleFor": "Horario para {date}",
+    "noSchedules": "No hay horarios para este día",
+    "clickToAdd": "Haz clic en + para agregar un horario",
+    "startDate": "Fecha de Inicio",
+    "endDate": "Fecha de Fin",
+    "startTime": "Hora de Inicio",
+    "endTime": "Hora de Fin",
+    "status": "Estado",
+    "notes": "Notas",
+    "selectPet": "Seleccionar Mascota",
+    "selectPets": "Seleccionar Mascotas",
+    "selected": "seleccionados",
+    "conflicts": "Conflictos",
+    "warnings": "Advertencias",
+    "statuses": {
+      "scheduled": "Programado",
+      "checked_in": "Registrado",
+      "completed": "Completado",
+      "cancelled": "Cancelado"
+    }
+  },
+  "pet": {
+    "title": "Mascotas",
+    "addPet": "Agregar Mascota",
+    "editPet": "Editar Mascota",
+    "noPets": "Aún no hay mascotas",
+    "addFirst": "¡Agrega tu primera mascota para comenzar!",
+    "registeredPets": "Mascotas Registradas",
+    "name": "Nombre",
+    "species": "Especie",
+    "breed": "Raza",
+    "age": "Edad",
+    "temperament": "Temperamento",
+    "dominance": "Nivel de Dominancia",
+    "size": "Tamaño",
+    "specialNotes": "Notas Especiales",
+    "owner": "Dueño",
+    "noOwner": "Sin dueño asignado",
+    "speciesOptions": {
+      "dog": "Perro",
+      "cat": "Gato",
+      "bird": "Ave",
+      "rabbit": "Conejo",
+      "other": "Otro"
+    },
+    "temperamentOptions": {
+      "calm": "Tranquilo",
+      "playful": "Juguetón",
+      "aggressive": "Agresivo",
+      "anxious": "Ansioso",
+      "friendly": "Amigable"
+    },
+    "sizeOptions": {
+      "small": "Pequeño",
+      "medium": "Mediano",
+      "large": "Grande"
+    }
+  },
+  "owner": {
+    "title": "Dueños",
+    "addOwner": "Agregar Dueño",
+    "editOwner": "Editar Dueño",
+    "noOwners": "Aún no hay dueños",
+    "addFirst": "¡Agrega tu primer dueño para comenzar!",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "email": "Correo Electrónico",
+    "phone": "Teléfono",
+    "address": "Dirección",
+    "pets": "Mascotas",
+    "scheduleAllPets": "Programar Todas las Mascotas",
+    "noPets": "Sin mascotas registradas"
+  },
+  "multiPet": {
+    "title": "Horario Multi-Mascota",
+    "filterByOwner": "Filtrar por Dueño",
+    "allOwners": "Todos los Dueños",
+    "noOwner": "Sin Dueño",
+    "selectAll": "Seleccionar Todo",
+    "selectAllShown": "Seleccionar Mostrados",
+    "clear": "Limpiar",
+    "petsCount": "{count} mascotas",
+    "selectedFrom": "de {count} mostradas",
+    "noPetsFound": "No se encontraron mascotas para este dueño",
+    "loadingPets": "Cargando mascotas...",
+    "results": "Resultados",
+    "created": "Creado",
+    "failed": "Fallido",
+    "schedulesCreated": "{count} horarios creados exitosamente"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "confirm": "Confirmar",
+    "yes": "Sí",
+    "no": "No",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "all": "Todo",
+    "none": "Ninguno",
+    "required": "Requerido",
+    "optional": "Opcional",
+    "years": "años",
+    "new": "Nuevo"
+  },
+  "errors": {
+    "fetchFailed": "Error al obtener datos",
+    "saveFailed": "Error al guardar",
+    "deleteFailed": "Error al eliminar",
+    "selectAtLeastOne": "Por favor selecciona al menos una mascota",
+    "invalidDates": "La fecha de fin no puede ser anterior a la fecha de inicio",
+    "invalidTimes": "La hora de fin debe ser posterior a la hora de inicio"
+  },
+  "confirmations": {
+    "deletePet": "¿Estás seguro de que deseas eliminar esta mascota? Esto también eliminará todos sus horarios.",
+    "deleteSchedule": "¿Estás seguro de que deseas eliminar este horario?",
+    "deleteOwner": "¿Estás seguro de que deseas eliminar este dueño?"
+  }
+}

@@ -5,6 +5,7 @@ import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, 
 import { ChevronLeft, ChevronRight, Clock, AlertTriangle, CalendarDays, CalendarRange } from 'lucide-react';
 import { api, Schedule } from '@/lib/api';
 import ScheduleDetailsPopup from './ScheduleDetailsPopup';
+import { useTranslation } from '@/lib/translations';
 
 interface WeekViewProps {
   selectedDate: Date;
@@ -14,6 +15,7 @@ interface WeekViewProps {
 }
 
 export default function WeekView({ selectedDate, onDateSelect, calendarView = 'week', onViewChange }: WeekViewProps) {
+  const { t } = useTranslation();
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(selectedDate));
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(false);
@@ -60,7 +62,7 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
       <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-slate-700">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 text-center sm:text-left">
-            Week of {format(currentWeekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
+            {t('calendar.weekOf')} {format(currentWeekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
           </h3>
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
             {onViewChange && (
@@ -74,7 +76,7 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
                   }`}
                 >
                   <CalendarDays className="w-4 h-4" />
-                  Month
+                  {t('calendar.month')}
                 </button>
                 <button
                   onClick={() => onViewChange('week')}
@@ -85,7 +87,7 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
                   }`}
                 >
                   <CalendarRange className="w-4 h-4" />
-                  Week
+                  {t('calendar.week')}
                 </button>
               </div>
             )}
@@ -100,7 +102,7 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
                 onClick={goToCurrentWeek}
                 className="px-3 py-1 text-sm bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors"
               >
-                This Week
+                {t('calendar.thisWeek')}
               </button>
               <button
                 onClick={goToNextWeek}

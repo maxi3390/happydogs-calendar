@@ -5,6 +5,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSam
 import { ChevronLeft, ChevronRight, AlertTriangle, Users, CalendarDays, CalendarRange } from 'lucide-react';
 import { api, Schedule } from '@/lib/api';
 import ScheduleDetailsPopup from './ScheduleDetailsPopup';
+import { useTranslation } from '@/lib/translations';
 
 interface CalendarProps {
   onDateSelect: (date: Date) => void;
@@ -14,6 +15,7 @@ interface CalendarProps {
 }
 
 export default function Calendar({ onDateSelect, selectedDate, calendarView = 'month', onViewChange }: CalendarProps) {
+  const { t } = useTranslation();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(false);
@@ -72,7 +74,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                 }`}
               >
                 <CalendarDays className="w-4 h-4" />
-                Month
+                {t('calendar.month')}
               </button>
               <button
                 onClick={() => onViewChange('week')}
@@ -83,7 +85,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                 }`}
               >
                 <CalendarRange className="w-4 h-4" />
-                Week
+                {t('calendar.week')}
               </button>
             </div>
           )}
@@ -98,7 +100,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
               onClick={() => setCurrentMonth(new Date())}
               className="px-3 py-1 text-sm bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors"
             >
-              Today
+              {t('calendar.today')}
             </button>
             <button
               onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}

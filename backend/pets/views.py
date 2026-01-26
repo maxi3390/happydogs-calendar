@@ -1,7 +1,10 @@
+import json
+import os
 from rest_framework import viewsets, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from django.db.models import Q
+from django.conf import settings
 from .models import Owner, Pet, Schedule
 from .serializers import (
     OwnerSerializer,
@@ -240,3 +243,48 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             response_data['warnings'] = all_warnings
 
         return Response(response_data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+def get_translations(request, language='en'):
+    """
+    Get translations for a specific language.
+    Supported languages: en (English), es (Spanish)
+    """
+    supported_languages = ['en', 'es']
+
+    if language not in supported_languages:
+        return Response(
+            {'error': f'Language not supported. Supported languages: {", ".join(supported_languages)}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    translations_dir = os.path.join(settings.BASE_DIR, 'translations')
+    translation_file = os.path.join(translations_dir, f'{language}.json')
+
+    try:
+        with open(translation_file, 'r', encoding='utf-8') as f:
+            translations = json.load(f)
+        return Response(translations)
+    except FileNotFoundError:
+        return Response(
+            {'error': f'Translation file for {language} not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except json.JSONDecodeError:
+        return Response(
+            {'error': 'Invalid translation file format'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+def get_available_languages(request):
+    """
+    Get list of available languages.
+    """
+    languages = [
+        {'code': 'en', 'name': 'English', 'nativeName': 'English'},
+        {'code': 'es', 'name': 'Spanish', 'nativeName': 'Español'}
+    ]
+    return Response(languages)

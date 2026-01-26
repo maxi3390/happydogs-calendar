@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { TranslationProvider } from "@/lib/translations";
 
 export const metadata: Metadata = {
   title: "Happy Pet Nursery - Schedule Management",
@@ -12,8 +13,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased">{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body className="antialiased">
+        <TranslationProvider>{children}</TranslationProvider>
+      </body>
     </html>
   );
 }
