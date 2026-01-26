@@ -46,6 +46,7 @@ export interface PetListItem {
   temperament: string;
   dominance_level: number;
   size: string;
+  owner: number | null;
 }
 
 export interface Pet {
@@ -120,6 +121,27 @@ export interface ConflictCheckResult {
   has_conflicts: boolean;
   conflicts: Conflict[];
   overlapping_pets_count: number;
+}
+
+export interface BatchScheduleFormData {
+  pet_ids: number[];
+  start_date: string;
+  end_date: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+  notes: string;
+}
+
+export interface BatchScheduleResult {
+  created_count: number;
+  schedules: Schedule[];
+  warnings?: Array<{
+    pet_id: number;
+    pet_name: string;
+    schedule_id: number;
+    conflicts: Conflict[];
+  }>;
 }
 
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -212,5 +234,9 @@ export const api = {
       by_status: Record<string, number>;
       schedules: Schedule[];
     }>(`/schedules/daily_summary/?date=${date}`),
+    batchCreate: (data: BatchScheduleFormData) => fetchApi<BatchScheduleResult>('/schedules/batch_create/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
   },
 };

@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Search, User, Mail, Phone, PawPrint, Edit2, Trash2, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
+import { Plus, Search, User, Mail, Phone, PawPrint, Edit2, Trash2, ChevronDown, ChevronUp, ArrowLeft, Calendar } from 'lucide-react';
 import { api, Owner, OwnerWithPets } from '@/lib/api';
 import OwnerForm from '@/components/OwnerForm';
+import MultiPetScheduleForm from '@/components/MultiPetScheduleForm';
 import ThemeToggle from '@/components/ThemeToggle';
 
 export default function OwnersPage() {
@@ -15,6 +16,8 @@ export default function OwnersPage() {
   const [editingOwner, setEditingOwner] = useState<Owner | undefined>();
   const [expandedOwner, setExpandedOwner] = useState<number | null>(null);
   const [ownerDetails, setOwnerDetails] = useState<Record<number, OwnerWithPets>>({});
+  const [showScheduleForm, setShowScheduleForm] = useState(false);
+  const [schedulePetIds, setSchedulePetIds] = useState<number[]>([]);
 
   const fetchOwners = async () => {
     try {
@@ -66,6 +69,20 @@ export default function OwnersPage() {
     setShowOwnerForm(false);
     setEditingOwner(undefined);
     fetchOwners();
+  };
+
+  const handleScheduleOwnerPets = (ownerData: OwnerWithPets) => {
+    if (ownerData.pets.length === 0) {
+      alert('This owner has no pets to schedule');
+      return;
+    }
+    setSchedulePetIds(ownerData.pets.map(p => p.id));
+    setShowScheduleForm(true);
+  };
+
+  const handleScheduleSinglePet = (petId: number) => {
+    setSchedulePetIds([petId]);
+    setShowScheduleForm(true);
   };
 
   const filteredOwners = owners.filter(owner => {
@@ -236,9 +253,20 @@ export default function OwnersPage() {
                       </p>
                     )}
 
-                    <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-3 mt-4">
-                      Pets ({ownerDetails[owner.id].pets.length})
-                    </h4>
+                    <div className="flex items-center justify-between mt-4 mb-3">
+                      <h4 className="font-medium text-gray-800 dark:text-gray-200">
+                        Pets ({ownerDetails[owner.id].pets.length})
+                      </h4>
+                      {ownerDetails[owner.id].pets.length > 0 && (
+                        <button
+                          onClick={() => handleScheduleOwnerPets(ownerDetails[owner.id])}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 transition-colors"
+                        >
+                          <Calendar className="w-4 h-4" />
+                          Schedule All Pets
+                        </button>
+                      )}
+                    </div>
                     {ownerDetails[owner.id].pets.length === 0 ? (
                       <p className="text-sm text-gray-500 dark:text-gray-400 italic">No pets registered</p>
                     ) : (
@@ -248,14 +276,23 @@ export default function OwnersPage() {
                             key={pet.id}
                             className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-gray-200 dark:border-slate-600"
                           >
-                            <div className="flex items-center gap-2">
-                              <span className="text-xl">{speciesIcons[pet.species] || '🐾'}</span>
-                              <div>
-                                <p className="font-medium text-gray-800 dark:text-gray-200">{pet.name}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                                  {pet.species} • {pet.temperament} • {pet.size}
-                                </p>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xl">{speciesIcons[pet.species] || '🐾'}</span>
+                                <div>
+                                  <p className="font-medium text-gray-800 dark:text-gray-200">{pet.name}</p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                                    {pet.species} • {pet.temperament} • {pet.size}
+                                  </p>
+                                </div>
                               </div>
+                              <button
+                                onClick={() => handleScheduleSinglePet(pet.id)}
+                                className="p-1.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                                title="Schedule this pet"
+                              >
+                                <Calendar className="w-4 h-4" />
+                              </button>
                             </div>
                           </div>
                         ))}
@@ -277,6 +314,21 @@ export default function OwnersPage() {
             setEditingOwner(undefined);
           }}
           onSave={handleSave}
+        />
+      )}
+
+      {showScheduleForm && (
+        <MultiPetScheduleForm
+          selectedDate={new Date()}
+          preselectedPetIds={schedulePetIds}
+          onClose={() => {
+            setShowScheduleForm(false);
+            setSchedulePetIds([]);
+          }}
+          onSave={() => {
+            setShowScheduleForm(false);
+            setSchedulePetIds([]);
+          }}
         />
       )}
     </div>

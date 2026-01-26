@@ -11,7 +11,8 @@ from .serializers import (
     PetListSerializer,
     ScheduleSerializer,
     ScheduleCreateSerializer,
-    ConflictCheckSerializer
+    ConflictCheckSerializer,
+    BatchScheduleCreateSerializer
 )
 
 
@@ -192,3 +193,50 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             summary['by_status'][status_choice] = schedules.filter(status=status_choice).count()
 
         return Response(summary)
+
+    @action(detail=False, methods=['post'])
+    def batch_create(self, request):
+        """Create schedules for multiple pets at once with the same schedule data"""
+        serializer = BatchScheduleCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        data = serializer.validated_data
+        pet_ids = data.pop('pet_ids')
+
+        # Verify all pets exist
+        pets = Pet.objects.filter(pk__in=pet_ids)
+        if pets.count() != len(pet_ids):
+            found_ids = set(pets.values_list('id', flat=True))
+            missing_ids = set(pet_ids) - found_ids
+            return Response(
+                {'error': f'Pets not found: {list(missing_ids)}'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        created_schedules = []
+        all_warnings = []
+
+        for pet in pets:
+            schedule = Schedule.objects.create(pet=pet, **data)
+            conflicts = schedule.check_conflicts()
+            schedule_data = ScheduleSerializer(schedule).data
+
+            if conflicts:
+                all_warnings.append({
+                    'pet_id': pet.id,
+                    'pet_name': pet.name,
+                    'schedule_id': schedule.id,
+                    'conflicts': conflicts
+                })
+
+            created_schedules.append(schedule_data)
+
+        response_data = {
+            'created_count': len(created_schedules),
+            'schedules': created_schedules
+        }
+
+        if all_warnings:
+            response_data['warnings'] = all_warnings
+
+        return Response(response_data, status=status.HTTP_201_CREATED)

@@ -36,7 +36,7 @@ class PetListSerializer(serializers.ModelSerializer):
     """Simplified serializer for listing pets"""
     class Meta:
         model = Pet
-        fields = ['id', 'name', 'species', 'temperament', 'dominance_level', 'size']
+        fields = ['id', 'name', 'species', 'temperament', 'dominance_level', 'size', 'owner']
 
 
 class PetWithOwnerSerializer(serializers.ModelSerializer):
@@ -95,3 +95,27 @@ class ConflictCheckSerializer(serializers.Serializer):
     start_time = serializers.TimeField()
     end_time = serializers.TimeField()
     exclude_schedule_id = serializers.IntegerField(required=False)
+
+
+class BatchScheduleCreateSerializer(serializers.Serializer):
+    """Serializer for creating schedules for multiple pets at once"""
+    pet_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        min_length=1
+    )
+    start_date = serializers.DateField()
+    end_date = serializers.DateField()
+    start_time = serializers.TimeField()
+    end_time = serializers.TimeField()
+    status = serializers.ChoiceField(
+        choices=['scheduled', 'checked_in', 'completed', 'cancelled'],
+        default='scheduled'
+    )
+    notes = serializers.CharField(required=False, allow_blank=True, default='')
+
+    def validate(self, data):
+        if data['start_time'] >= data['end_time']:
+            raise serializers.ValidationError("End time must be after start time")
+        if data['start_date'] > data['end_date']:
+            raise serializers.ValidationError("End date must be on or after start date")
+        return data

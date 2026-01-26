@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Plus, PawPrint, CalendarDays, CalendarRange, Users } from 'lucide-react';
+import { Plus, PawPrint, CalendarDays, CalendarRange, Users, UsersRound } from 'lucide-react';
 import Calendar from '@/components/Calendar';
 import PetForm from '@/components/PetForm';
 import PetList from '@/components/PetList';
 import ScheduleForm from '@/components/ScheduleForm';
+import MultiPetScheduleForm from '@/components/MultiPetScheduleForm';
 import DaySchedule from '@/components/DaySchedule';
 import WeekView from '@/components/WeekView';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -21,6 +22,7 @@ export default function Home() {
   const [refreshPets, setRefreshPets] = useState(0);
   const [refreshSchedules, setRefreshSchedules] = useState(0);
   const [calendarView, setCalendarView] = useState<'month' | 'week'>('month');
+  const [showMultiScheduleForm, setShowMultiScheduleForm] = useState(false);
 
   const handlePetSave = () => {
     setShowPetForm(false);
@@ -31,6 +33,11 @@ export default function Home() {
   const handleScheduleSave = () => {
     setShowScheduleForm(false);
     setEditingSchedule(undefined);
+    setRefreshSchedules(prev => prev + 1);
+  };
+
+  const handleMultiScheduleSave = () => {
+    setShowMultiScheduleForm(false);
     setRefreshSchedules(prev => prev + 1);
   };
 
@@ -86,6 +93,13 @@ export default function Home() {
               >
                 <CalendarDays className="w-5 h-5" />
                 New Schedule
+              </button>
+              <button
+                onClick={() => setShowMultiScheduleForm(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 dark:bg-purple-500 text-white rounded-lg hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors shadow-sm"
+              >
+                <UsersRound className="w-5 h-5" />
+                Multi-Pet
               </button>
             </div>
           </div>
@@ -178,6 +192,14 @@ export default function Home() {
             setEditingSchedule(undefined);
           }}
           onSave={handleScheduleSave}
+        />
+      )}
+
+      {showMultiScheduleForm && (
+        <MultiPetScheduleForm
+          selectedDate={selectedDate}
+          onClose={() => setShowMultiScheduleForm(false)}
+          onSave={handleMultiScheduleSave}
         />
       )}
     </div>
