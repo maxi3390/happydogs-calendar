@@ -2,8 +2,11 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Q
-from .models import Pet, Schedule
+from .models import Owner, Pet, Schedule
 from .serializers import (
+    OwnerSerializer,
+    OwnerListSerializer,
+    OwnerWithPetsSerializer,
     PetSerializer,
     PetListSerializer,
     ScheduleSerializer,
@@ -12,8 +15,27 @@ from .serializers import (
 )
 
 
+class OwnerViewSet(viewsets.ModelViewSet):
+    queryset = Owner.objects.all()
+    serializer_class = OwnerSerializer
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return OwnerSerializer
+        if self.action == 'retrieve':
+            return OwnerWithPetsSerializer
+        return OwnerSerializer
+
+    @action(detail=False, methods=['get'])
+    def dropdown(self, request):
+        """Get simplified owner list for dropdowns"""
+        owners = Owner.objects.all()
+        serializer = OwnerListSerializer(owners, many=True)
+        return Response(serializer.data)
+
+
 class PetViewSet(viewsets.ModelViewSet):
-    queryset = Pet.objects.all()
+    queryset = Pet.objects.select_related('owner').all()
     serializer_class = PetSerializer
 
     def get_serializer_class(self):

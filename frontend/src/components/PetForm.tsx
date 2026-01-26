@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { X } from 'lucide-react';
-import { api, Pet, PetFormData } from '@/lib/api';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { X, Plus } from 'lucide-react';
+import { api, Pet, PetFormData, OwnerListItem } from '@/lib/api';
 
 interface PetFormProps {
   pet?: Pet;
@@ -35,6 +36,7 @@ const SIZE_OPTIONS = [
 export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [owners, setOwners] = useState<OwnerListItem[]>([]);
   const [formData, setFormData] = useState<PetFormData>({
     name: pet?.name || '',
     species: pet?.species || 'dog',
@@ -44,9 +46,20 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
     dominance_level: pet?.dominance_level || 5,
     size: pet?.size || 'medium',
     special_notes: pet?.special_notes || '',
-    owner_name: pet?.owner_name || '',
-    owner_phone: pet?.owner_phone || '',
+    owner: pet?.owner || null,
   });
+
+  useEffect(() => {
+    const fetchOwners = async () => {
+      try {
+        const data = await api.owners.dropdown();
+        setOwners(data);
+      } catch (err) {
+        console.error('Failed to fetch owners:', err);
+      }
+    };
+    fetchOwners();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,30 +216,34 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
               </select>
             </div>
 
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Owner Name *
+                Owner
               </label>
-              <input
-                type="text"
-                required
-                value={formData.owner_name}
-                onChange={e => setFormData({ ...formData, owner_name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Owner Phone *
-              </label>
-              <input
-                type="tel"
-                required
-                value={formData.owner_phone}
-                onChange={e => setFormData({ ...formData, owner_phone: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-              />
+              <div className="flex gap-2">
+                <select
+                  value={formData.owner || ''}
+                  onChange={e => setFormData({ ...formData, owner: e.target.value ? Number(e.target.value) : null })}
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                >
+                  <option value="">No owner assigned</option>
+                  {owners.map(owner => (
+                    <option key={owner.id} value={owner.id}>
+                      {owner.full_name} ({owner.phone})
+                    </option>
+                  ))}
+                </select>
+                <Link
+                  href="/owners"
+                  className="flex items-center gap-1 px-3 py-2 bg-gray-100 dark:bg-slate-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-500 transition-colors text-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  New
+                </Link>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Assign this pet to an owner or create a new owner first
+              </p>
             </div>
           </div>
 

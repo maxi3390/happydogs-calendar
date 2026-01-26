@@ -1,5 +1,53 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
+export interface Owner {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  address: string;
+  emergency_contact: string;
+  emergency_phone: string;
+  notes: string;
+  pet_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OwnerWithPets extends Owner {
+  pets: PetListItem[];
+}
+
+export interface OwnerFormData {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  address?: string;
+  emergency_contact?: string;
+  emergency_phone?: string;
+  notes?: string;
+}
+
+export interface OwnerListItem {
+  id: number;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  phone: string;
+  email: string;
+}
+
+export interface PetListItem {
+  id: number;
+  name: string;
+  species: string;
+  temperament: string;
+  dominance_level: number;
+  size: string;
+}
+
 export interface Pet {
   id: number;
   name: string;
@@ -10,8 +58,8 @@ export interface Pet {
   dominance_level: number;
   size: string;
   special_notes: string;
-  owner_name: string;
-  owner_phone: string;
+  owner: number | null;
+  owner_details?: OwnerListItem;
   created_at: string;
   updated_at: string;
 }
@@ -25,8 +73,7 @@ export interface PetFormData {
   dominance_level: number;
   size: string;
   special_notes: string;
-  owner_name: string;
-  owner_phone: string;
+  owner?: number | null;
 }
 
 export interface Schedule {
@@ -93,6 +140,21 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
 }
 
 export const api = {
+  owners: {
+    list: () => fetchApi<Owner[]>('/owners/'),
+    get: (id: number) => fetchApi<OwnerWithPets>(`/owners/${id}/`),
+    create: (data: OwnerFormData) => fetchApi<Owner>('/owners/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    update: (id: number, data: Partial<OwnerFormData>) => fetchApi<Owner>(`/owners/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+    delete: (id: number) => fetchApi<void>(`/owners/${id}/`, { method: 'DELETE' }),
+    dropdown: () => fetchApi<OwnerListItem[]>('/owners/dropdown/'),
+  },
+
   pets: {
     list: () => fetchApi<Pet[]>('/pets/'),
     get: (id: number) => fetchApi<Pet>(`/pets/${id}/`),

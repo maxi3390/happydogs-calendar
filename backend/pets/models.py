@@ -2,6 +2,30 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 
+class Owner(models.Model):
+    """Model representing a pet owner."""
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    email = models.EmailField(unique=True)
+    phone = models.CharField(max_length=20)
+    address = models.TextField(blank=True)
+    emergency_contact = models.CharField(max_length=100, blank=True)
+    emergency_phone = models.CharField(max_length=20, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['last_name', 'first_name']
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"
+
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
+
 class Pet(models.Model):
     TEMPERAMENT_CHOICES = [
         ('calm', 'Calm'),
@@ -36,8 +60,7 @@ class Pet(models.Model):
     )
     size = models.CharField(max_length=10, choices=SIZE_CHOICES, default='medium')
     special_notes = models.TextField(blank=True)
-    owner_name = models.CharField(max_length=100)
-    owner_phone = models.CharField(max_length=20)
+    owner = models.ForeignKey(Owner, on_delete=models.CASCADE, related_name='pets', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

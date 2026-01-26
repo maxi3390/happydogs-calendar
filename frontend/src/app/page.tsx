@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, PawPrint, CalendarDays, CalendarRange } from 'lucide-react';
+import Link from 'next/link';
+import { Plus, PawPrint, CalendarDays, CalendarRange, Users } from 'lucide-react';
 import Calendar from '@/components/Calendar';
 import PetForm from '@/components/PetForm';
 import PetList from '@/components/PetList';
@@ -59,6 +60,13 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-3">
               <ThemeToggle />
+              <Link
+                href="/owners"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+              >
+                <Users className="w-5 h-5" />
+                Owners
+              </Link>
               <button
                 onClick={() => {
                   setEditingPet(undefined);

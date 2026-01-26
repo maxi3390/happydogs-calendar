@@ -1,8 +1,31 @@
 from rest_framework import serializers
-from .models import Pet, Schedule
+from .models import Owner, Pet, Schedule
+
+
+class OwnerSerializer(serializers.ModelSerializer):
+    pet_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Owner
+        fields = '__all__'
+        read_only_fields = ['created_at', 'updated_at']
+
+    def get_pet_count(self, obj):
+        return obj.pets.count()
+
+
+class OwnerListSerializer(serializers.ModelSerializer):
+    """Simplified serializer for listing owners in dropdowns"""
+    full_name = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = Owner
+        fields = ['id', 'first_name', 'last_name', 'full_name', 'phone', 'email']
 
 
 class PetSerializer(serializers.ModelSerializer):
+    owner_details = OwnerListSerializer(source='owner', read_only=True)
+
     class Meta:
         model = Pet
         fields = '__all__'
@@ -14,6 +37,24 @@ class PetListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pet
         fields = ['id', 'name', 'species', 'temperament', 'dominance_level', 'size']
+
+
+class PetWithOwnerSerializer(serializers.ModelSerializer):
+    """Serializer for pets with owner details"""
+    owner_details = OwnerListSerializer(source='owner', read_only=True)
+
+    class Meta:
+        model = Pet
+        fields = ['id', 'name', 'species', 'breed', 'age', 'temperament', 'dominance_level', 'size', 'special_notes', 'owner', 'owner_details']
+
+
+class OwnerWithPetsSerializer(serializers.ModelSerializer):
+    """Serializer for owner with their pets"""
+    pets = PetListSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Owner
+        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'address', 'emergency_contact', 'emergency_phone', 'notes', 'pets', 'created_at']
 
 
 class ScheduleSerializer(serializers.ModelSerializer):
