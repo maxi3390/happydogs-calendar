@@ -93,7 +93,8 @@ class Schedule(models.Model):
     ]
 
     pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='schedules')
-    date = models.DateField()
+    start_date = models.DateField()
+    end_date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
@@ -102,15 +103,18 @@ class Schedule(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['date', 'start_time']
+        ordering = ['start_date', 'start_time']
 
     def __str__(self):
-        return f"{self.pet.name} - {self.date} ({self.start_time} to {self.end_time})"
+        if self.start_date == self.end_date:
+            return f"{self.pet.name} - {self.start_date} ({self.start_time} to {self.end_time})"
+        return f"{self.pet.name} - {self.start_date} to {self.end_date} ({self.start_time} to {self.end_time})"
 
     def get_overlapping_schedules(self):
-        """Get all schedules that overlap with this schedule's time slot."""
+        """Get all schedules that overlap with this schedule's date range and time slot."""
+        from django.db.models import Q
         return Schedule.objects.filter(
-            date=self.date,
+            Q(start_date__lte=self.end_date) & Q(end_date__gte=self.start_date),
             status__in=['scheduled', 'checked_in'],
             start_time__lt=self.end_time,
             end_time__gt=self.start_time
@@ -127,10 +131,16 @@ class Schedule(models.Model):
         for other_schedule in overlapping:
             is_compatible, reason = self.pet.is_compatible_with(other_schedule.pet)
             if not is_compatible:
+                date_range = (
+                    f"{other_schedule.start_date}"
+                    if other_schedule.start_date == other_schedule.end_date
+                    else f"{other_schedule.start_date} to {other_schedule.end_date}"
+                )
                 conflicts.append({
                     'conflicting_pet': other_schedule.pet.name,
                     'conflicting_schedule_id': other_schedule.id,
                     'reason': reason,
+                    'date_range': date_range,
                     'time_slot': f"{other_schedule.start_time} - {other_schedule.end_time}"
                 })
 

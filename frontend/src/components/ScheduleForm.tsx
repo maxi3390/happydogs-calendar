@@ -12,6 +12,18 @@ interface ScheduleFormProps {
   onSave: () => void;
 }
 
+const TIME_OPTIONS = (() => {
+  const options: string[] = [];
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      const hour = h.toString().padStart(2, '0');
+      const minute = m.toString().padStart(2, '0');
+      options.push(`${hour}:${minute}`);
+    }
+  }
+  return options;
+})();
+
 export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }: ScheduleFormProps) {
   const [loading, setLoading] = useState(false);
   const [checkingConflicts, setCheckingConflicts] = useState(false);
@@ -21,9 +33,10 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
 
   const [formData, setFormData] = useState<ScheduleFormData>({
     pet: schedule?.pet || 0,
-    date: schedule?.date || format(selectedDate, 'yyyy-MM-dd'),
-    start_time: schedule?.start_time || '09:00',
-    end_time: schedule?.end_time || '17:00',
+    start_date: schedule?.start_date || format(selectedDate, 'yyyy-MM-dd'),
+    end_date: schedule?.end_date || format(selectedDate, 'yyyy-MM-dd'),
+    start_time: schedule?.start_time?.slice(0, 5) || '09:00',
+    end_time: schedule?.end_time?.slice(0, 5) || '17:00',
     status: schedule?.status || 'scheduled',
     notes: schedule?.notes || '',
   });
@@ -45,7 +58,7 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
 
   useEffect(() => {
     const checkConflicts = async () => {
-      if (!formData.pet || !formData.date || !formData.start_time || !formData.end_time) {
+      if (!formData.pet || !formData.start_date || !formData.end_date || !formData.start_time || !formData.end_time) {
         setConflictResult(null);
         return;
       }
@@ -54,7 +67,8 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
       try {
         const result = await api.schedules.checkConflicts({
           pet_id: formData.pet,
-          date: formData.date,
+          start_date: formData.start_date,
+          end_date: formData.end_date,
           start_time: formData.start_time,
           end_time: formData.end_time,
           exclude_schedule_id: schedule?.id,
@@ -69,7 +83,7 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
 
     const timer = setTimeout(checkConflicts, 500);
     return () => clearTimeout(timer);
-  }, [formData.pet, formData.date, formData.start_time, formData.end_time, schedule?.id]);
+  }, [formData.pet, formData.start_date, formData.end_date, formData.start_time, formData.end_time, schedule?.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,43 +158,70 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date *
-            </label>
-            <input
-              type="date"
-              required
-              value={formData.date}
-              onChange={e => setFormData({ ...formData, date: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Start Time *
+                Start Date *
               </label>
               <input
-                type="time"
+                type="date"
                 required
-                value={formData.start_time}
-                onChange={e => setFormData({ ...formData, start_time: e.target.value })}
+                value={formData.start_date}
+                onChange={e => setFormData({ ...formData, start_date: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                End Time *
+                End Date *
               </label>
               <input
-                type="time"
+                type="date"
+                required
+                value={formData.end_date}
+                min={formData.start_date}
+                onChange={e => setFormData({ ...formData, end_date: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+          </div>
+
+          {formData.start_date !== formData.end_date && (
+            <div className="p-3 bg-indigo-50 rounded-lg text-sm text-indigo-700">
+              Multi-day schedule: {formData.start_date} to {formData.end_date}
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Daily Start Time *
+              </label>
+              <select
+                required
+                value={formData.start_time}
+                onChange={e => setFormData({ ...formData, start_time: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                {TIME_OPTIONS.map(time => (
+                  <option key={time} value={time}>{time}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Daily End Time *
+              </label>
+              <select
                 required
                 value={formData.end_time}
                 onChange={e => setFormData({ ...formData, end_time: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              />
+              >
+                {TIME_OPTIONS.filter(t => t > formData.start_time).map(time => (
+                  <option key={time} value={time}>{time}</option>
+                ))}
+              </select>
             </div>
           </div>
 

@@ -40,7 +40,8 @@ export interface Schedule {
     dominance_level: number;
     size: string;
   };
-  date: string;
+  start_date: string;
+  end_date: string;
   start_time: string;
   end_time: string;
   status: string;
@@ -52,7 +53,8 @@ export interface Schedule {
 
 export interface ScheduleFormData {
   pet: number;
-  date: string;
+  start_date: string;
+  end_date: string;
   start_time: string;
   end_time: string;
   status: string;
@@ -63,6 +65,7 @@ export interface Conflict {
   conflicting_pet: string;
   conflicting_schedule_id: number;
   reason: string;
+  date_range?: string;
   time_slot: string;
 }
 
@@ -132,7 +135,8 @@ export const api = {
     delete: (id: number) => fetchApi<void>(`/schedules/${id}/`, { method: 'DELETE' }),
     checkConflicts: (data: {
       pet_id: number;
-      date: string;
+      start_date: string;
+      end_date: string;
       start_time: string;
       end_time: string;
       exclude_schedule_id?: number;

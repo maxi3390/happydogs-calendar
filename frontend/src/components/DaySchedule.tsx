@@ -125,6 +125,11 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: Da
                   </div>
                   <p className="text-sm text-gray-500 mt-1">
                     {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
+                    {schedule.start_date !== schedule.end_date && (
+                      <span className="ml-2 text-indigo-600">
+                        ({schedule.start_date} to {schedule.end_date})
+                      </span>
+                    )}
                   </p>
                   <div className="flex items-center gap-2 mt-2">
                     <select

@@ -11,6 +11,6 @@ class PetAdmin(admin.ModelAdmin):
 
 @admin.register(Schedule)
 class ScheduleAdmin(admin.ModelAdmin):
-    list_display = ['pet', 'date', 'start_time', 'end_time', 'status']
-    list_filter = ['date', 'status']
+    list_display = ['pet', 'start_date', 'end_date', 'start_time', 'end_time', 'status']
+    list_filter = ['start_date', 'status']
     search_fields = ['pet__name']

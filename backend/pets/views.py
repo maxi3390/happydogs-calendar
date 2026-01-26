@@ -58,9 +58,13 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         status_filter = self.request.query_params.get('status')
 
         if date:
-            queryset = queryset.filter(date=date)
+            # Get schedules that include this specific date
+            queryset = queryset.filter(start_date__lte=date, end_date__gte=date)
         if start_date and end_date:
-            queryset = queryset.filter(date__gte=start_date, date__lte=end_date)
+            # Get schedules that overlap with the date range
+            queryset = queryset.filter(
+                Q(start_date__lte=end_date) & Q(end_date__gte=start_date)
+            )
         if pet_id:
             queryset = queryset.filter(pet_id=pet_id)
         if status_filter:
@@ -105,9 +109,9 @@ class ScheduleViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Get overlapping schedules
+        # Get overlapping schedules (date range overlap AND time overlap)
         overlapping_query = Schedule.objects.filter(
-            date=data['date'],
+            Q(start_date__lte=data['end_date']) & Q(end_date__gte=data['start_date']),
             status__in=['scheduled', 'checked_in'],
             start_time__lt=data['end_time'],
             end_time__gt=data['start_time']
@@ -120,11 +124,17 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         for schedule in overlapping_query:
             is_compatible, reason = pet.is_compatible_with(schedule.pet)
             if not is_compatible:
+                date_range = (
+                    f"{schedule.start_date}"
+                    if schedule.start_date == schedule.end_date
+                    else f"{schedule.start_date} to {schedule.end_date}"
+                )
                 conflicts.append({
                     'conflicting_pet_id': schedule.pet.id,
                     'conflicting_pet': schedule.pet.name,
                     'conflicting_schedule_id': schedule.id,
                     'reason': reason,
+                    'date_range': date_range,
                     'time_slot': f"{schedule.start_time.strftime('%H:%M')} - {schedule.end_time.strftime('%H:%M')}"
                 })
 
@@ -144,7 +154,10 @@ class ScheduleViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        schedules = Schedule.objects.filter(date=date).select_related('pet')
+        # Get schedules that include this date in their range
+        schedules = Schedule.objects.filter(
+            start_date__lte=date, end_date__gte=date
+        ).select_related('pet')
 
         summary = {
             'date': date,

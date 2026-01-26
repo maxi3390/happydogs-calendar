@@ -39,7 +39,7 @@ export default function Calendar({ onDateSelect, selectedDate }: CalendarProps) 
 
   const getSchedulesForDay = (day: Date) => {
     const dateStr = format(day, 'yyyy-MM-dd');
-    return schedules.filter(s => s.date === dateStr);
+    return schedules.filter(s => s.start_date <= dateStr && s.end_date >= dateStr);
   };
 
   const hasConflicts = (day: Date) => {

@@ -32,17 +32,20 @@ class ScheduleSerializer(serializers.ModelSerializer):
 class ScheduleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Schedule
-        fields = ['pet', 'date', 'start_time', 'end_time', 'status', 'notes']
+        fields = ['pet', 'start_date', 'end_date', 'start_time', 'end_time', 'status', 'notes']
 
     def validate(self, data):
         if data['start_time'] >= data['end_time']:
             raise serializers.ValidationError("End time must be after start time")
+        if data['start_date'] > data['end_date']:
+            raise serializers.ValidationError("End date must be on or after start date")
         return data
 
 
 class ConflictCheckSerializer(serializers.Serializer):
     pet_id = serializers.IntegerField()
-    date = serializers.DateField()
+    start_date = serializers.DateField()
+    end_date = serializers.DateField()
     start_time = serializers.TimeField()
     end_time = serializers.TimeField()
     exclude_schedule_id = serializers.IntegerField(required=False)
