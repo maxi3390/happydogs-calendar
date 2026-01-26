@@ -10,7 +10,9 @@
     "newSchedule": "New Schedule",
     "multiPet": "Multi-Pet",
     "addPet": "Add Pet",
-    "back": "Back"
+    "back": "Back",
+    "settings": "Settings",
+    "calendar": "Calendar"
   },
   "calendar": {
     "month": "Month",
@@ -165,5 +167,29 @@
     "deletePet": "Are you sure you want to delete this pet? This will also delete all their schedules.",
     "deleteSchedule": "Are you sure you want to delete this schedule?",
     "deleteOwner": "Are you sure you want to delete this owner?"
+  },
+  "settings": {
+    "title": "Settings",
+    "incompatibilities": "Pet Incompatibilities",
+    "incompatibilityInfo": "Define custom incompatibility rules between specific pets. These rules will generate warnings when scheduling incompatible pets together.",
+    "addRule": "Add Rule",
+    "newRule": "New Incompatibility Rule",
+    "pet1": "First Pet",
+    "pet2": "Second Pet",
+    "selectPet": "Select a pet...",
+    "reason": "Reason",
+    "reasonPlaceholder": "e.g., History of fights, territorial issues",
+    "noRules": "No custom incompatibility rules defined",
+    "addFirstRule": "Add your first rule",
+    "confirmDelete": "Are you sure you want to delete this rule?",
+    "fillAllFields": "Please fill all fields",
+    "samePetError": "Cannot create rule for the same pet",
+    "ruleExists": "This rule already exists",
+    "systemRules": "System Conflict Detection Rules",
+    "rule1": "Aggressive pets cannot be scheduled with any other pets",
+    "rule2": "Two pets with dominance levels > 7 cannot be together",
+    "rule3": "Large size difference (2+ levels) with dominance difference ≥ 5 is flagged",
+    "rule4": "Certain temperament combinations between different species are incompatible",
+    "rule5": "Anxious pets should not be with highly playful pets if dominance differs by > 4"
   }
 }

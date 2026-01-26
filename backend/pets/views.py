@@ -5,6 +5,8 @@ from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from django.db.models import Q
 from django.conf import settings
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
+from drf_spectacular.types import OpenApiTypes
 from .models import Owner, Pet, Schedule
 from .serializers import (
     OwnerSerializer,
@@ -19,6 +21,38 @@ from .serializers import (
 )
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="List all owners",
+        description="Retrieve a list of all registered pet owners.",
+        tags=['owners']
+    ),
+    create=extend_schema(
+        summary="Create a new owner",
+        description="Register a new pet owner with contact information.",
+        tags=['owners']
+    ),
+    retrieve=extend_schema(
+        summary="Get owner details",
+        description="Retrieve detailed information about a specific owner including their pets.",
+        tags=['owners']
+    ),
+    update=extend_schema(
+        summary="Update owner",
+        description="Update all fields of an existing owner.",
+        tags=['owners']
+    ),
+    partial_update=extend_schema(
+        summary="Partially update owner",
+        description="Update specific fields of an existing owner.",
+        tags=['owners']
+    ),
+    destroy=extend_schema(
+        summary="Delete owner",
+        description="Remove an owner from the system.",
+        tags=['owners']
+    ),
+)
 class OwnerViewSet(viewsets.ModelViewSet):
     queryset = Owner.objects.all()
     serializer_class = OwnerSerializer
@@ -30,6 +64,12 @@ class OwnerViewSet(viewsets.ModelViewSet):
             return OwnerWithPetsSerializer
         return OwnerSerializer
 
+    @extend_schema(
+        summary="Get owners for dropdown",
+        description="Get a simplified list of owners suitable for dropdown menus.",
+        responses={200: OwnerListSerializer(many=True)},
+        tags=['owners']
+    )
     @action(detail=False, methods=['get'])
     def dropdown(self, request):
         """Get simplified owner list for dropdowns"""
@@ -38,6 +78,38 @@ class OwnerViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="List all pets",
+        description="Retrieve a list of all registered pets with their basic information.",
+        tags=['pets']
+    ),
+    create=extend_schema(
+        summary="Create a new pet",
+        description="Register a new pet with behavioral characteristics (temperament, dominance level, size).",
+        tags=['pets']
+    ),
+    retrieve=extend_schema(
+        summary="Get pet details",
+        description="Retrieve detailed information about a specific pet.",
+        tags=['pets']
+    ),
+    update=extend_schema(
+        summary="Update pet",
+        description="Update all fields of an existing pet.",
+        tags=['pets']
+    ),
+    partial_update=extend_schema(
+        summary="Partially update pet",
+        description="Update specific fields of an existing pet.",
+        tags=['pets']
+    ),
+    destroy=extend_schema(
+        summary="Delete pet",
+        description="Remove a pet from the system. This will also delete all associated schedules.",
+        tags=['pets']
+    ),
+)
 class PetViewSet(viewsets.ModelViewSet):
     queryset = Pet.objects.select_related('owner').all()
     serializer_class = PetSerializer
@@ -47,6 +119,23 @@ class PetViewSet(viewsets.ModelViewSet):
             return PetListSerializer
         return PetSerializer
 
+    @extend_schema(
+        summary="Check pet compatibility",
+        description="Check the compatibility of a specific pet with all other registered pets based on temperament, dominance, and size.",
+        responses={200: {
+            'type': 'array',
+            'items': {
+                'type': 'object',
+                'properties': {
+                    'pet_id': {'type': 'integer'},
+                    'pet_name': {'type': 'string'},
+                    'is_compatible': {'type': 'boolean'},
+                    'reason': {'type': 'string', 'nullable': True}
+                }
+            }
+        }},
+        tags=['pets']
+    )
     @action(detail=True, methods=['get'])
     def compatibility(self, request, pk=None):
         """Check compatibility of a pet with all other pets"""
@@ -66,6 +155,45 @@ class PetViewSet(viewsets.ModelViewSet):
         return Response(results)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="List schedules",
+        description="Retrieve schedules with optional filtering by date, date range, pet, or status.",
+        parameters=[
+            OpenApiParameter(name='date', type=OpenApiTypes.DATE, description='Filter schedules that include this specific date'),
+            OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start of date range filter'),
+            OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End of date range filter'),
+            OpenApiParameter(name='pet_id', type=OpenApiTypes.INT, description='Filter by pet ID'),
+            OpenApiParameter(name='status', type=OpenApiTypes.STR, description='Filter by status (scheduled, checked_in, completed, cancelled)'),
+        ],
+        tags=['schedules']
+    ),
+    create=extend_schema(
+        summary="Create a schedule",
+        description="Create a new schedule for a pet. The system will automatically check for conflicts with other scheduled pets and return warnings if any incompatibilities are detected.",
+        tags=['schedules']
+    ),
+    retrieve=extend_schema(
+        summary="Get schedule details",
+        description="Retrieve detailed information about a specific schedule.",
+        tags=['schedules']
+    ),
+    update=extend_schema(
+        summary="Update schedule",
+        description="Update all fields of an existing schedule.",
+        tags=['schedules']
+    ),
+    partial_update=extend_schema(
+        summary="Partially update schedule",
+        description="Update specific fields of an existing schedule.",
+        tags=['schedules']
+    ),
+    destroy=extend_schema(
+        summary="Delete schedule",
+        description="Remove a schedule from the system.",
+        tags=['schedules']
+    ),
+)
 class ScheduleViewSet(viewsets.ModelViewSet):
     queryset = Schedule.objects.all()
 
@@ -119,6 +247,20 @@ class ScheduleViewSet(viewsets.ModelViewSet):
 
         return Response(response_data, status=status.HTTP_201_CREATED)
 
+    @extend_schema(
+        summary="Check scheduling conflicts",
+        description="Check for potential conflicts before creating a schedule. Returns a list of incompatible pets that are already scheduled during the specified time slot.",
+        request=ConflictCheckSerializer,
+        responses={200: {
+            'type': 'object',
+            'properties': {
+                'has_conflicts': {'type': 'boolean'},
+                'conflicts': {'type': 'array', 'items': {'type': 'object'}},
+                'overlapping_pets_count': {'type': 'integer'}
+            }
+        }},
+        tags=['schedules']
+    )
     @action(detail=False, methods=['post'])
     def check_conflicts(self, request):
         """Check for conflicts before creating a schedule"""
@@ -170,6 +312,23 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             'overlapping_pets_count': overlapping_query.count()
         })
 
+    @extend_schema(
+        summary="Get daily schedule summary",
+        description="Get a summary of all schedules for a specific date, including counts by status.",
+        parameters=[
+            OpenApiParameter(name='date', type=OpenApiTypes.DATE, required=True, description='Date to get summary for (YYYY-MM-DD)')
+        ],
+        responses={200: {
+            'type': 'object',
+            'properties': {
+                'date': {'type': 'string', 'format': 'date'},
+                'total_schedules': {'type': 'integer'},
+                'by_status': {'type': 'object'},
+                'schedules': {'type': 'array'}
+            }
+        }},
+        tags=['schedules']
+    )
     @action(detail=False, methods=['get'])
     def daily_summary(self, request):
         """Get a summary of schedules for a specific date"""
@@ -197,6 +356,20 @@ class ScheduleViewSet(viewsets.ModelViewSet):
 
         return Response(summary)
 
+    @extend_schema(
+        summary="Batch create schedules",
+        description="Create schedules for multiple pets at once with the same time slot. Useful for scheduling group activities. Returns all created schedules and any conflict warnings.",
+        request=BatchScheduleCreateSerializer,
+        responses={201: {
+            'type': 'object',
+            'properties': {
+                'created_count': {'type': 'integer'},
+                'schedules': {'type': 'array'},
+                'warnings': {'type': 'array'}
+            }
+        }},
+        tags=['schedules']
+    )
     @action(detail=False, methods=['post'])
     def batch_create(self, request):
         """Create schedules for multiple pets at once with the same schedule data"""
@@ -245,6 +418,18 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         return Response(response_data, status=status.HTTP_201_CREATED)
 
 
+@extend_schema(
+    summary="Get translations",
+    description="Get all translation strings for a specific language. Used for internationalization of the frontend.",
+    parameters=[
+        OpenApiParameter(name='language', type=OpenApiTypes.STR, location=OpenApiParameter.PATH, description='Language code (en, es)')
+    ],
+    responses={200: {
+        'type': 'object',
+        'description': 'Translation dictionary with nested keys'
+    }},
+    tags=['translations']
+)
 @api_view(['GET'])
 def get_translations(request, language='en'):
     """
@@ -278,6 +463,22 @@ def get_translations(request, language='en'):
         )
 
 
+@extend_schema(
+    summary="Get available languages",
+    description="Get a list of all available languages for the application.",
+    responses={200: {
+        'type': 'array',
+        'items': {
+            'type': 'object',
+            'properties': {
+                'code': {'type': 'string', 'example': 'en'},
+                'name': {'type': 'string', 'example': 'English'},
+                'nativeName': {'type': 'string', 'example': 'English'}
+            }
+        }
+    }},
+    tags=['translations']
+)
 @api_view(['GET'])
 def get_available_languages(request):
     """

@@ -62,6 +62,20 @@ Multi-language support with dynamic language switching:
 ### Dark Mode
 Full dark mode support with system preference detection and manual toggle.
 
+### Settings & Incompatibility Management
+Customizable pet incompatibility rules:
+- Define custom incompatibility rules between specific dogs
+- Rules are stored locally and generate warnings during scheduling
+- View system conflict detection rules
+- Full translation support for settings UI
+
+### Reusable Navigation Component
+Consistent navigation across all pages:
+- Active state highlighting for current page
+- Integrated language switcher and theme toggle
+- Mobile-responsive hamburger menu
+- Links to Calendar, Owners, Pets, and Settings pages
+
 ## Tech Stack
 
 - **Frontend**: Next.js 15 with React 19, TypeScript, TailwindCSS, Lucide icons
@@ -95,6 +109,9 @@ docker-compose up --build
 4. Access the application:
    - **Frontend**: http://localhost:3000
    - **Backend API**: http://localhost:8000/api/
+   - **API Documentation (Swagger)**: http://localhost:8000/api/docs/
+   - **API Documentation (ReDoc)**: http://localhost:8000/api/redoc/
+   - **OpenAPI Schema**: http://localhost:8000/api/schema/
 
 ## API Endpoints
 
@@ -137,6 +154,13 @@ docker-compose up --build
 | GET | `/api/translations/` | Get default translations (English) |
 | GET | `/api/languages/` | Get list of available languages |
 
+### API Documentation
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/schema/` | Download OpenAPI 3.0 schema (YAML) |
+| GET | `/api/docs/` | Interactive Swagger UI documentation |
+| GET | `/api/redoc/` | ReDoc API documentation |
+
 ## Conflict Detection Rules
 
 The system automatically detects potential conflicts when scheduling pets together:
@@ -172,6 +196,7 @@ happy-calendar/
 │   │   │   ├── page.tsx      # Main calendar page
 │   │   │   ├── pets/         # Pets management page
 │   │   │   ├── owners/       # Owners management page
+│   │   │   ├── settings/     # Settings & incompatibility management
 │   │   │   └── layout.tsx    # Root layout with providers
 │   │   ├── components/       # React components
 │   │   │   ├── Calendar.tsx          # Monthly calendar view
@@ -183,6 +208,7 @@ happy-calendar/
 │   │   │   ├── PetList.tsx           # Pet listing component
 │   │   │   ├── OwnerForm.tsx         # Owner creation/editing
 │   │   │   ├── OwnerList.tsx         # Owner listing component
+│   │   │   ├── Navigation.tsx        # Reusable navigation component
 │   │   │   ├── LanguageSwitcher.tsx  # Language selector
 │   │   │   └── ThemeToggle.tsx       # Dark mode toggle
 │   │   └── lib/
@@ -272,6 +298,34 @@ t('greeting', { name: 'John' })  // "Hello, John!"
 |----------|-------------|---------|
 | `DEBUG` | Django debug mode | `True` |
 | `DATABASE_URL` | PostgreSQL connection string | (from docker-compose) |
+
+## API Documentation
+
+The backend includes comprehensive OpenAPI 3.0 documentation powered by drf-spectacular.
+
+### Accessing Documentation
+
+- **Swagger UI**: http://localhost:8000/api/docs/ - Interactive API explorer
+- **ReDoc**: http://localhost:8000/api/redoc/ - Clean, readable documentation
+- **OpenAPI Schema**: http://localhost:8000/api/schema/ - Raw OpenAPI 3.0 schema
+
+### Features
+
+- Complete endpoint documentation with request/response schemas
+- Interactive "Try it out" functionality in Swagger UI
+- Organized by tags: pets, owners, schedules, translations
+- Detailed parameter descriptions and examples
+- Conflict detection rules documented inline
+
+### Downloading the Schema
+
+```bash
+# Download OpenAPI schema as YAML
+curl http://localhost:8000/api/schema/ -o openapi.yaml
+
+# Download as JSON
+curl http://localhost:8000/api/schema/?format=json -o openapi.json
+```
 
 ## Stopping the Application
 

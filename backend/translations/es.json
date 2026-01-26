@@ -10,7 +10,9 @@
     "newSchedule": "Nuevo Horario",
     "multiPet": "Multi-Mascota",
     "addPet": "Agregar Mascota",
-    "back": "Volver"
+    "back": "Volver",
+    "settings": "Configuración",
+    "calendar": "Calendario"
   },
   "calendar": {
     "month": "Mes",
@@ -165,5 +167,29 @@
     "deletePet": "¿Estás seguro de que deseas eliminar esta mascota? Esto también eliminará todos sus horarios.",
     "deleteSchedule": "¿Estás seguro de que deseas eliminar este horario?",
     "deleteOwner": "¿Estás seguro de que deseas eliminar este dueño?"
+  },
+  "settings": {
+    "title": "Configuración",
+    "incompatibilities": "Incompatibilidades de Mascotas",
+    "incompatibilityInfo": "Define reglas de incompatibilidad personalizadas entre mascotas específicas. Estas reglas generarán advertencias al programar mascotas incompatibles juntas.",
+    "addRule": "Agregar Regla",
+    "newRule": "Nueva Regla de Incompatibilidad",
+    "pet1": "Primera Mascota",
+    "pet2": "Segunda Mascota",
+    "selectPet": "Selecciona una mascota...",
+    "reason": "Razón",
+    "reasonPlaceholder": "ej., Historial de peleas, problemas territoriales",
+    "noRules": "No hay reglas de incompatibilidad definidas",
+    "addFirstRule": "Agrega tu primera regla",
+    "confirmDelete": "¿Estás seguro de que deseas eliminar esta regla?",
+    "fillAllFields": "Por favor completa todos los campos",
+    "samePetError": "No se puede crear una regla para la misma mascota",
+    "ruleExists": "Esta regla ya existe",
+    "systemRules": "Reglas de Detección de Conflictos del Sistema",
+    "rule1": "Las mascotas agresivas no pueden ser programadas con otras mascotas",
+    "rule2": "Dos mascotas con niveles de dominancia > 7 no pueden estar juntas",
+    "rule3": "Gran diferencia de tamaño (2+ niveles) con diferencia de dominancia ≥ 5 es señalada",
+    "rule4": "Ciertas combinaciones de temperamento entre diferentes especies son incompatibles",
+    "rule5": "Las mascotas ansiosas no deben estar con mascotas muy juguetonas si la dominancia difiere por > 4"
   }
 }

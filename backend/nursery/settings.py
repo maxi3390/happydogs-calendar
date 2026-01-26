@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'drf_spectacular',
     'pets',
 ]
 
@@ -85,5 +86,37 @@ CORS_ALLOW_ALL_ORIGINS = True
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Happy Pet Nursery API',
+    'DESCRIPTION': '''
+API for managing pet nursery schedules with automatic conflict detection.
+
+## Features
+- **Pet Management**: Create and manage pets with behavioral profiles
+- **Owner Management**: Register owners and link them to their pets
+- **Smart Scheduling**: Create schedules with automatic conflict detection
+- **Multi-Pet Scheduling**: Batch create schedules for multiple pets
+- **Translations**: Multi-language support (EN/ES)
+
+## Conflict Detection Rules
+The system automatically detects potential conflicts when scheduling pets together:
+1. Aggressive pets cannot be scheduled with any other pets
+2. Two pets with dominance levels > 7 cannot be together
+3. Large size difference with high dominance difference is flagged
+4. Certain cross-species temperament combinations are incompatible
+5. Anxious pets should not be with highly playful pets if dominance differs significantly
+''',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'TAGS': [
+        {'name': 'pets', 'description': 'Pet management endpoints'},
+        {'name': 'owners', 'description': 'Owner management endpoints'},
+        {'name': 'schedules', 'description': 'Schedule management with conflict detection'},
+        {'name': 'translations', 'description': 'Internationalization endpoints'},
     ],
 }
