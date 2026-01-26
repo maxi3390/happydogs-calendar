@@ -285,6 +285,63 @@ To also remove the database volume:
 docker-compose down -v
 ```
 
+## Testing
+
+The frontend includes comprehensive Playwright tests for common user flows.
+
+### Setup
+
+```bash
+cd frontend
+
+# Install dependencies (including Playwright)
+npm install
+
+# Install Playwright browsers
+npx playwright install
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with UI mode (interactive)
+npm run test:ui
+
+# Run tests in headed mode (see browser)
+npm run test:headed
+
+# Debug tests
+npm run test:debug
+
+# View test report
+npm run test:report
+```
+
+### Test Suites
+
+| File | Description |
+|------|-------------|
+| `tests/navigation.spec.ts` | Navigation flows, mobile menu |
+| `tests/calendar.spec.ts` | Calendar views, month/week navigation |
+| `tests/pets.spec.ts` | Pet CRUD operations, form validation |
+| `tests/schedule.spec.ts` | Schedule creation, multi-pet scheduling |
+| `tests/language.spec.ts` | Language switching, translation persistence |
+
+### Running Tests Against Docker
+
+To run tests against the Docker deployment:
+
+```bash
+# Start the application
+docker-compose up -d
+
+# Run tests with the Docker URL
+BASE_URL=http://localhost:3000 npm test
+```
+
 ## Screenshots
 
 ### Main Calendar View
