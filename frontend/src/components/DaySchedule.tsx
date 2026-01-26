@@ -1,0 +1,185 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { Clock, AlertTriangle, Edit2, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { api, Schedule } from '@/lib/api';
+
+interface DayScheduleProps {
+  date: Date;
+  onEditSchedule: (schedule: Schedule) => void;
+  refreshTrigger: number;
+}
+
+const statusColors: Record<string, string> = {
+  scheduled: 'bg-blue-100 text-blue-800 border-blue-200',
+  checked_in: 'bg-green-100 text-green-800 border-green-200',
+  completed: 'bg-gray-100 text-gray-800 border-gray-200',
+  cancelled: 'bg-red-100 text-red-800 border-red-200',
+};
+
+const statusIcons: Record<string, React.ReactNode> = {
+  scheduled: <Clock className="w-4 h-4" />,
+  checked_in: <CheckCircle className="w-4 h-4" />,
+  completed: <CheckCircle className="w-4 h-4" />,
+  cancelled: <XCircle className="w-4 h-4" />,
+};
+
+export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: DayScheduleProps) {
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const fetchSchedules = async () => {
+    setLoading(true);
+    try {
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const data = await api.schedules.list({ date: dateStr });
+      setSchedules(data.sort((a, b) => a.start_time.localeCompare(b.start_time)));
+    } catch (error) {
+      console.error('Failed to fetch schedules:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSchedules();
+  }, [date, refreshTrigger]);
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this schedule?')) {
+      return;
+    }
+
+    setDeletingId(id);
+    try {
+      await api.schedules.delete(id);
+      setSchedules(schedules.filter(s => s.id !== id));
+    } catch (error) {
+      console.error('Failed to delete schedule:', error);
+      alert('Failed to delete schedule');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleStatusChange = async (schedule: Schedule, newStatus: string) => {
+    try {
+      await api.schedules.update(schedule.id, { status: newStatus });
+      setSchedules(schedules.map(s =>
+        s.id === schedule.id ? { ...s, status: newStatus } : s
+      ));
+    } catch (error) {
+      console.error('Failed to update status:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="animate-pulse space-y-4">
+          {[1, 2].map(i => (
+            <div key={i} className="h-24 bg-gray-100 rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+      <div className="p-4 border-b bg-gradient-to-r from-indigo-500 to-purple-500">
+        <h3 className="font-semibold text-white">
+          {format(date, 'EEEE, MMMM d, yyyy')}
+        </h3>
+        <p className="text-indigo-100 text-sm">
+          {schedules.length} {schedules.length === 1 ? 'schedule' : 'schedules'}
+        </p>
+      </div>
+
+      {schedules.length === 0 ? (
+        <div className="p-8 text-center">
+          <Clock className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+          <p className="text-gray-500">No schedules for this day</p>
+        </div>
+      ) : (
+        <div className="divide-y max-h-[400px] overflow-y-auto">
+          {schedules.map(schedule => (
+            <div
+              key={schedule.id}
+              className={`p-4 ${schedule.conflicts?.length ? 'bg-amber-50' : ''}`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-medium text-gray-800">
+                      {schedule.pet_details.name}
+                    </h4>
+                    {schedule.conflicts?.length > 0 && (
+                      <span className="flex items-center gap-1 text-xs text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                        <AlertTriangle className="w-3 h-3" />
+                        {schedule.conflicts.length} conflict{schedule.conflicts.length > 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <select
+                      value={schedule.status}
+                      onChange={e => handleStatusChange(schedule, e.target.value)}
+                      className={`text-xs px-2 py-1 rounded-full border cursor-pointer ${statusColors[schedule.status]}`}
+                    >
+                      <option value="scheduled">Scheduled</option>
+                      <option value="checked_in">Checked In</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                    <span className="text-xs text-gray-500">
+                      {schedule.pet_details.species} • {schedule.pet_details.temperament}
+                    </span>
+                  </div>
+
+                  {schedule.conflicts?.length > 0 && (
+                    <div className="mt-3 p-2 bg-amber-100 rounded-lg">
+                      <p className="text-xs font-medium text-amber-800">Conflicts:</p>
+                      {schedule.conflicts.map((conflict, i) => (
+                        <p key={i} className="text-xs text-amber-700 mt-1">
+                          • {conflict.conflicting_pet}: {conflict.reason}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+
+                  {schedule.notes && (
+                    <p className="text-xs text-gray-500 mt-2 italic">
+                      Note: {schedule.notes}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1 ml-4">
+                  <button
+                    onClick={() => onEditSchedule(schedule)}
+                    className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(schedule.id)}
+                    disabled={deletingId === schedule.id}
+                    className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

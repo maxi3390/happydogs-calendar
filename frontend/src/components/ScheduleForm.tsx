@@ -1,0 +1,285 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { X, AlertTriangle, CheckCircle } from 'lucide-react';
+import { api, Pet, Schedule, ScheduleFormData, ConflictCheckResult } from '@/lib/api';
+
+interface ScheduleFormProps {
+  schedule?: Schedule;
+  selectedDate: Date;
+  onClose: () => void;
+  onSave: () => void;
+}
+
+export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }: ScheduleFormProps) {
+  const [loading, setLoading] = useState(false);
+  const [checkingConflicts, setCheckingConflicts] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pets, setPets] = useState<Pet[]>([]);
+  const [conflictResult, setConflictResult] = useState<ConflictCheckResult | null>(null);
+
+  const [formData, setFormData] = useState<ScheduleFormData>({
+    pet: schedule?.pet || 0,
+    date: schedule?.date || format(selectedDate, 'yyyy-MM-dd'),
+    start_time: schedule?.start_time || '09:00',
+    end_time: schedule?.end_time || '17:00',
+    status: schedule?.status || 'scheduled',
+    notes: schedule?.notes || '',
+  });
+
+  useEffect(() => {
+    const fetchPets = async () => {
+      try {
+        const data = await api.pets.list();
+        setPets(data);
+        if (data.length > 0 && !formData.pet) {
+          setFormData(prev => ({ ...prev, pet: data[0].id }));
+        }
+      } catch (err) {
+        console.error('Failed to fetch pets:', err);
+      }
+    };
+    fetchPets();
+  }, []);
+
+  useEffect(() => {
+    const checkConflicts = async () => {
+      if (!formData.pet || !formData.date || !formData.start_time || !formData.end_time) {
+        setConflictResult(null);
+        return;
+      }
+
+      setCheckingConflicts(true);
+      try {
+        const result = await api.schedules.checkConflicts({
+          pet_id: formData.pet,
+          date: formData.date,
+          start_time: formData.start_time,
+          end_time: formData.end_time,
+          exclude_schedule_id: schedule?.id,
+        });
+        setConflictResult(result);
+      } catch (err) {
+        console.error('Failed to check conflicts:', err);
+      } finally {
+        setCheckingConflicts(false);
+      }
+    };
+
+    const timer = setTimeout(checkConflicts, 500);
+    return () => clearTimeout(timer);
+  }, [formData.pet, formData.date, formData.start_time, formData.end_time, schedule?.id]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (schedule) {
+        await api.schedules.update(schedule.id, formData);
+      } else {
+        await api.schedules.create(formData);
+      }
+      onSave();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save schedule');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const selectedPet = pets.find(p => p.id === formData.pet);
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b">
+          <h2 className="text-xl font-bold text-gray-800">
+            {schedule ? 'Edit Schedule' : 'New Schedule'}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {error && (
+            <div className="p-4 bg-red-50 text-red-700 rounded-lg">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Pet *
+            </label>
+            <select
+              required
+              value={formData.pet}
+              onChange={e => setFormData({ ...formData, pet: parseInt(e.target.value) })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="">Select a pet...</option>
+              {pets.map(pet => (
+                <option key={pet.id} value={pet.id}>
+                  {pet.name} ({pet.species}) - {pet.temperament}, Dom: {pet.dominance_level}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedPet && (
+            <div className="p-3 bg-gray-50 rounded-lg text-sm">
+              <div className="font-medium text-gray-800">{selectedPet.name}</div>
+              <div className="text-gray-600 mt-1 grid grid-cols-3 gap-2">
+                <span>Species: {selectedPet.species}</span>
+                <span>Temperament: {selectedPet.temperament}</span>
+                <span>Dominance: {selectedPet.dominance_level}/10</span>
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Date *
+            </label>
+            <input
+              type="date"
+              required
+              value={formData.date}
+              onChange={e => setFormData({ ...formData, date: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Start Time *
+              </label>
+              <input
+                type="time"
+                required
+                value={formData.start_time}
+                onChange={e => setFormData({ ...formData, start_time: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                End Time *
+              </label>
+              <input
+                type="time"
+                required
+                value={formData.end_time}
+                onChange={e => setFormData({ ...formData, end_time: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+          </div>
+
+          {conflictResult && (
+            <div className={`p-4 rounded-lg ${
+              conflictResult.has_conflicts
+                ? 'bg-amber-50 border border-amber-200'
+                : 'bg-green-50 border border-green-200'
+            }`}>
+              {checkingConflicts ? (
+                <div className="flex items-center gap-2 text-gray-600">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600" />
+                  Checking conflicts...
+                </div>
+              ) : conflictResult.has_conflicts ? (
+                <div>
+                  <div className="flex items-center gap-2 text-amber-800 font-medium">
+                    <AlertTriangle className="w-5 h-5" />
+                    Conflicts Detected!
+                  </div>
+                  <ul className="mt-2 space-y-2">
+                    {conflictResult.conflicts.map((conflict, i) => (
+                      <li key={i} className="text-sm text-amber-700">
+                        <span className="font-medium">{conflict.conflicting_pet}</span>
+                        <span className="text-amber-600"> ({conflict.time_slot})</span>
+                        <div className="text-amber-600">{conflict.reason}</div>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-amber-600 mt-2">
+                    You can still create this schedule, but be aware of the potential conflicts.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-green-700">
+                  <CheckCircle className="w-5 h-5" />
+                  No conflicts detected
+                  {conflictResult.overlapping_pets_count > 0 && (
+                    <span className="text-green-600">
+                      ({conflictResult.overlapping_pets_count} compatible pets at this time)
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Status
+            </label>
+            <select
+              value={formData.status}
+              onChange={e => setFormData({ ...formData, status: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="scheduled">Scheduled</option>
+              <option value="checked_in">Checked In</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Notes
+            </label>
+            <textarea
+              value={formData.notes}
+              onChange={e => setFormData({ ...formData, notes: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Any special instructions for this visit..."
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !formData.pet}
+              className={`px-6 py-2 rounded-lg transition-colors disabled:opacity-50 ${
+                conflictResult?.has_conflicts
+                  ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                  : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+              }`}
+            >
+              {loading ? 'Saving...' : schedule ? 'Update Schedule' :
+                conflictResult?.has_conflicts ? 'Schedule Anyway' : 'Create Schedule'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
