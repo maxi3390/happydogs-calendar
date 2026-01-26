@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { PawPrint, Users, CalendarDays, Settings, Menu, X } from 'lucide-react';
+import { PawPrint, Users, CalendarDays, Settings, Menu, X, LogIn, LogOut, Shield } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useTranslation } from '@/lib/translations';
+import { useAuth } from '@/lib/auth';
 
 interface NavigationProps {
   onNewSchedule?: () => void;
@@ -17,6 +18,7 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
   const { t } = useTranslation();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
 
   const isActive = (path: string) => {
     if (path === '/') return pathname === '/';
@@ -86,6 +88,31 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
                 <CalendarDays className="w-4 h-4 lg:w-5 lg:h-5" />
                 <span className="hidden lg:inline">{t('nav.newSchedule')}</span>
               </button>
+            )}
+
+            {/* Auth Section */}
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2">
+                <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-slate-700 rounded-lg">
+                  {isAdmin && <Shield className="w-4 h-4 text-amber-500" />}
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{user?.first_name}</span>
+                </div>
+                <button
+                  onClick={logout}
+                  className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors text-sm"
+                >
+                  <LogOut className="w-4 h-4 lg:w-5 lg:h-5" />
+                  <span className="hidden lg:inline">{t('auth.signOut')}</span>
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors shadow-sm text-sm"
+              >
+                <LogIn className="w-4 h-4 lg:w-5 lg:h-5" />
+                <span className="hidden lg:inline">{t('auth.signIn')}</span>
+              </Link>
             )}
           </div>
 
@@ -162,6 +189,44 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
                   {t('multiPet.title')}
                 </button>
               )}
+
+              {/* Mobile Auth Section */}
+              <div className="border-t border-gray-200 dark:border-slate-600 pt-3 mt-2">
+                {isAuthenticated ? (
+                  <>
+                    <div className="flex items-center gap-3 px-4 py-2 mb-2">
+                      {isAdmin && <Shield className="w-5 h-5 text-amber-500" />}
+                      <span className="text-gray-700 dark:text-gray-300">
+                        {t('auth.welcome')}, {user?.first_name}
+                      </span>
+                      {isAdmin && (
+                        <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded">
+                          {t('auth.admin')}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        logout();
+                      }}
+                      className="flex items-center gap-3 px-4 py-3 w-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg"
+                    >
+                      <LogOut className="w-5 h-5" />
+                      {t('auth.signOut')}
+                    </button>
+                  </>
+                ) : (
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 bg-blue-600 dark:bg-blue-500 text-white rounded-lg"
+                  >
+                    <LogIn className="w-5 h-5" />
+                    {t('auth.signIn')}
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         )}

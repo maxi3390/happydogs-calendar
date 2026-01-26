@@ -191,5 +191,38 @@
     "rule3": "Large size difference (2+ levels) with dominance difference ≥ 5 is flagged",
     "rule4": "Certain temperament combinations between different species are incompatible",
     "rule5": "Anxious pets should not be with highly playful pets if dominance differs by > 4"
+  },
+  "public": {
+    "welcome": "Welcome to Happy Pet Nursery",
+    "description": "View our availability calendar below. Sign in to manage schedules and access all features.",
+    "availabilityCalendar": "Availability Calendar",
+    "ctaTitle": "Want to schedule your pet?",
+    "ctaDescription": "Sign in to create schedules, manage pets, and access all features.",
+    "available": "Available",
+    "limitedAvailability": "Limited",
+    "busy": "Busy",
+    "adminMode": "Admin Mode",
+    "fullAccess": "You have full access to all features"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "signInTitle": "Sign in to your account",
+    "signUpTitle": "Create your account",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "backToHome": "Back to home",
+    "passwordMismatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 8 characters",
+    "welcome": "Welcome",
+    "profile": "Profile",
+    "admin": "Admin",
+    "user": "User"
   }
 }

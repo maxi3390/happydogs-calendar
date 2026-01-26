@@ -76,6 +76,16 @@ Consistent navigation across all pages:
 - Mobile-responsive hamburger menu
 - Links to Calendar, Owners, Pets, and Settings pages
 
+### User Authentication & RBAC
+Complete authentication system with role-based access control:
+- **JWT Authentication**: Secure token-based authentication with access/refresh tokens
+- **User Roles**: Admin and User roles with different permission levels
+- **Registration**: New user signup with email validation
+- **Login/Logout**: Secure session management with token blacklisting
+- **Profile Management**: View and update user profile information
+- **Password Change**: Secure password update functionality
+- **Admin Panel**: Admin users can manage all users and modify roles
+
 ## Tech Stack
 
 - **Frontend**: Next.js 15 with React 19, TypeScript, TailwindCSS, Lucide icons
@@ -153,6 +163,26 @@ docker-compose up --build
 | GET | `/api/translations/{language}/` | Get all translations for a language (en, es) |
 | GET | `/api/translations/` | Get default translations (English) |
 | GET | `/api/languages/` | Get list of available languages |
+
+### Authentication
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register/` | Register a new user |
+| POST | `/api/auth/login/` | Login and get JWT tokens |
+| POST | `/api/auth/logout/` | Logout and blacklist refresh token |
+| POST | `/api/auth/refresh/` | Refresh access token |
+| GET | `/api/auth/profile/` | Get current user profile |
+| PATCH | `/api/auth/profile/` | Update current user profile |
+| PUT | `/api/auth/change-password/` | Change password |
+
+### User Management (Admin Only)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/users/` | List all users |
+| GET | `/api/users/{id}/` | Get user details |
+| PATCH | `/api/users/{id}/` | Update user (role, status) |
+| DELETE | `/api/users/{id}/` | Delete a user |
+| GET | `/api/users/me/` | Get current user info |
 
 ### API Documentation
 | Method | Endpoint | Description |

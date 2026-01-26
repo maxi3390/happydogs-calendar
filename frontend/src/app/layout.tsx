@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { TranslationProvider } from "@/lib/translations";
+import { AuthProvider } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Happy Pet Nursery - Schedule Management",
@@ -15,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased">
-        <TranslationProvider>{children}</TranslationProvider>
+        <AuthProvider>
+          <TranslationProvider>{children}</TranslationProvider>
+        </AuthProvider>
       </body>
     </html>
   );
