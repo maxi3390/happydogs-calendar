@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
-import { ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertTriangle, Users } from 'lucide-react';
 import { api, Schedule } from '@/lib/api';
+import ScheduleDetailsPopup from './ScheduleDetailsPopup';
 
 interface CalendarProps {
   onDateSelect: (date: Date) => void;
@@ -14,6 +15,7 @@ export default function Calendar({ onDateSelect, selectedDate }: CalendarProps) 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
 
   useEffect(() => {
     const fetchSchedules = async () => {
@@ -106,9 +108,9 @@ export default function Calendar({ onDateSelect, selectedDate }: CalendarProps) 
                   : 'border-gray-100 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-700 hover:bg-gray-50 dark:hover:bg-slate-700/50'
               } ${!isSameMonth(day, currentMonth) ? 'opacity-40' : ''}`}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between h-7">
                 <span
-                  className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm ${
+                  className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm flex-shrink-0 ${
                     isToday
                       ? 'bg-indigo-600 dark:bg-indigo-500 text-white font-bold'
                       : 'text-gray-700 dark:text-gray-300'
@@ -116,22 +118,38 @@ export default function Calendar({ onDateSelect, selectedDate }: CalendarProps) 
                 >
                   {format(day, 'd')}
                 </span>
-                {dayHasConflicts && (
-                  <AlertTriangle className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-                )}
+                <div className="flex items-center gap-1 h-7">
+                  {daySchedules.length > 0 && (
+                    <span className={`inline-flex items-center gap-0.5 px-1.5 h-5 rounded-full text-xs font-medium ${
+                      dayHasConflicts
+                        ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300'
+                        : 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300'
+                    }`}>
+                      <Users className="w-3 h-3" />
+                      {daySchedules.length}
+                    </span>
+                  )}
+                  {dayHasConflicts && (
+                    <AlertTriangle className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+                  )}
+                </div>
               </div>
               <div className="mt-1 space-y-1 overflow-hidden">
                 {daySchedules.slice(0, 2).map(schedule => (
-                  <div
+                  <button
                     key={schedule.id}
-                    className={`text-xs px-1.5 py-0.5 rounded truncate ${
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedSchedule(schedule);
+                    }}
+                    className={`w-full text-left text-xs px-1.5 py-0.5 rounded truncate hover:ring-1 hover:ring-indigo-400 transition-all ${
                       schedule.conflicts?.length
                         ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200'
                         : 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200'
                     }`}
                   >
                     {schedule.pet_details.name}
-                  </div>
+                  </button>
                 ))}
                 {daySchedules.length > 2 && (
                   <div className="text-xs text-gray-500 dark:text-gray-400 px-1">
@@ -148,6 +166,13 @@ export default function Calendar({ onDateSelect, selectedDate }: CalendarProps) 
         <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 dark:border-indigo-400" />
         </div>
+      )}
+
+      {selectedSchedule && (
+        <ScheduleDetailsPopup
+          schedule={selectedSchedule}
+          onClose={() => setSelectedSchedule(null)}
+        />
       )}
     </div>
   );

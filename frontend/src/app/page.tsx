@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, PawPrint, CalendarDays } from 'lucide-react';
+import { Plus, PawPrint, CalendarDays, CalendarRange } from 'lucide-react';
 import Calendar from '@/components/Calendar';
 import PetForm from '@/components/PetForm';
 import PetList from '@/components/PetList';
 import ScheduleForm from '@/components/ScheduleForm';
 import DaySchedule from '@/components/DaySchedule';
+import WeekView from '@/components/WeekView';
 import ThemeToggle from '@/components/ThemeToggle';
 import { Pet, Schedule } from '@/lib/api';
 
@@ -18,6 +19,7 @@ export default function Home() {
   const [editingSchedule, setEditingSchedule] = useState<Schedule | undefined>();
   const [refreshPets, setRefreshPets] = useState(0);
   const [refreshSchedules, setRefreshSchedules] = useState(0);
+  const [calendarView, setCalendarView] = useState<'month' | 'week'>('month');
 
   const handlePetSave = () => {
     setShowPetForm(false);
@@ -85,10 +87,46 @@ export default function Home() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
-            <Calendar
-              selectedDate={selectedDate}
-              onDateSelect={setSelectedDate}
-            />
+            <div className="flex items-center justify-end gap-2 mb-2">
+              <span className="text-sm text-gray-500 dark:text-gray-400">View:</span>
+              <div className="flex bg-gray-100 dark:bg-slate-700 rounded-lg p-1">
+                <button
+                  onClick={() => setCalendarView('month')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    calendarView === 'month'
+                      ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  }`}
+                >
+                  <CalendarDays className="w-4 h-4" />
+                  Month
+                </button>
+                <button
+                  onClick={() => setCalendarView('week')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    calendarView === 'week'
+                      ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  }`}
+                >
+                  <CalendarRange className="w-4 h-4" />
+                  Week
+                </button>
+              </div>
+            </div>
+
+            {calendarView === 'month' ? (
+              <Calendar
+                selectedDate={selectedDate}
+                onDateSelect={setSelectedDate}
+              />
+            ) : (
+              <WeekView
+                selectedDate={selectedDate}
+                onDateSelect={setSelectedDate}
+              />
+            )}
+
             <DaySchedule
               date={selectedDate}
               onEditSchedule={handleEditSchedule}
