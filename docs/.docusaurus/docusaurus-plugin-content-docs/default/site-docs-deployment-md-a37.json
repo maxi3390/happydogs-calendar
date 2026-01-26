@@ -1,0 +1,20 @@
+{
+  "id": "deployment",
+  "title": "Deployment",
+  "description": "Overview",
+  "source": "@site/docs/deployment.md",
+  "sourceDirName": ".",
+  "slug": "/deployment",
+  "permalink": "/docs/deployment",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/maximiliano/happy-calendar/edit/main/docs/docs/deployment.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Frontend Architecture",
+    "permalink": "/docs/frontend/intro"
+  }
+}

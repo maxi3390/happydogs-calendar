@@ -1,0 +1,24 @@
+{
+  "id": "backend/intro",
+  "title": "Backend Architecture",
+  "description": "Overview",
+  "source": "@site/docs/backend/intro.md",
+  "sourceDirName": "backend",
+  "slug": "/backend/intro",
+  "permalink": "/docs/backend/intro",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/maximiliano/happy-calendar/edit/main/docs/docs/backend/intro.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Architecture",
+    "permalink": "/docs/architecture"
+  },
+  "next": {
+    "title": "Frontend Architecture",
+    "permalink": "/docs/frontend/intro"
+  }
+}

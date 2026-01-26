@@ -1,0 +1,35 @@
+{
+  "/docs-94e": {
+    "__comp": "5e95c892",
+    "__context": {
+      "plugin": "aba21aa0"
+    }
+  },
+  "/docs-c28": {
+    "__comp": "a7bd4aaa",
+    "__props": "0058b4c6"
+  },
+  "/docs-c55": {
+    "__comp": "a94703ab"
+  },
+  "/docs/architecture-52f": {
+    "__comp": "17896441",
+    "content": "5281b7a2"
+  },
+  "/docs/backend/intro-c5b": {
+    "__comp": "17896441",
+    "content": "160f7bb3"
+  },
+  "/docs/deployment-9a4": {
+    "__comp": "17896441",
+    "content": "a3713279"
+  },
+  "/docs/frontend/intro-e1b": {
+    "__comp": "17896441",
+    "content": "78460e70"
+  },
+  "/docs/overview-bdc": {
+    "__comp": "17896441",
+    "content": "1db64337"
+  }
+}

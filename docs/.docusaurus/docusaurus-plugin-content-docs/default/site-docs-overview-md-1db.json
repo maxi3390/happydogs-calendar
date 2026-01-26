@@ -1,0 +1,20 @@
+{
+  "id": "overview",
+  "title": "Overview",
+  "description": "What is Happy Calendar?",
+  "source": "@site/docs/overview.md",
+  "sourceDirName": ".",
+  "slug": "/overview",
+  "permalink": "/docs/overview",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/maximiliano/happy-calendar/edit/main/docs/docs/overview.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "next": {
+    "title": "Architecture",
+    "permalink": "/docs/architecture"
+  }
+}
