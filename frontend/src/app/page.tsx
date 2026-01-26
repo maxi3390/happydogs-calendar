@@ -7,6 +7,7 @@ import PetForm from '@/components/PetForm';
 import PetList from '@/components/PetList';
 import ScheduleForm from '@/components/ScheduleForm';
 import DaySchedule from '@/components/DaySchedule';
+import ThemeToggle from '@/components/ThemeToggle';
 import { Pet, Schedule } from '@/lib/api';
 
 export default function Home() {
@@ -41,26 +42,27 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-      <header className="bg-white shadow-sm border-b border-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+      <header className="bg-white dark:bg-slate-800 shadow-sm border-b border-indigo-100 dark:border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-indigo-600 rounded-xl">
+              <div className="p-2 bg-indigo-600 dark:bg-indigo-500 rounded-xl">
                 <PawPrint className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">Happy Pet Nursery</h1>
-                <p className="text-sm text-gray-500">Schedule Management System</p>
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Happy Pet Nursery</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Schedule Management System</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <ThemeToggle />
               <button
                 onClick={() => {
                   setEditingPet(undefined);
                   setShowPetForm(true);
                 }}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 dark:bg-emerald-500 text-white rounded-lg hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors shadow-sm"
               >
                 <Plus className="w-5 h-5" />
                 Add Pet
@@ -70,7 +72,7 @@ export default function Home() {
                   setEditingSchedule(undefined);
                   setShowScheduleForm(true);
                 }}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors shadow-sm"
               >
                 <CalendarDays className="w-5 h-5" />
                 New Schedule
@@ -102,9 +104,9 @@ export default function Home() {
         </div>
       </main>
 
-      <footer className="border-t border-gray-200 mt-12">
+      <footer className="border-t border-gray-200 dark:border-slate-700 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <p className="text-center text-gray-500 text-sm">
+          <p className="text-center text-gray-500 dark:text-gray-400 text-sm">
             Happy Pet Nursery - Keeping your pets safe and happy
           </p>
         </div>

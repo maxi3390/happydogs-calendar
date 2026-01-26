@@ -35,9 +35,14 @@ class ScheduleCreateSerializer(serializers.ModelSerializer):
         fields = ['pet', 'start_date', 'end_date', 'start_time', 'end_time', 'status', 'notes']
 
     def validate(self, data):
-        if data['start_time'] >= data['end_time']:
+        start_time = data.get('start_time', getattr(self.instance, 'start_time', None))
+        end_time = data.get('end_time', getattr(self.instance, 'end_time', None))
+        start_date = data.get('start_date', getattr(self.instance, 'start_date', None))
+        end_date = data.get('end_date', getattr(self.instance, 'end_date', None))
+
+        if start_time and end_time and start_time >= end_time:
             raise serializers.ValidationError("End time must be after start time")
-        if data['start_date'] > data['end_date']:
+        if start_date and end_date and start_date > end_date:
             raise serializers.ValidationError("End date must be on or after start date")
         return data
 

@@ -107,15 +107,15 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
   const selectedPet = pets.find(p => p.id === formData.pet);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-bold text-gray-800">
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
             {schedule ? 'Edit Schedule' : 'New Schedule'}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
           >
             <X className="w-5 h-5" />
           </button>
@@ -123,20 +123,20 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
-            <div className="p-4 bg-red-50 text-red-700 rounded-lg">
+            <div className="p-4 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Pet *
             </label>
             <select
               required
               value={formData.pet}
               onChange={e => setFormData({ ...formData, pet: parseInt(e.target.value) })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
             >
               <option value="">Select a pet...</option>
               {pets.map(pet => (
@@ -148,9 +148,9 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
           </div>
 
           {selectedPet && (
-            <div className="p-3 bg-gray-50 rounded-lg text-sm">
-              <div className="font-medium text-gray-800">{selectedPet.name}</div>
-              <div className="text-gray-600 mt-1 grid grid-cols-3 gap-2">
+            <div className="p-3 bg-gray-50 dark:bg-slate-700 rounded-lg text-sm">
+              <div className="font-medium text-gray-800 dark:text-gray-100">{selectedPet.name}</div>
+              <div className="text-gray-600 dark:text-gray-400 mt-1 grid grid-cols-3 gap-2">
                 <span>Species: {selectedPet.species}</span>
                 <span>Temperament: {selectedPet.temperament}</span>
                 <span>Dominance: {selectedPet.dominance_level}/10</span>
@@ -160,7 +160,7 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Start Date *
               </label>
               <input
@@ -168,11 +168,11 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
                 required
                 value={formData.start_date}
                 onChange={e => setFormData({ ...formData, start_date: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 End Date *
               </label>
               <input
@@ -181,27 +181,27 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
                 value={formData.end_date}
                 min={formData.start_date}
                 onChange={e => setFormData({ ...formData, end_date: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
               />
             </div>
           </div>
 
           {formData.start_date !== formData.end_date && (
-            <div className="p-3 bg-indigo-50 rounded-lg text-sm text-indigo-700">
+            <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-sm text-indigo-700 dark:text-indigo-300">
               Multi-day schedule: {formData.start_date} to {formData.end_date}
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Daily Start Time *
               </label>
               <select
                 required
                 value={formData.start_time}
                 onChange={e => setFormData({ ...formData, start_time: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
               >
                 {TIME_OPTIONS.map(time => (
                   <option key={time} value={time}>{time}</option>
@@ -209,14 +209,14 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Daily End Time *
               </label>
               <select
                 required
                 value={formData.end_time}
                 onChange={e => setFormData({ ...formData, end_time: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
               >
                 {TIME_OPTIONS.filter(t => t > formData.start_time).map(time => (
                   <option key={time} value={time}>{time}</option>
@@ -270,13 +270,13 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Status
             </label>
             <select
               value={formData.status}
               onChange={e => setFormData({ ...formData, status: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
             >
               <option value="scheduled">Scheduled</option>
               <option value="checked_in">Checked In</option>
@@ -286,23 +286,23 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Notes
             </label>
             <textarea
               value={formData.notes}
               onChange={e => setFormData({ ...formData, notes: e.target.value })}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
               placeholder="Any special instructions for this visit..."
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
               Cancel
             </button>
