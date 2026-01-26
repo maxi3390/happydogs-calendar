@@ -2,16 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay } from 'date-fns';
-import { ChevronLeft, ChevronRight, Clock, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, AlertTriangle, CalendarDays, CalendarRange } from 'lucide-react';
 import { api, Schedule } from '@/lib/api';
 import ScheduleDetailsPopup from './ScheduleDetailsPopup';
 
 interface WeekViewProps {
   selectedDate: Date;
   onDateSelect: (date: Date) => void;
+  calendarView?: 'month' | 'week';
+  onViewChange?: (view: 'month' | 'week') => void;
 }
 
-export default function WeekView({ selectedDate, onDateSelect }: WeekViewProps) {
+export default function WeekView({ selectedDate, onDateSelect, calendarView = 'week', onViewChange }: WeekViewProps) {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(selectedDate));
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(false);
@@ -55,29 +57,59 @@ export default function WeekView({ selectedDate, onDateSelect }: WeekViewProps) 
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
-      <div className="p-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-          Week of {format(currentWeekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
-        </h3>
-        <div className="flex gap-2">
-          <button
-            onClick={goToPreviousWeek}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button
-            onClick={goToCurrentWeek}
-            className="px-3 py-1 text-sm bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors"
-          >
-            This Week
-          </button>
-          <button
-            onClick={goToNextWeek}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
+      <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-slate-700">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 text-center sm:text-left">
+            Week of {format(currentWeekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
+          </h3>
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+            {onViewChange && (
+              <div className="flex bg-gray-100 dark:bg-slate-700 rounded-lg p-1 w-full sm:w-auto justify-center">
+                <button
+                  onClick={() => onViewChange('month')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex-1 sm:flex-none justify-center ${
+                    calendarView === 'month'
+                      ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  }`}
+                >
+                  <CalendarDays className="w-4 h-4" />
+                  Month
+                </button>
+                <button
+                  onClick={() => onViewChange('week')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex-1 sm:flex-none justify-center ${
+                    calendarView === 'week'
+                      ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  }`}
+                >
+                  <CalendarRange className="w-4 h-4" />
+                  Week
+                </button>
+              </div>
+            )}
+            <div className="flex gap-2 justify-center">
+              <button
+                onClick={goToPreviousWeek}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={goToCurrentWeek}
+                className="px-3 py-1 text-sm bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors"
+              >
+                This Week
+              </button>
+              <button
+                onClick={goToNextWeek}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 

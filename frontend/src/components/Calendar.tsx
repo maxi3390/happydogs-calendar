@@ -2,16 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
-import { ChevronLeft, ChevronRight, AlertTriangle, Users } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertTriangle, Users, CalendarDays, CalendarRange } from 'lucide-react';
 import { api, Schedule } from '@/lib/api';
 import ScheduleDetailsPopup from './ScheduleDetailsPopup';
 
 interface CalendarProps {
   onDateSelect: (date: Date) => void;
   selectedDate: Date;
+  calendarView?: 'month' | 'week';
+  onViewChange?: (view: 'month' | 'week') => void;
 }
 
-export default function Calendar({ onDateSelect, selectedDate }: CalendarProps) {
+export default function Calendar({ onDateSelect, selectedDate, calendarView = 'month', onViewChange }: CalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(false);
@@ -52,44 +54,74 @@ export default function Calendar({ onDateSelect, selectedDate }: CalendarProps) 
   const firstDayOfMonth = startOfMonth(currentMonth).getDay();
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-3 sm:p-6">
+      {/* Header - Stacked on mobile */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
+        <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 text-center sm:text-left">
           {format(currentMonth, 'MMMM yyyy')}
         </h2>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => setCurrentMonth(new Date())}
-            className="px-3 py-1 text-sm bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors"
-          >
-            Today
-          </button>
-          <button
-            onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
+        <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+          {onViewChange && (
+            <div className="flex bg-gray-100 dark:bg-slate-700 rounded-lg p-1 w-full sm:w-auto justify-center">
+              <button
+                onClick={() => onViewChange('month')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex-1 sm:flex-none justify-center ${
+                  calendarView === 'month'
+                    ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                }`}
+              >
+                <CalendarDays className="w-4 h-4" />
+                Month
+              </button>
+              <button
+                onClick={() => onViewChange('week')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex-1 sm:flex-none justify-center ${
+                  calendarView === 'week'
+                    ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                }`}
+              >
+                <CalendarRange className="w-4 h-4" />
+                Week
+              </button>
+            </div>
+          )}
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setCurrentMonth(new Date())}
+              className="px-3 py-1 text-sm bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors"
+            >
+              Today
+            </button>
+            <button
+              onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 mb-2">
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-          <div key={day} className="text-center text-sm font-medium text-gray-500 dark:text-gray-400 py-2">
-            {day}
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1 sm:mb-2">
+        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+          <div key={i} className="text-center text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 py-1 sm:py-2">
+            <span className="sm:hidden">{day}</span>
+            <span className="hidden sm:inline">{['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i]}</span>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
         {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-          <div key={`empty-${i}`} className="h-24" />
+          <div key={`empty-${i}`} className="h-16 sm:h-24" />
         ))}
 
         {days.map(day => {
@@ -102,15 +134,15 @@ export default function Calendar({ onDateSelect, selectedDate }: CalendarProps) 
             <button
               key={day.toISOString()}
               onClick={() => onDateSelect(day)}
-              className={`h-24 p-1 rounded-lg border transition-all text-left ${
+              className={`h-16 sm:h-24 p-0.5 sm:p-1 rounded-md sm:rounded-lg border transition-all text-left ${
                 isSelected
                   ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30'
                   : 'border-gray-100 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-700 hover:bg-gray-50 dark:hover:bg-slate-700/50'
               } ${!isSameMonth(day, currentMonth) ? 'opacity-40' : ''}`}
             >
-              <div className="flex items-start justify-between h-7">
+              <div className="flex items-start justify-between h-5 sm:h-7">
                 <span
-                  className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm flex-shrink-0 ${
+                  className={`inline-flex items-center justify-center w-5 h-5 sm:w-7 sm:h-7 rounded-full text-xs sm:text-sm flex-shrink-0 ${
                     isToday
                       ? 'bg-indigo-600 dark:bg-indigo-500 text-white font-bold'
                       : 'text-gray-700 dark:text-gray-300'
@@ -118,23 +150,24 @@ export default function Calendar({ onDateSelect, selectedDate }: CalendarProps) 
                 >
                   {format(day, 'd')}
                 </span>
-                <div className="flex items-center gap-1 h-7">
+                <div className="flex items-center gap-0.5 sm:gap-1 h-5 sm:h-7">
                   {daySchedules.length > 0 && (
-                    <span className={`inline-flex items-center gap-0.5 px-1.5 h-5 rounded-full text-xs font-medium ${
+                    <span className={`inline-flex items-center gap-0.5 px-1 sm:px-1.5 h-4 sm:h-5 rounded-full text-[10px] sm:text-xs font-medium ${
                       dayHasConflicts
                         ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300'
                         : 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300'
                     }`}>
-                      <Users className="w-3 h-3" />
-                      {daySchedules.length}
+                      <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                      <span className="hidden sm:inline">{daySchedules.length}</span>
                     </span>
                   )}
                   {dayHasConflicts && (
-                    <AlertTriangle className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+                    <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4 text-amber-500 dark:text-amber-400" />
                   )}
                 </div>
               </div>
-              <div className="mt-1 space-y-1 overflow-hidden">
+              {/* Schedule details - hidden on mobile, show on larger screens */}
+              <div className="hidden sm:block mt-1 space-y-1 overflow-hidden">
                 {daySchedules.slice(0, 2).map(schedule => (
                   <button
                     key={schedule.id}
