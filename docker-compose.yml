@@ -49,6 +49,15 @@ services:
       - "3001:3000"
     environment:
       - NODE_ENV=production
+    profiles:
+      - docs
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - "5050:5050"
+    profiles:
+      - dev
 
 volumes:
   postgres_data:
