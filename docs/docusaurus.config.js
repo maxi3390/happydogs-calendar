@@ -17,12 +17,16 @@ export default {
   onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
 
+  markdown: {
+    mermaid: true,
+  },
+
   i18n: {
     defaultLocale: 'en',
     locales: ['en'],
   },
 
-  themes: [],
+  themes: ['@docusaurus/theme-mermaid'],
 
   presets: [
     [
