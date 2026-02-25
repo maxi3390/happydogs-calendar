@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Owner, Pet, Schedule
+from .models import Owner, Pet, Schedule, Vaccination
 
 
 class OwnerSerializer(serializers.ModelSerializer):
@@ -23,8 +23,16 @@ class OwnerListSerializer(serializers.ModelSerializer):
         fields = ['id', 'first_name', 'last_name', 'full_name', 'phone', 'email']
 
 
+class VaccinationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vaccination
+        fields = ['id', 'vax_type', 'date', 'created_at']
+        read_only_fields = ['created_at']
+
+
 class PetSerializer(serializers.ModelSerializer):
     owner_details = OwnerListSerializer(source='owner', read_only=True)
+    vaccinations = VaccinationSerializer(many=True, read_only=True)
 
     class Meta:
         model = Pet
@@ -42,10 +50,11 @@ class PetListSerializer(serializers.ModelSerializer):
 class PetWithOwnerSerializer(serializers.ModelSerializer):
     """Serializer for pets with owner details"""
     owner_details = OwnerListSerializer(source='owner', read_only=True)
+    vaccinations = VaccinationSerializer(many=True, read_only=True)
 
     class Meta:
         model = Pet
-        fields = ['id', 'name', 'species', 'breed', 'age', 'temperament', 'dominance_level', 'size', 'special_notes', 'owner', 'owner_details']
+        fields = ['id', 'name', 'species', 'breed', 'age', 'temperament', 'dominance_level', 'size', 'neutered', 'sex', 'birth_date', 'special_notes', 'owner', 'owner_details', 'vaccinations']
 
 
 class OwnerWithPetsSerializer(serializers.ModelSerializer):

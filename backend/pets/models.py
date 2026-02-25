@@ -43,6 +43,11 @@ class Pet(models.Model):
         ('other', 'Other'),
     ]
 
+    SEX_CHOICES = [
+        ('male', 'Male'),
+        ('female', 'Female'),
+    ]
+
     SIZE_CHOICES = [
         ('small', 'Small'),
         ('medium', 'Medium'),
@@ -59,6 +64,9 @@ class Pet(models.Model):
         help_text="Dominance level from 1 (submissive) to 10 (very dominant)"
     )
     size = models.CharField(max_length=10, choices=SIZE_CHOICES, default='medium')
+    neutered = models.BooleanField(default=False)
+    sex = models.CharField(max_length=10, choices=SEX_CHOICES, default='male')
+    birth_date = models.DateField(null=True, blank=True, help_text="Date of birth (dd/mm/yyyy)")
     special_notes = models.TextField(blank=True)
     owner = models.ForeignKey(Owner, on_delete=models.CASCADE, related_name='pets', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -105,6 +113,32 @@ class Pet(models.Model):
             return False, "Anxious pets may be stressed by highly playful pets with different dominance levels"
 
         return True, "Compatible"
+
+
+class Vaccination(models.Model):
+    """Model representing a vaccination record for a pet."""
+    VAX_TYPE_CHOICES = [
+        ('rabies', 'Rabies'),
+        ('distemper', 'Distemper'),
+        ('parvovirus', 'Parvovirus'),
+        ('hepatitis', 'Hepatitis'),
+        ('bordetella', 'Bordetella'),
+        ('leptospirosis', 'Leptospirosis'),
+        ('fvrcp', 'FVRCP'),
+        ('felv', 'FeLV'),
+        ('other', 'Other'),
+    ]
+
+    pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='vaccinations')
+    vax_type = models.CharField(max_length=20, choices=VAX_TYPE_CHOICES)
+    date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date']
+
+    def __str__(self):
+        return f"{self.pet.name} - {self.get_vax_type_display()} ({self.date})"
 
 
 class Schedule(models.Model):

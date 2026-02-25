@@ -49,6 +49,13 @@ export interface PetListItem {
   owner: number | null;
 }
 
+export interface Vaccination {
+  id: number;
+  vax_type: string;
+  date: string;
+  created_at: string;
+}
+
 export interface Pet {
   id: number;
   name: string;
@@ -58,9 +65,13 @@ export interface Pet {
   temperament: string;
   dominance_level: number;
   size: string;
+  neutered: boolean;
+  sex: string;
+  birth_date: string | null;
   special_notes: string;
   owner: number | null;
   owner_details?: OwnerListItem;
+  vaccinations: Vaccination[];
   created_at: string;
   updated_at: string;
 }
@@ -73,6 +84,9 @@ export interface PetFormData {
   temperament: string;
   dominance_level: number;
   size: string;
+  neutered: boolean;
+  sex: string;
+  birth_date: string | null;
   special_notes: string;
   owner?: number | null;
 }

@@ -79,6 +79,14 @@
     "temperament": "Temperament",
     "dominance": "Dominance Level",
     "size": "Size",
+    "neutered": "Neutered",
+    "sex": "Sex",
+    "birthDate": "Birth Date",
+    "vaccinations": "Vaccinations",
+    "addVaccination": "Add Vaccination",
+    "vaxType": "Vaccine Type",
+    "vaxDate": "Vaccination Date",
+    "noVaccinations": "No vaccinations recorded",
     "specialNotes": "Special Notes",
     "owner": "Owner",
     "noOwner": "No owner assigned",
@@ -100,6 +108,21 @@
       "small": "Small",
       "medium": "Medium",
       "large": "Large"
+    },
+    "sexOptions": {
+      "male": "Male",
+      "female": "Female"
+    },
+    "vaxTypeOptions": {
+      "rabies": "Rabies",
+      "distemper": "Distemper",
+      "parvovirus": "Parvovirus",
+      "hepatitis": "Hepatitis",
+      "bordetella": "Bordetella",
+      "leptospirosis": "Leptospirosis",
+      "fvrcp": "FVRCP",
+      "felv": "FeLV",
+      "other": "Other"
     }
   },
   "owner": {
