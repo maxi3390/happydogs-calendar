@@ -55,7 +55,7 @@ function interpolate(text: string, params?: Record<string, string | number>): st
 }
 
 export function TranslationProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>('en');
+  const [language, setLanguageState] = useState<Language>('es');
   const [translations, setTranslations] = useState<Translations>({});
   const [loading, setLoading] = useState(true);
   const [availableLanguages, setAvailableLanguages] = useState<LanguageInfo[]>([
