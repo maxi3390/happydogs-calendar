@@ -1,8 +1,8 @@
 {
   "app": {
-    "name": "Guardería de Mascotas Feliz",
+    "name": "Guardería Happy Dogs",
     "tagline": "Sistema de Gestión de Horarios",
-    "footer": "Guardería de Mascotas Feliz - Manteniendo a tus mascotas seguras y felices"
+    "footer": "Guardería Happy Dogs - Manteniendo a tus mascotas seguras y felices"
   },
   "nav": {
     "owners": "Dueños",
