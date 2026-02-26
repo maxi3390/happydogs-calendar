@@ -1,5 +1,12 @@
 from rest_framework import serializers
-from .models import Owner, Pet, Schedule, Vaccination
+from django.db import transaction
+from .models import Owner, Pet, Schedule, Vaccination, VaccinationType
+
+
+class VaccinationTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VaccinationType
+        fields = ['id', 'name', 'label', 'enabled', 'order']
 
 
 class OwnerSerializer(serializers.ModelSerializer):
@@ -32,12 +39,32 @@ class VaccinationSerializer(serializers.ModelSerializer):
 
 class PetSerializer(serializers.ModelSerializer):
     owner_details = OwnerListSerializer(source='owner', read_only=True)
-    vaccinations = VaccinationSerializer(many=True, read_only=True)
+    vaccinations = VaccinationSerializer(many=True, required=False)
 
     class Meta:
         model = Pet
         fields = '__all__'
         read_only_fields = ['created_at', 'updated_at']
+
+    @transaction.atomic
+    def create(self, validated_data):
+        vaccinations_data = validated_data.pop('vaccinations', [])
+        pet = Pet.objects.create(**validated_data)
+        for vax_data in vaccinations_data:
+            Vaccination.objects.create(pet=pet, **vax_data)
+        return pet
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        vaccinations_data = validated_data.pop('vaccinations', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        if vaccinations_data is not None:
+            instance.vaccinations.all().delete()
+            for vax_data in vaccinations_data:
+                Vaccination.objects.create(pet=instance, **vax_data)
+        return instance
 
 
 class PetListSerializer(serializers.ModelSerializer):

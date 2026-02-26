@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.conf import settings
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
-from .models import Owner, Pet, Schedule
+from .models import Owner, Pet, Schedule, VaccinationType
 from .serializers import (
     OwnerSerializer,
     OwnerListSerializer,
@@ -17,7 +17,8 @@ from .serializers import (
     ScheduleSerializer,
     ScheduleCreateSerializer,
     ConflictCheckSerializer,
-    BatchScheduleCreateSerializer
+    BatchScheduleCreateSerializer,
+    VaccinationTypeSerializer,
 )
 
 
@@ -115,8 +116,6 @@ class PetViewSet(viewsets.ModelViewSet):
     serializer_class = PetSerializer
 
     def get_serializer_class(self):
-        if self.action == 'list':
-            return PetListSerializer
         return PetSerializer
 
     @extend_schema(
@@ -416,6 +415,38 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             response_data['warnings'] = all_warnings
 
         return Response(response_data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List vaccination types",
+        description="Retrieve all configurable vaccination types.",
+        tags=['vaccination-types']
+    ),
+    create=extend_schema(
+        summary="Create vaccination type",
+        description="Add a new vaccination type.",
+        tags=['vaccination-types']
+    ),
+    update=extend_schema(
+        summary="Update vaccination type",
+        description="Update a vaccination type (e.g. toggle enabled).",
+        tags=['vaccination-types']
+    ),
+    partial_update=extend_schema(
+        summary="Partially update vaccination type",
+        description="Partially update a vaccination type.",
+        tags=['vaccination-types']
+    ),
+    destroy=extend_schema(
+        summary="Delete vaccination type",
+        description="Remove a vaccination type.",
+        tags=['vaccination-types']
+    ),
+)
+class VaccinationTypeViewSet(viewsets.ModelViewSet):
+    queryset = VaccinationType.objects.all()
+    serializer_class = VaccinationTypeSerializer
 
 
 @extend_schema(

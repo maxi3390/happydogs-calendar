@@ -115,22 +115,26 @@ class Pet(models.Model):
         return True, "Compatible"
 
 
+class VaccinationType(models.Model):
+    """Model representing a configurable vaccination type."""
+    name = models.CharField(max_length=50, unique=True, help_text="Internal key (e.g. rabies)")
+    label = models.CharField(max_length=100, help_text="Display label (e.g. Rabies)")
+    enabled = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0, help_text="Display order")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', 'name']
+
+    def __str__(self):
+        return f"{self.label} ({'enabled' if self.enabled else 'disabled'})"
+
+
 class Vaccination(models.Model):
     """Model representing a vaccination record for a pet."""
-    VAX_TYPE_CHOICES = [
-        ('rabies', 'Rabies'),
-        ('distemper', 'Distemper'),
-        ('parvovirus', 'Parvovirus'),
-        ('hepatitis', 'Hepatitis'),
-        ('bordetella', 'Bordetella'),
-        ('leptospirosis', 'Leptospirosis'),
-        ('fvrcp', 'FVRCP'),
-        ('felv', 'FeLV'),
-        ('other', 'Other'),
-    ]
-
     pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='vaccinations')
-    vax_type = models.CharField(max_length=20, choices=VAX_TYPE_CHOICES)
+    vax_type = models.CharField(max_length=50)
     date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -138,7 +142,7 @@ class Vaccination(models.Model):
         ordering = ['-date']
 
     def __str__(self):
-        return f"{self.pet.name} - {self.get_vax_type_display()} ({self.date})"
+        return f"{self.pet.name} - {self.vax_type} ({self.date})"
 
 
 class Schedule(models.Model):

@@ -89,6 +89,15 @@ export interface PetFormData {
   birth_date: string | null;
   special_notes: string;
   owner?: number | null;
+  vaccinations?: Array<{ vax_type: string; date: string }>;
+}
+
+export interface VaccinationType {
+  id: number;
+  name: string;
+  label: string;
+  enabled: boolean;
+  order: number;
 }
 
 export interface Schedule {
@@ -209,6 +218,19 @@ export const api = {
       is_compatible: boolean;
       reason: string;
     }>>(`/pets/${id}/compatibility/`),
+  },
+
+  vaccinationTypes: {
+    list: () => fetchApi<VaccinationType[]>('/vaccination-types/'),
+    create: (data: Omit<VaccinationType, 'id'>) => fetchApi<VaccinationType>('/vaccination-types/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    update: (id: number, data: Partial<VaccinationType>) => fetchApi<VaccinationType>(`/vaccination-types/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+    delete: (id: number) => fetchApi<void>(`/vaccination-types/${id}/`, { method: 'DELETE' }),
   },
 
   schedules: {

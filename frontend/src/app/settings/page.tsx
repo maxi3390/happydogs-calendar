@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, AlertTriangle, Plus, Trash2, Save, Info } from 'lucide-react';
+import { Settings, AlertTriangle, Plus, Trash2, Save, Info, Syringe, ToggleLeft, ToggleRight } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import { useTranslation } from '@/lib/translations';
-import { api, Pet } from '@/lib/api';
+import { api, Pet, VaccinationType } from '@/lib/api';
 
 interface IncompatibilityRule {
   id: number;
@@ -23,6 +23,9 @@ export default function SettingsPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newRule, setNewRule] = useState({ pet1_id: '', pet2_id: '', reason: '' });
   const [saving, setSaving] = useState(false);
+  const [vaccinationTypes, setVaccinationTypes] = useState<VaccinationType[]>([]);
+  const [showAddVaxForm, setShowAddVaxForm] = useState(false);
+  const [newVaxType, setNewVaxType] = useState({ name: '', label: '' });
 
   useEffect(() => {
     fetchData();
@@ -30,8 +33,12 @@ export default function SettingsPage() {
 
   const fetchData = async () => {
     try {
-      const petsData = await api.pets.list();
+      const [petsData, vaxTypesData] = await Promise.all([
+        api.pets.list(),
+        api.vaccinationTypes.list(),
+      ]);
       setPets(petsData);
+      setVaccinationTypes(vaxTypesData);
 
       // Fetch incompatibilities from localStorage (or could be from API)
       const stored = localStorage.getItem('pet_incompatibilities');
@@ -93,6 +100,49 @@ export default function SettingsPage() {
   const handleDeleteRule = (id: number) => {
     if (confirm(t('settings.confirmDelete'))) {
       saveIncompatibilities(incompatibilities.filter(r => r.id !== id));
+    }
+  };
+
+  const handleAddVaxType = async () => {
+    if (!newVaxType.name || !newVaxType.label) {
+      alert(t('settings.fillAllFields'));
+      return;
+    }
+    if (vaccinationTypes.some(v => v.name === newVaxType.name)) {
+      alert(t('settings.vaxNameExists'));
+      return;
+    }
+    try {
+      const created = await api.vaccinationTypes.create({
+        name: newVaxType.name,
+        label: newVaxType.label,
+        enabled: true,
+        order: vaccinationTypes.length,
+      });
+      setVaccinationTypes([...vaccinationTypes, created]);
+      setNewVaxType({ name: '', label: '' });
+      setShowAddVaxForm(false);
+    } catch (error) {
+      console.error('Failed to create vaccination type:', error);
+    }
+  };
+
+  const handleToggleVaxType = async (vaxType: VaccinationType) => {
+    try {
+      const updated = await api.vaccinationTypes.update(vaxType.id, { enabled: !vaxType.enabled });
+      setVaccinationTypes(vaccinationTypes.map(v => v.id === vaxType.id ? updated : v));
+    } catch (error) {
+      console.error('Failed to toggle vaccination type:', error);
+    }
+  };
+
+  const handleDeleteVaxType = async (id: number) => {
+    if (!confirm(t('settings.confirmDeleteVaxType'))) return;
+    try {
+      await api.vaccinationTypes.delete(id);
+      setVaccinationTypes(vaccinationTypes.filter(v => v.id !== id));
+    } catch (error) {
+      console.error('Failed to delete vaccination type:', error);
     }
   };
 
@@ -250,6 +300,140 @@ export default function SettingsPage() {
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Vaccination Types Section */}
+        <div className="mt-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+          <div className="p-4 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-emerald-500 to-teal-500">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-white">
+                <Syringe className="w-5 h-5" />
+                <h3 className="font-semibold">{t('settings.vaccinationTypes')}</h3>
+              </div>
+              <button
+                onClick={() => setShowAddVaxForm(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                {t('settings.addVaccinationType')}
+              </button>
+            </div>
+          </div>
+
+          <div className="p-4">
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-start gap-3">
+              <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                {t('settings.vaccinationTypesInfo')}
+              </p>
+            </div>
+
+            {showAddVaxForm && (
+              <div className="mb-4 p-4 bg-gray-50 dark:bg-slate-700/50 rounded-lg border border-gray-200 dark:border-slate-600">
+                <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-3">{t('settings.newVaccinationType')}</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      {t('settings.vaxName')}
+                    </label>
+                    <input
+                      type="text"
+                      value={newVaxType.name}
+                      onChange={e => setNewVaxType({ ...newVaxType, name: e.target.value.toLowerCase().replace(/\s+/g, '_') })}
+                      placeholder={t('settings.vaxNamePlaceholder')}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      {t('settings.vaxLabel')}
+                    </label>
+                    <input
+                      type="text"
+                      value={newVaxType.label}
+                      onChange={e => setNewVaxType({ ...newVaxType, label: e.target.value })}
+                      placeholder={t('settings.vaxLabelPlaceholder')}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => {
+                      setShowAddVaxForm(false);
+                      setNewVaxType({ name: '', label: '' });
+                    }}
+                    className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-600 rounded-lg transition-colors"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                  <button
+                    onClick={handleAddVaxType}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                  >
+                    <Save className="w-4 h-4" />
+                    {t('common.save')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" />
+              </div>
+            ) : vaccinationTypes.length === 0 ? (
+              <div className="text-center py-8">
+                <Syringe className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                <p className="text-gray-500 dark:text-gray-400">{t('settings.noVaccinationTypes')}</p>
+                <button
+                  onClick={() => setShowAddVaxForm(true)}
+                  className="mt-3 text-emerald-600 dark:text-emerald-400 hover:underline"
+                >
+                  {t('settings.addFirstVaccinationType')}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {vaccinationTypes.map(vaxType => (
+                  <div
+                    key={vaxType.id}
+                    className={`flex items-center justify-between p-3 rounded-lg border ${
+                      vaxType.enabled
+                        ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800'
+                        : 'bg-gray-50 dark:bg-slate-700/30 border-gray-200 dark:border-slate-600 opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Syringe className={`w-4 h-4 ${vaxType.enabled ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}`} />
+                      <div>
+                        <p className="font-medium text-gray-800 dark:text-gray-200">{vaxType.label}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{vaxType.name}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleToggleVaxType(vaxType)}
+                        className={`p-2 rounded-lg transition-colors ${vaxType.enabled
+                          ? 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30'
+                          : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-600'
+                        }`}
+                        title={vaxType.enabled ? t('settings.enabled') : t('settings.disabled')}
+                      >
+                        {vaxType.enabled ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteVaxType(vaxType.id)}
+                        className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

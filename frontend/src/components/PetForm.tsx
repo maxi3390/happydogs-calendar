@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { X, Plus } from 'lucide-react';
-import { api, Pet, PetFormData, OwnerListItem, Vaccination } from '@/lib/api';
+import { api, Pet, PetFormData, OwnerListItem, Vaccination, VaccinationType } from '@/lib/api';
+import { useTranslation } from '@/lib/translations';
 
 interface PetFormProps {
   pet?: Pet;
@@ -11,49 +12,16 @@ interface PetFormProps {
   onSave: () => void;
 }
 
-const SPECIES_OPTIONS = [
-  { value: 'dog', label: 'Dog' },
-  { value: 'cat', label: 'Cat' },
-  { value: 'bird', label: 'Bird' },
-  { value: 'rabbit', label: 'Rabbit' },
-  { value: 'other', label: 'Other' },
-];
-
-const TEMPERAMENT_OPTIONS = [
-  { value: 'calm', label: 'Calm' },
-  { value: 'playful', label: 'Playful' },
-  { value: 'aggressive', label: 'Aggressive' },
-  { value: 'anxious', label: 'Anxious' },
-  { value: 'friendly', label: 'Friendly' },
-];
-
-const SIZE_OPTIONS = [
-  { value: 'small', label: 'Small' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'large', label: 'Large' },
-];
-
-const SEX_OPTIONS = [
-  { value: 'male', label: 'Male' },
-  { value: 'female', label: 'Female' },
-];
-
-const VAX_TYPE_OPTIONS = [
-  { value: 'rabies', label: 'Rabies' },
-  { value: 'distemper', label: 'Distemper' },
-  { value: 'parvovirus', label: 'Parvovirus' },
-  { value: 'hepatitis', label: 'Hepatitis' },
-  { value: 'bordetella', label: 'Bordetella' },
-  { value: 'leptospirosis', label: 'Leptospirosis' },
-  { value: 'fvrcp', label: 'FVRCP' },
-  { value: 'felv', label: 'FeLV' },
-  { value: 'other', label: 'Other' },
-];
-
+const SPECIES_VALUES = ['dog', 'cat', 'bird', 'rabbit', 'other'];
+const TEMPERAMENT_VALUES = ['calm', 'playful', 'aggressive', 'anxious', 'friendly'];
+const SIZE_VALUES = ['small', 'medium', 'large'];
+const SEX_VALUES = ['male', 'female'];
 export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [owners, setOwners] = useState<OwnerListItem[]>([]);
+  const [vaxTypes, setVaxTypes] = useState<VaccinationType[]>([]);
   const [vaccinations, setVaccinations] = useState<Array<{ vax_type: string; date: string }>>([
     ...(pet?.vaccinations?.map(v => ({ vax_type: v.vax_type, date: v.date })) || []),
   ]);
@@ -73,16 +41,22 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
   });
 
   useEffect(() => {
-    const fetchOwners = async () => {
+    const fetchData = async () => {
       try {
-        const data = await api.owners.dropdown();
-        setOwners(data);
+        const [ownersData, vaxTypesData] = await Promise.all([
+          api.owners.dropdown(),
+          api.vaccinationTypes.list(),
+        ]);
+        setOwners(ownersData);
+        setVaxTypes(vaxTypesData);
       } catch (err) {
-        console.error('Failed to fetch owners:', err);
+        console.error('Failed to fetch form data:', err);
       }
     };
-    fetchOwners();
+    fetchData();
   }, []);
+
+  const enabledVaxTypes = vaxTypes.filter(v => v.enabled);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,14 +64,16 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
     setError(null);
 
     try {
+      const validVaccinations = vaccinations.filter(v => v.date);
+      const submitData = { ...formData, vaccinations: validVaccinations };
       if (pet) {
-        await api.pets.update(pet.id, formData);
+        await api.pets.update(pet.id, submitData);
       } else {
-        await api.pets.create(formData);
+        await api.pets.create(submitData);
       }
       onSave();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save pet');
+      setError(err instanceof Error ? err.message : t('errors.saveFailed'));
     } finally {
       setLoading(false);
     }
@@ -108,7 +84,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-            {pet ? 'Edit Pet' : 'Add New Pet'}
+            {pet ? t('pet.editPet') : t('pet.addPet')}
           </h2>
           <button
             onClick={onClose}
@@ -128,7 +104,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Pet Name *
+                {t('pet.name')} *
               </label>
               <input
                 type="text"
@@ -141,7 +117,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Species *
+                {t('pet.species')} *
               </label>
               <select
                 required
@@ -149,15 +125,15 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                 onChange={e => setFormData({ ...formData, species: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
               >
-                {SPECIES_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                {SPECIES_VALUES.map(val => (
+                  <option key={val} value={val}>{t(`pet.speciesOptions.${val}`)}</option>
                 ))}
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Breed
+                {t('pet.breed')}
               </label>
               <input
                 type="text"
@@ -169,7 +145,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Age (years) *
+                {t('pet.age')} ({t('common.years')}) *
               </label>
               <input
                 type="number"
@@ -183,7 +159,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Temperament *
+                {t('pet.temperament')} *
               </label>
               <select
                 required
@@ -191,15 +167,15 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                 onChange={e => setFormData({ ...formData, temperament: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
               >
-                {TEMPERAMENT_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                {TEMPERAMENT_VALUES.map(val => (
+                  <option key={val} value={val}>{t(`pet.temperamentOptions.${val}`)}</option>
                 ))}
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Dominance Level (1-10) *
+                {t('pet.dominance')} (1-10) *
               </label>
               <div className="flex items-center gap-3">
                 <input
@@ -219,13 +195,13 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                 </span>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                1 = Very submissive, 10 = Very dominant
+                {t('pet.dominanceHint')}
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Size *
+                {t('pet.size')} *
               </label>
               <select
                 required
@@ -233,15 +209,15 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                 onChange={e => setFormData({ ...formData, size: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
               >
-                {SIZE_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                {SIZE_VALUES.map(val => (
+                  <option key={val} value={val}>{t(`pet.sizeOptions.${val}`)}</option>
                 ))}
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Sex *
+                {t('pet.sex')} *
               </label>
               <select
                 required
@@ -249,15 +225,15 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                 onChange={e => setFormData({ ...formData, sex: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
               >
-                {SEX_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                {SEX_VALUES.map(val => (
+                  <option key={val} value={val}>{t(`pet.sexOptions.${val}`)}</option>
                 ))}
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Birth Date
+                {t('pet.birthDate')}
               </label>
               <input
                 type="date"
@@ -275,13 +251,13 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                   onChange={e => setFormData({ ...formData, neutered: e.target.checked })}
                   className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                 />
-                Neutered
+                {t('pet.neutered')}
               </label>
             </div>
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Owner
+                {t('pet.owner')}
               </label>
               <div className="flex gap-2">
                 <select
@@ -289,7 +265,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                   onChange={e => setFormData({ ...formData, owner: e.target.value ? Number(e.target.value) : null })}
                   className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
                 >
-                  <option value="">No owner assigned</option>
+                  <option value="">{t('pet.noOwner')}</option>
                   {owners.map(owner => (
                     <option key={owner.id} value={owner.id}>
                       {owner.full_name} ({owner.phone})
@@ -301,11 +277,11 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                   className="flex items-center gap-1 px-3 py-2 bg-gray-100 dark:bg-slate-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-500 transition-colors text-sm"
                 >
                   <Plus className="w-4 h-4" />
-                  New
+                  {t('common.new')}
                 </Link>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Assign this pet to an owner or create a new owner first
+                {t('pet.assignOwnerHint')}
               </p>
             </div>
           </div>
@@ -313,19 +289,19 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Vaccinations
+                {t('pet.vaccinations')}
               </label>
               <button
                 type="button"
-                onClick={() => setVaccinations([...vaccinations, { vax_type: 'rabies', date: '' }])}
+                onClick={() => setVaccinations([...vaccinations, { vax_type: enabledVaxTypes[0]?.name || '', date: '' }])}
                 className="flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
               >
                 <Plus className="w-4 h-4" />
-                Add Vaccination
+                {t('pet.addVaccination')}
               </button>
             </div>
             {vaccinations.length === 0 ? (
-              <p className="text-sm text-gray-400 dark:text-gray-500 italic">No vaccinations recorded</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 italic">{t('pet.noVaccinations')}</p>
             ) : (
               <div className="space-y-2">
                 {vaccinations.map((vax, index) => (
@@ -339,8 +315,8 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                       }}
                       className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 text-sm"
                     >
-                      {VAX_TYPE_OPTIONS.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      {enabledVaxTypes.map(vt => (
+                        <option key={vt.name} value={vt.name}>{vt.label}</option>
                       ))}
                     </select>
                     <input
@@ -369,7 +345,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Special Notes
+              {t('pet.specialNotes')}
             </label>
             <textarea
               value={formData.special_notes}
@@ -386,14 +362,14 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
               onClick={onClose}
               className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="px-6 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors disabled:opacity-50"
             >
-              {loading ? 'Saving...' : pet ? 'Update Pet' : 'Add Pet'}
+              {loading ? t('common.saving') : pet ? t('pet.editPet') : t('pet.addPet')}
             </button>
           </div>
         </form>
