@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { X, AlertTriangle, CheckCircle } from 'lucide-react';
-import { api, Pet, Schedule, ScheduleFormData, ConflictCheckResult } from '@/lib/api';
+import { api, Pet, Schedule, ScheduleFormData, ConflictCheckResult, DailyCountResult } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 
 interface ScheduleFormProps {
@@ -32,6 +32,8 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
   const [error, setError] = useState<string | null>(null);
   const [pets, setPets] = useState<Pet[]>([]);
   const [conflictResult, setConflictResult] = useState<ConflictCheckResult | null>(null);
+  const [dailyCount, setDailyCount] = useState<DailyCountResult | null>(null);
+  const [showLimitConfirm, setShowLimitConfirm] = useState(false);
 
   const [formData, setFormData] = useState<ScheduleFormData>({
     pet: schedule?.pet || 0,
@@ -87,8 +89,52 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
     return () => clearTimeout(timer);
   }, [formData.pet, formData.start_date, formData.end_date, formData.start_time, formData.end_time, schedule?.id]);
 
+  useEffect(() => {
+    const fetchDailyCount = async () => {
+      if (!formData.start_date) {
+        setDailyCount(null);
+        return;
+      }
+      try {
+        const result = await api.schedules.dailyCount(formData.start_date);
+        setDailyCount(result);
+      } catch (err) {
+        console.error('Failed to fetch daily count:', err);
+      }
+    };
+
+    const timer = setTimeout(fetchDailyCount, 300);
+    return () => clearTimeout(timer);
+  }, [formData.start_date]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!schedule && dailyCount?.limit_reached && !showLimitConfirm) {
+      setShowLimitConfirm(true);
+      return;
+    }
+
+    setShowLimitConfirm(false);
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (schedule) {
+        await api.schedules.update(schedule.id, formData);
+      } else {
+        await api.schedules.create(formData);
+      }
+      onSave();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('errors.saveFailed'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmOverLimit = async () => {
+    setShowLimitConfirm(false);
     setLoading(true);
     setError(null);
 
@@ -227,6 +273,36 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
             </div>
           </div>
 
+          {dailyCount && dailyCount.limit > 0 && (
+            <div className={`p-4 rounded-lg border ${
+              dailyCount.limit_reached
+                ? 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800'
+                : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+            }`}>
+              {dailyCount.limit_reached ? (
+                <div>
+                  <div className="flex items-center gap-2 text-red-800 dark:text-red-200 font-medium">
+                    <AlertTriangle className="w-5 h-5" />
+                    {t('schedule.dailyLimitReached')}
+                  </div>
+                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                    {t('schedule.dailyLimitReachedDetail')
+                      .replace('{count}', String(dailyCount.count))
+                      .replace('{date}', formData.start_date)
+                      .replace('{limit}', String(dailyCount.limit))}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm">
+                  <AlertTriangle className="w-4 h-4" />
+                  {t('schedule.dailyLimitWarningDetail')
+                    .replace('{count}', String(dailyCount.count))
+                    .replace('{limit}', String(dailyCount.limit))}
+                </div>
+              )}
+            </div>
+          )}
+
           {conflictResult && (
             <div className={`p-4 rounded-lg ${
               conflictResult.has_conflicts
@@ -312,16 +388,49 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
               type="submit"
               disabled={loading || !formData.pet}
               className={`px-6 py-2 rounded-lg transition-colors disabled:opacity-50 ${
-                conflictResult?.has_conflicts
-                  ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                  : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                dailyCount?.limit_reached
+                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                  : conflictResult?.has_conflicts
+                    ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
               }`}
             >
               {loading ? t('common.saving') : schedule ? t('schedule.updateSchedule') :
+                dailyCount?.limit_reached ? t('schedule.scheduleAnyway') :
                 conflictResult?.has_conflicts ? t('schedule.scheduleAnyway') : t('schedule.createSchedule')}
             </button>
           </div>
         </form>
+
+        {showLimitConfirm && (
+          <div className="absolute inset-0 bg-black/40 dark:bg-black/60 flex items-center justify-center rounded-xl">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-6 m-4 max-w-sm">
+              <div className="flex items-center gap-2 text-red-700 dark:text-red-300 font-bold mb-3">
+                <AlertTriangle className="w-6 h-6" />
+                {t('schedule.confirmOverLimit')}
+              </div>
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                {t('schedule.confirmOverLimitMessage')
+                  .replace('{limit}', String(dailyCount?.limit))
+                  .replace('{date}', formData.start_date)}
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowLimitConfirm(false)}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  onClick={handleConfirmOverLimit}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                >
+                  {t('schedule.proceedAnyway')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

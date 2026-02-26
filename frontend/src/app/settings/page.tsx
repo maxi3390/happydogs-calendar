@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, AlertTriangle, Plus, Trash2, Save, Info, Syringe, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Settings, AlertTriangle, Plus, Trash2, Save, Info, Syringe, ToggleLeft, ToggleRight, CalendarClock } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import { useTranslation } from '@/lib/translations';
 import { api, Pet, VaccinationType } from '@/lib/api';
@@ -26,6 +26,9 @@ export default function SettingsPage() {
   const [vaccinationTypes, setVaccinationTypes] = useState<VaccinationType[]>([]);
   const [showAddVaxForm, setShowAddVaxForm] = useState(false);
   const [newVaxType, setNewVaxType] = useState({ name: '', label: '' });
+  const [dailyLimit, setDailyLimit] = useState<number>(0);
+  const [dailyLimitSaving, setDailyLimitSaving] = useState(false);
+  const [dailyLimitSaved, setDailyLimitSaved] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -33,12 +36,14 @@ export default function SettingsPage() {
 
   const fetchData = async () => {
     try {
-      const [petsData, vaxTypesData] = await Promise.all([
+      const [petsData, vaxTypesData, settingsData] = await Promise.all([
         api.pets.list(),
         api.vaccinationTypes.list(),
+        api.nurserySettings.get(),
       ]);
       setPets(petsData);
       setVaccinationTypes(vaxTypesData);
+      setDailyLimit(settingsData.daily_booking_limit);
 
       // Fetch incompatibilities from localStorage (or could be from API)
       const stored = localStorage.getItem('pet_incompatibilities');
@@ -146,6 +151,21 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveDailyLimit = async () => {
+    setDailyLimitSaving(true);
+    setDailyLimitSaved(false);
+    try {
+      const updated = await api.nurserySettings.update({ daily_booking_limit: dailyLimit });
+      setDailyLimit(updated.daily_booking_limit);
+      setDailyLimitSaved(true);
+      setTimeout(() => setDailyLimitSaved(false), 3000);
+    } catch (error) {
+      console.error('Failed to save daily limit:', error);
+    } finally {
+      setDailyLimitSaving(false);
+    }
+  };
+
   const dogPets = pets.filter(p => p.species === 'dog');
 
   return (
@@ -157,6 +177,58 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3">
             <Settings className="w-8 h-8 text-amber-600 dark:text-amber-400" />
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('settings.title')}</h2>
+          </div>
+        </div>
+
+        {/* Daily Booking Limit Section */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden mb-6">
+          <div className="p-4 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-blue-500 to-indigo-500">
+            <div className="flex items-center gap-2 text-white">
+              <CalendarClock className="w-5 h-5" />
+              <h3 className="font-semibold">{t('settings.dailyBookingLimit')}</h3>
+            </div>
+          </div>
+
+          <div className="p-4">
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-start gap-3">
+              <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                {t('settings.dailyBookingLimitInfo')}
+              </p>
+            </div>
+
+            <div className="flex items-end gap-4">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('settings.dailyBookingLimitLabel')}
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={dailyLimit}
+                  onChange={e => setDailyLimit(Math.max(0, parseInt(e.target.value) || 0))}
+                  placeholder={t('settings.dailyBookingLimitPlaceholder')}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {dailyLimit === 0 ? t('settings.unlimited') : `${dailyLimit} ${t('settings.dailyBookingLimitLabel').toLowerCase()}`}
+                </p>
+              </div>
+              <button
+                onClick={handleSaveDailyLimit}
+                disabled={dailyLimitSaving}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                {dailyLimitSaving ? t('common.saving') : t('common.save')}
+              </button>
+            </div>
+
+            {dailyLimitSaved && (
+              <div className="mt-3 p-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-lg text-sm text-center">
+                {t('settings.dailyBookingLimitSaved')}
+              </div>
+            )}
           </div>
         </div>
 

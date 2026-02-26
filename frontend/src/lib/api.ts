@@ -156,6 +156,19 @@ export interface BatchScheduleFormData {
   notes: string;
 }
 
+export interface NurserySetting {
+  daily_booking_limit: number;
+  updated_at: string;
+}
+
+export interface DailyCountResult {
+  date: string;
+  count: number;
+  limit: number;
+  limit_reached: boolean;
+  limit_exceeded: boolean;
+}
+
 export interface BatchScheduleResult {
   created_count: number;
   schedules: Schedule[];
@@ -272,6 +285,15 @@ export const api = {
     }>(`/schedules/daily_summary/?date=${date}`),
     batchCreate: (data: BatchScheduleFormData) => fetchApi<BatchScheduleResult>('/schedules/batch_create/', {
       method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    dailyCount: (date: string) => fetchApi<DailyCountResult>(`/schedules/daily_count/?date=${date}`),
+  },
+
+  nurserySettings: {
+    get: () => fetchApi<NurserySetting>('/settings/'),
+    update: (data: Partial<NurserySetting>) => fetchApi<NurserySetting>('/settings/update/', {
+      method: 'PATCH',
       body: JSON.stringify(data),
     }),
   },

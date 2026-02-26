@@ -8,6 +8,7 @@ from django.conf import settings
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 from .models import Owner, Pet, Schedule, VaccinationType
+from nursery_settings.models import NurserySetting
 from .serializers import (
     OwnerSerializer,
     OwnerListSerializer,
@@ -309,6 +310,50 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             'has_conflicts': len(conflicts) > 0,
             'conflicts': conflicts,
             'overlapping_pets_count': overlapping_query.count()
+        })
+
+    @extend_schema(
+        summary="Get daily booking count and limit",
+        description="Get the number of active bookings for a specific date along with the configured daily limit.",
+        parameters=[
+            OpenApiParameter(name='date', type=OpenApiTypes.DATE, required=True, description='Date to check (YYYY-MM-DD)')
+        ],
+        responses={200: {
+            'type': 'object',
+            'properties': {
+                'date': {'type': 'string', 'format': 'date'},
+                'count': {'type': 'integer'},
+                'limit': {'type': 'integer'},
+                'limit_reached': {'type': 'boolean'},
+                'limit_exceeded': {'type': 'boolean'},
+            }
+        }},
+        tags=['schedules']
+    )
+    @action(detail=False, methods=['get'])
+    def daily_count(self, request):
+        """Get the booking count for a specific date and the configured limit."""
+        date = request.query_params.get('date')
+        if not date:
+            return Response(
+                {'error': 'Date parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        active_count = Schedule.objects.filter(
+            start_date__lte=date, end_date__gte=date,
+            status__in=['scheduled', 'checked_in']
+        ).count()
+
+        settings_obj = NurserySetting.load()
+        limit = settings_obj.daily_booking_limit
+
+        return Response({
+            'date': date,
+            'count': active_count,
+            'limit': limit,
+            'limit_reached': limit > 0 and active_count >= limit,
+            'limit_exceeded': limit > 0 and active_count > limit,
         })
 
     @extend_schema(

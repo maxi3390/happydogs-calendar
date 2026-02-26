@@ -73,6 +73,13 @@
     "conflictsWarning": "Aún puedes crear este horario, pero ten en cuenta los posibles conflictos.",
     "noConflicts": "No se detectaron conflictos",
     "compatiblePets": "{count} mascotas compatibles en este horario",
+    "dailyLimitReached": "¡Límite diario de reservas alcanzado!",
+    "dailyLimitReachedDetail": "Ya hay {count} reservas para {date} (límite: {limit}). Puedes continuar, pero confirma por favor.",
+    "dailyLimitWarning": "Acercándose al límite diario de reservas",
+    "dailyLimitWarningDetail": "{count} de {limit} reservas para este día",
+    "confirmOverLimit": "Confirmar Reserva Sobre el Límite",
+    "confirmOverLimitMessage": "El límite diario de {limit} reservas ha sido alcanzado para {date}. ¿Deseas continuar de todos modos?",
+    "proceedAnyway": "Continuar de Todos Modos",
     "scheduleAnyway": "Programar de Todos Modos",
     "createSchedule": "Crear Horario",
     "updateSchedule": "Actualizar Horario",
@@ -265,7 +272,13 @@
     "enabled": "Habilitado",
     "disabled": "Deshabilitado",
     "confirmDeleteVaxType": "¿Estás seguro de que deseas eliminar este tipo de vacuna?",
-    "vaxNameExists": "Ya existe un tipo de vacuna con este nombre"
+    "vaxNameExists": "Ya existe un tipo de vacuna con este nombre",
+    "dailyBookingLimit": "Límite Diario de Reservas",
+    "dailyBookingLimitInfo": "Establece el número máximo de mascotas que se pueden reservar por día. Establece 0 para ilimitado.",
+    "dailyBookingLimitLabel": "Reservas máximas por día",
+    "dailyBookingLimitPlaceholder": "0 = ilimitado",
+    "dailyBookingLimitSaved": "Límite diario de reservas guardado",
+    "unlimited": "Ilimitado"
   },
   "public": {
     "welcome": "Bienvenido a Guardería Happy Dogs",

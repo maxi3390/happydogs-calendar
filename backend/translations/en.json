@@ -73,6 +73,13 @@
     "conflictsWarning": "You can still create this schedule, but be aware of the potential conflicts.",
     "noConflicts": "No conflicts detected",
     "compatiblePets": "{count} compatible pets at this time",
+    "dailyLimitReached": "Daily booking limit reached!",
+    "dailyLimitReachedDetail": "There are already {count} bookings for {date} (limit: {limit}). You can still proceed, but please confirm.",
+    "dailyLimitWarning": "Approaching daily booking limit",
+    "dailyLimitWarningDetail": "{count} of {limit} bookings for this day",
+    "confirmOverLimit": "Confirm Booking Over Limit",
+    "confirmOverLimitMessage": "The daily booking limit of {limit} has been reached for {date}. Do you want to proceed anyway?",
+    "proceedAnyway": "Proceed Anyway",
     "scheduleAnyway": "Schedule Anyway",
     "createSchedule": "Create Schedule",
     "updateSchedule": "Update Schedule",
@@ -265,7 +272,13 @@
     "enabled": "Enabled",
     "disabled": "Disabled",
     "confirmDeleteVaxType": "Are you sure you want to delete this vaccination type?",
-    "vaxNameExists": "A vaccination type with this name already exists"
+    "vaxNameExists": "A vaccination type with this name already exists",
+    "dailyBookingLimit": "Daily Booking Limit",
+    "dailyBookingLimitInfo": "Set the maximum number of pets that can be booked per day. Set to 0 for unlimited.",
+    "dailyBookingLimitLabel": "Maximum bookings per day",
+    "dailyBookingLimitPlaceholder": "0 = unlimited",
+    "dailyBookingLimitSaved": "Daily booking limit saved",
+    "unlimited": "Unlimited"
   },
   "public": {
     "welcome": "Welcome to Happy Pet Nursery",

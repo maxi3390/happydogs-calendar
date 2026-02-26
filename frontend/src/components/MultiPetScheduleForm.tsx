@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { X, AlertTriangle, CheckCircle, Users } from 'lucide-react';
-import { api, Pet, PetListItem, BatchScheduleFormData, BatchScheduleResult, OwnerListItem } from '@/lib/api';
+import { api, Pet, PetListItem, BatchScheduleFormData, BatchScheduleResult, OwnerListItem, DailyCountResult } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 
 interface MultiPetScheduleFormProps {
@@ -33,6 +33,8 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
   const [owners, setOwners] = useState<OwnerListItem[]>([]);
   const [selectedOwner, setSelectedOwner] = useState<number | null>(null);
   const [result, setResult] = useState<BatchScheduleResult | null>(null);
+  const [dailyCount, setDailyCount] = useState<DailyCountResult | null>(null);
+  const [showLimitConfirm, setShowLimitConfirm] = useState(false);
 
   const [formData, setFormData] = useState<BatchScheduleFormData>({
     pet_ids: preselectedPetIds || [],
@@ -66,6 +68,24 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
     }
   }, [preselectedPetIds]);
 
+  useEffect(() => {
+    const fetchDailyCount = async () => {
+      if (!formData.start_date) {
+        setDailyCount(null);
+        return;
+      }
+      try {
+        const result = await api.schedules.dailyCount(formData.start_date);
+        setDailyCount(result);
+      } catch (err) {
+        console.error('Failed to fetch daily count:', err);
+      }
+    };
+
+    const timer = setTimeout(fetchDailyCount, 300);
+    return () => clearTimeout(timer);
+  }, [formData.start_date]);
+
   const togglePet = (petId: number) => {
     setFormData(prev => ({
       ...prev,
@@ -94,13 +114,8 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
     setFormData(prev => ({ ...prev, pet_ids: [] }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formData.pet_ids.length === 0) {
-      setError(t('errors.selectAtLeastOne'));
-      return;
-    }
-
+  const doSubmit = async () => {
+    setShowLimitConfirm(false);
     setLoading(true);
     setError(null);
 
@@ -112,6 +127,21 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formData.pet_ids.length === 0) {
+      setError(t('errors.selectAtLeastOne'));
+      return;
+    }
+
+    if (dailyCount?.limit_reached && !showLimitConfirm) {
+      setShowLimitConfirm(true);
+      return;
+    }
+
+    await doSubmit();
   };
 
   const selectedPets = pets.filter(p => formData.pet_ids.includes(p.id));
@@ -353,6 +383,36 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
             </div>
           )}
 
+          {dailyCount && dailyCount.limit > 0 && (
+            <div className={`p-4 rounded-lg border ${
+              dailyCount.limit_reached
+                ? 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800'
+                : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+            }`}>
+              {dailyCount.limit_reached ? (
+                <div>
+                  <div className="flex items-center gap-2 text-red-800 dark:text-red-200 font-medium">
+                    <AlertTriangle className="w-5 h-5" />
+                    {t('schedule.dailyLimitReached')}
+                  </div>
+                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                    {t('schedule.dailyLimitReachedDetail')
+                      .replace('{count}', String(dailyCount.count))
+                      .replace('{date}', formData.start_date)
+                      .replace('{limit}', String(dailyCount.limit))}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm">
+                  <AlertTriangle className="w-4 h-4" />
+                  {t('schedule.dailyLimitWarningDetail')
+                    .replace('{count}', String(dailyCount.count))
+                    .replace('{limit}', String(dailyCount.limit))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -426,12 +486,47 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
             <button
               type="submit"
               disabled={loading || formData.pet_ids.length === 0}
-              className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50"
+              className={`px-6 py-2 rounded-lg transition-colors disabled:opacity-50 ${
+                dailyCount?.limit_reached
+                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                  : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+              }`}
             >
-              {loading ? t('multiPet.creating') : t('schedule.createSchedule')}
+              {loading ? t('multiPet.creating') :
+                dailyCount?.limit_reached ? t('schedule.scheduleAnyway') : t('schedule.createSchedule')}
             </button>
           </div>
         </form>
+
+        {showLimitConfirm && (
+          <div className="absolute inset-0 bg-black/40 dark:bg-black/60 flex items-center justify-center rounded-xl">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-6 m-4 max-w-sm">
+              <div className="flex items-center gap-2 text-red-700 dark:text-red-300 font-bold mb-3">
+                <AlertTriangle className="w-6 h-6" />
+                {t('schedule.confirmOverLimit')}
+              </div>
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                {t('schedule.confirmOverLimitMessage')
+                  .replace('{limit}', String(dailyCount?.limit))
+                  .replace('{date}', formData.start_date)}
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowLimitConfirm(false)}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  onClick={doSubmit}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                >
+                  {t('schedule.proceedAnyway')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

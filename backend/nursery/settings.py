@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'accounts',
     'pets',
+    'nursery_settings',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
