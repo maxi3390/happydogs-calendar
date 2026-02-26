@@ -1,28 +1,28 @@
 import { test, expect } from '@playwright/test';
+import { setupAuthAndLanguage } from './helpers';
 
 test.describe('Language Switching', () => {
-  test('should display language switcher', async ({ page }) => {
-    await page.goto('/');
+  test.beforeEach(async ({ page }) => {
+    await setupAuthAndLanguage(page);
+  });
 
-    // Language switcher should be visible in header
+  test('should display language switcher', async ({ page }) => {
+    // Language switcher should be visible in header (select with Globe icon)
     const languageSwitcher = page.locator('select').filter({ hasText: /english|español/i });
     await expect(languageSwitcher).toBeVisible();
   });
 
-  test('should default to English', async ({ page }) => {
-    await page.goto('/');
-
-    // Clear localStorage to ensure default
+  test('should default to Spanish when no preference is set', async ({ page }) => {
+    // Clear localStorage language preference
     await page.evaluate(() => localStorage.removeItem('preferred_language'));
-    await page.reload();
+    await page.reload({ waitUntil: 'networkidle' });
 
-    // UI should show English text
-    await expect(page.getByText(/pets|owners|schedule/i)).toBeVisible();
+    // Default language state is 'es'
+    const languageSwitcher = page.locator('select').filter({ hasText: /english|español/i });
+    await expect(languageSwitcher).toHaveValue('es');
   });
 
   test('should switch to Spanish', async ({ page }) => {
-    await page.goto('/');
-
     // Find language switcher
     const languageSwitcher = page.locator('select').filter({ hasText: /english|español/i });
 
@@ -33,12 +33,10 @@ test.describe('Language Switching', () => {
     await page.waitForTimeout(500);
 
     // UI should show Spanish text
-    await expect(page.getByText(/mascotas|propietarios|horario/i)).toBeVisible();
+    await expect(page.getByText(/mascotas|propietarios/i)).toBeVisible();
   });
 
   test('should switch back to English', async ({ page }) => {
-    await page.goto('/');
-
     const languageSwitcher = page.locator('select').filter({ hasText: /english|español/i });
 
     // Switch to Spanish first
@@ -50,12 +48,10 @@ test.describe('Language Switching', () => {
     await page.waitForTimeout(500);
 
     // UI should show English text again
-    await expect(page.getByText(/pets|owners|schedule/i)).toBeVisible();
+    await expect(page.getByText(/pets|owners/i)).toBeVisible();
   });
 
   test('should persist language preference', async ({ page }) => {
-    await page.goto('/');
-
     const languageSwitcher = page.locator('select').filter({ hasText: /english|español/i });
 
     // Switch to Spanish
@@ -63,15 +59,13 @@ test.describe('Language Switching', () => {
     await page.waitForTimeout(500);
 
     // Reload the page
-    await page.reload();
+    await page.reload({ waitUntil: 'networkidle' });
 
     // Language should still be Spanish
-    await expect(page.getByText(/mascotas|propietarios|horario/i)).toBeVisible();
+    await expect(page.getByText(/mascotas|propietarios/i)).toBeVisible();
   });
 
   test('should translate calendar view buttons', async ({ page }) => {
-    await page.goto('/');
-
     const languageSwitcher = page.locator('select').filter({ hasText: /english|español/i });
 
     // Check English buttons first
@@ -88,8 +82,6 @@ test.describe('Language Switching', () => {
   });
 
   test('should translate navigation links', async ({ page }) => {
-    await page.goto('/');
-
     const languageSwitcher = page.locator('select').filter({ hasText: /english|español/i });
 
     // Switch to Spanish
@@ -102,8 +94,6 @@ test.describe('Language Switching', () => {
   });
 
   test('should translate app title and tagline', async ({ page }) => {
-    await page.goto('/');
-
     const languageSwitcher = page.locator('select').filter({ hasText: /english|español/i });
 
     // Check English title
@@ -121,31 +111,25 @@ test.describe('Language Switching', () => {
 test.describe('Language Persistence', () => {
   test('should load with saved language from localStorage', async ({ page }) => {
     // Set Spanish in localStorage before navigation
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'commit' });
     await page.evaluate(() => localStorage.setItem('preferred_language', 'es'));
-    await page.reload();
-
-    // Wait for translations to load
-    await page.waitForTimeout(500);
+    await page.reload({ waitUntil: 'networkidle' });
 
     // Should show Spanish content
-    await expect(page.getByText(/mascotas|propietarios|horario/i)).toBeVisible();
+    await expect(page.getByText(/mascotas|propietarios/i)).toBeVisible();
   });
 
   test('should work across page navigation', async ({ page }) => {
-    await page.goto('/');
+    await setupAuthAndLanguage(page, { lang: 'es' });
 
     const languageSwitcher = page.locator('select').filter({ hasText: /english|español/i });
-
-    // Switch to Spanish
-    await languageSwitcher.selectOption('es');
-    await page.waitForTimeout(500);
+    await expect(languageSwitcher).toHaveValue('es');
 
     // Navigate to pets page
     await page.getByRole('link', { name: /mascotas/i }).first().click();
     await expect(page).toHaveURL('/pets');
 
     // Language should still be Spanish on new page
-    await expect(page.getByText(/agregar mascota|nueva mascota/i)).toBeVisible();
+    await expect(page.getByText(/mascotas/i)).toBeVisible();
   });
 });

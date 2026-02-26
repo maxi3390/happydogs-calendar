@@ -1,4 +1,4 @@
-.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend lint clean rebuild create-admin
+.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend test-frontend test-frontend-debug lint clean rebuild create-admin
 
 # Default target
 help:
@@ -32,9 +32,11 @@ help:
 	@echo "  make create-admin   - Create first admin user (non-interactive)"
 	@echo ""
 	@echo "Testing:"
-	@echo "  make test           - Run all tests"
-	@echo "  make test-backend   - Run backend tests only"
-	@echo "  make test-coverage  - Run tests with coverage report"
+	@echo "  make test              - Run all tests (backend + frontend)"
+	@echo "  make test-backend      - Run backend tests only"
+	@echo "  make test-frontend     - Run frontend Playwright tests (Chrome headless)"
+	@echo "  make test-frontend-debug - Run frontend tests with Playwright trace viewer"
+	@echo "  make test-coverage     - Run tests with coverage report"
 	@echo ""
 	@echo "Development:"
 	@echo "  make lint           - Run linters"
@@ -118,10 +120,32 @@ create-admin:
 	@echo "Email: $(ADMIN_EMAIL) | Password: $(ADMIN_PASSWORD)"
 
 # Testing
-test: test-backend
+PLAYWRIGHT_IMAGE ?= mcr.microsoft.com/playwright:v1.50.0-noble
+
+test: test-backend test-frontend
 
 test-backend:
 	docker compose exec backend python manage.py test --settings=nursery.test_settings
+
+test-frontend:
+	@echo "Running Playwright tests (Chrome headless)..."
+	docker run --rm --network=host \
+		-v $(CURDIR)/frontend:/app \
+		-w /app \
+		-e CI=1 \
+		-e BASE_URL=http://localhost:3000 \
+		$(PLAYWRIGHT_IMAGE) \
+		sh -c "npm install && npx playwright test --project=chromium"
+
+test-frontend-debug:
+	@echo "Running Playwright tests (Chrome headless, trace on)..."
+	docker run --rm --network=host \
+		-v $(CURDIR)/frontend:/app \
+		-w /app \
+		-e CI=1 \
+		-e BASE_URL=http://localhost:3000 \
+		$(PLAYWRIGHT_IMAGE) \
+		sh -c "npm install && npx playwright test --project=chromium --trace=on"
 
 test-coverage:
 	docker compose exec backend coverage run --source='.' manage.py test --settings=nursery.test_settings
