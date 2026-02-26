@@ -121,10 +121,10 @@ create-admin:
 test: test-backend
 
 test-backend:
-	docker compose exec backend python manage.py test
+	docker compose exec backend python manage.py test --settings=nursery.test_settings
 
 test-coverage:
-	docker compose exec backend coverage run --source='.' manage.py test
+	docker compose exec backend coverage run --source='.' manage.py test --settings=nursery.test_settings
 	docker compose exec backend coverage report
 	docker compose exec backend coverage html
 
