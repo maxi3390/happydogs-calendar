@@ -1,4 +1,4 @@
-.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend lint clean rebuild
+.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend lint clean rebuild create-admin
 
 # Default target
 help:
@@ -28,7 +28,8 @@ help:
 	@echo "Database:"
 	@echo "  make migrate        - Run Django migrations"
 	@echo "  make makemigrations - Create new migrations"
-	@echo "  make createsuperuser - Create Django admin user"
+	@echo "  make createsuperuser - Create Django admin user (interactive)"
+	@echo "  make create-admin   - Create first admin user (non-interactive)"
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test           - Run all tests"
@@ -92,6 +93,30 @@ makemigrations:
 createsuperuser:
 	docker compose exec backend python manage.py createsuperuser
 
+ADMIN_EMAIL ?= admin@happypet.com
+ADMIN_PASSWORD ?= admin1234
+ADMIN_FIRST ?= Admin
+ADMIN_LAST ?= User
+
+create-admin:
+	@docker compose exec backend python manage.py shell -c "\
+	from accounts.models import User; \
+	user, created = User.objects.get_or_create( \
+		email='$(ADMIN_EMAIL)', \
+		defaults={ \
+			'first_name': '$(ADMIN_FIRST)', \
+			'last_name': '$(ADMIN_LAST)', \
+			'role': 'admin', \
+			'is_staff': True, \
+			'is_superuser': True, \
+		} \
+	); \
+	user.set_password('$(ADMIN_PASSWORD)') if created else None; \
+	user.save() if created else None; \
+	print(f'Admin created: {user.email}') if created else print(f'Admin already exists: {user.email}') \
+	"
+	@echo "Email: $(ADMIN_EMAIL) | Password: $(ADMIN_PASSWORD)"
+
 # Testing
 test: test-backend
 
@@ -117,10 +142,10 @@ status:
 	docker compose ps
 
 # Quick start for new developers
-init: build up migrate
+init: build up migrate create-admin
 	@echo ""
 	@echo "Setup complete! The application is now running at:"
 	@echo "  Frontend: http://localhost:3000"
 	@echo "  Backend API: http://localhost:8000/api"
 	@echo ""
-	@echo "Run 'make createsuperuser' to create an admin account."
+	@echo "Default admin: $(ADMIN_EMAIL) / $(ADMIN_PASSWORD)"
