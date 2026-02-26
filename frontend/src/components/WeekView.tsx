@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay } from 'date-fns';
-import { ChevronLeft, ChevronRight, Clock, AlertTriangle, CalendarDays, CalendarRange } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertTriangle, CalendarDays, CalendarRange } from 'lucide-react';
 import { api, Schedule } from '@/lib/api';
 import ScheduleDetailsPopup from './ScheduleDetailsPopup';
 import { useTranslation } from '@/lib/translations';
@@ -12,6 +12,32 @@ interface WeekViewProps {
   onDateSelect: (date: Date) => void;
   calendarView?: 'month' | 'week';
   onViewChange?: (view: 'month' | 'week') => void;
+}
+
+const BAR_COLORS = [
+  { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-800 dark:text-blue-200', border: 'border-blue-300 dark:border-blue-700', hover: 'hover:bg-blue-200 dark:hover:bg-blue-800/60' },
+  { bg: 'bg-emerald-100 dark:bg-emerald-900/40', text: 'text-emerald-800 dark:text-emerald-200', border: 'border-emerald-300 dark:border-emerald-700', hover: 'hover:bg-emerald-200 dark:hover:bg-emerald-800/60' },
+  { bg: 'bg-purple-100 dark:bg-purple-900/40', text: 'text-purple-800 dark:text-purple-200', border: 'border-purple-300 dark:border-purple-700', hover: 'hover:bg-purple-200 dark:hover:bg-purple-800/60' },
+  { bg: 'bg-amber-100 dark:bg-amber-900/40', text: 'text-amber-800 dark:text-amber-200', border: 'border-amber-300 dark:border-amber-700', hover: 'hover:bg-amber-200 dark:hover:bg-amber-800/60' },
+  { bg: 'bg-rose-100 dark:bg-rose-900/40', text: 'text-rose-800 dark:text-rose-200', border: 'border-rose-300 dark:border-rose-700', hover: 'hover:bg-rose-200 dark:hover:bg-rose-800/60' },
+  { bg: 'bg-cyan-100 dark:bg-cyan-900/40', text: 'text-cyan-800 dark:text-cyan-200', border: 'border-cyan-300 dark:border-cyan-700', hover: 'hover:bg-cyan-200 dark:hover:bg-cyan-800/60' },
+  { bg: 'bg-indigo-100 dark:bg-indigo-900/40', text: 'text-indigo-800 dark:text-indigo-200', border: 'border-indigo-300 dark:border-indigo-700', hover: 'hover:bg-indigo-200 dark:hover:bg-indigo-800/60' },
+  { bg: 'bg-teal-100 dark:bg-teal-900/40', text: 'text-teal-800 dark:text-teal-200', border: 'border-teal-300 dark:border-teal-700', hover: 'hover:bg-teal-200 dark:hover:bg-teal-800/60' },
+];
+
+const CONFLICT_BAR = {
+  bg: 'bg-amber-50 dark:bg-amber-900/30',
+  text: 'text-amber-900 dark:text-amber-100',
+  border: 'border-amber-400 dark:border-amber-600',
+  hover: 'hover:bg-amber-100 dark:hover:bg-amber-900/50',
+};
+
+interface BarLayout {
+  schedule: Schedule;
+  startCol: number;
+  endCol: number;
+  startsBeforeWeek: boolean;
+  endsAfterWeek: boolean;
 }
 
 export default function WeekView({ selectedDate, onDateSelect, calendarView = 'week', onViewChange }: WeekViewProps) {
@@ -41,21 +67,60 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
     fetchSchedules();
   }, [currentWeekStart]);
 
-  const getSchedulesForDay = (day: Date) => {
-    const dateStr = format(day, 'yyyy-MM-dd');
-    return schedules.filter(s => s.start_date <= dateStr && s.end_date >= dateStr);
-  };
-
   const goToPreviousWeek = () => setCurrentWeekStart(subWeeks(currentWeekStart, 1));
   const goToNextWeek = () => setCurrentWeekStart(addWeeks(currentWeekStart, 1));
   const goToCurrentWeek = () => setCurrentWeekStart(startOfWeek(new Date()));
 
-  const statusColors: Record<string, string> = {
-    scheduled: 'border-l-blue-500',
-    checked_in: 'border-l-green-500',
-    completed: 'border-l-gray-400',
-    cancelled: 'border-l-red-500',
-  };
+  const petRows = useMemo(() => {
+    const weekStartStr = format(currentWeekStart, 'yyyy-MM-dd');
+    const weekEndStr = format(weekEnd, 'yyyy-MM-dd');
+    const dayStrings = weekDays.map(d => format(d, 'yyyy-MM-dd'));
+
+    const uniqueSchedules = new Map<number, Schedule>();
+    schedules.forEach(s => uniqueSchedules.set(s.id, s));
+
+    const byPet = new Map<number, { petName: string; petDetails: Schedule['pet_details']; bars: BarLayout[] }>();
+
+    uniqueSchedules.forEach(s => {
+      if (!byPet.has(s.pet)) {
+        byPet.set(s.pet, { petName: s.pet_details.name, petDetails: s.pet_details, bars: [] });
+      }
+
+      const startsBeforeWeek = s.start_date < weekStartStr;
+      const endsAfterWeek = s.end_date > weekEndStr;
+
+      let startCol = 0;
+      if (!startsBeforeWeek) {
+        const idx = dayStrings.indexOf(s.start_date);
+        if (idx !== -1) startCol = idx;
+      }
+
+      let endCol = 6;
+      if (!endsAfterWeek) {
+        const idx = dayStrings.indexOf(s.end_date);
+        if (idx !== -1) endCol = idx;
+      }
+
+      byPet.get(s.pet)!.bars.push({ schedule: s, startCol, endCol, startsBeforeWeek, endsAfterWeek });
+    });
+
+    byPet.forEach(group => {
+      group.bars.sort((a, b) => a.startCol - b.startCol || a.schedule.start_date.localeCompare(b.schedule.start_date));
+    });
+
+    const result = Array.from(byPet.entries()).map(([petId, group]) => ({
+      petId,
+      ...group,
+    }));
+    result.sort((a, b) => a.petName.localeCompare(b.petName));
+    return result;
+  }, [schedules, currentWeekStart, weekEnd, weekDays]);
+
+  const petColorMap = useMemo(() => {
+    const map = new Map<number, number>();
+    petRows.forEach((row, i) => map.set(row.petId, i % BAR_COLORS.length));
+    return map;
+  }, [petRows]);
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
@@ -120,82 +185,100 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 dark:border-indigo-400" />
         </div>
       ) : (
-        <div className="divide-y divide-gray-100 dark:divide-slate-700">
-          {weekDays.map(day => {
-            const daySchedules = getSchedulesForDay(day);
-            const isToday = isSameDay(day, new Date());
-            const isSelected = isSameDay(day, selectedDate);
-
-            return (
-              <div
-                key={day.toISOString()}
-                className={`${isSelected ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}`}
-              >
-                <div
-                  className={`flex items-center gap-4 p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors ${
-                    isToday ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : ''
-                  }`}
-                  onClick={() => onDateSelect(day)}
-                >
-                  <div className="w-16 text-center">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">
-                      {format(day, 'EEE')}
-                    </p>
-                    <p className={`text-2xl font-bold ${
-                      isToday
-                        ? 'text-indigo-600 dark:text-indigo-400'
-                        : 'text-gray-800 dark:text-gray-200'
+        <div className="overflow-x-auto">
+          <div className="min-w-[640px]">
+            {/* Day column headers */}
+            <div className="grid border-b border-gray-200 dark:border-slate-700" style={{ gridTemplateColumns: '110px repeat(7, 1fr)' }}>
+              <div className="p-2 border-r border-gray-200 dark:border-slate-700" />
+              {weekDays.map(day => {
+                const isToday = isSameDay(day, new Date());
+                const isSelected = isSameDay(day, selectedDate);
+                return (
+                  <div
+                    key={day.toISOString()}
+                    className={`p-2 text-center border-r last:border-r-0 border-gray-200 dark:border-slate-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors ${
+                      isSelected ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
+                    }`}
+                    onClick={() => onDateSelect(day)}
+                  >
+                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">{format(day, 'EEE')}</p>
+                    <p className={`text-lg font-bold ${
+                      isToday ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-800 dark:text-gray-200'
                     }`}>
                       {format(day, 'd')}
                     </p>
                   </div>
-                  <div className="flex-1">
-                    {daySchedules.length === 0 ? (
-                      <p className="text-sm text-gray-400 dark:text-gray-500 italic">No schedules</p>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {daySchedules.map(schedule => (
-                          <button
-                            key={schedule.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedSchedule(schedule);
-                            }}
-                            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border-l-4 ${statusColors[schedule.status]} ${
-                              schedule.conflicts?.length
-                                ? 'bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/50'
-                                : 'bg-gray-50 dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600'
-                            } transition-colors`}
-                          >
-                            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                              {schedule.pet_details.name}
-                            </span>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {schedule.start_time.slice(0, 5)}-{schedule.end_time.slice(0, 5)}
-                            </span>
-                            {schedule.conflicts && schedule.conflicts.length > 0 && (
-                              <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                            )}
-                          </button>
+                );
+              })}
+            </div>
+
+            {/* Pet schedule rows */}
+            {petRows.length === 0 ? (
+              <div className="p-8 text-center text-gray-400 dark:text-gray-500 italic">
+                {t('schedule.noSchedules')}
+              </div>
+            ) : (
+              petRows.map(row => {
+                const colorIdx = petColorMap.get(row.petId) ?? 0;
+                return (
+                  <div
+                    key={row.petId}
+                    className="grid border-b last:border-b-0 border-gray-100 dark:border-slate-700"
+                    style={{ gridTemplateColumns: '110px repeat(7, 1fr)' }}
+                  >
+                    {/* Pet name label */}
+                    <div className="p-2 border-r border-gray-200 dark:border-slate-700 flex items-center min-h-[44px]">
+                      <div className="truncate">
+                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{row.petName}</p>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                          {row.petDetails.species} · {row.petDetails.temperament}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Schedule bars area - 7 columns */}
+                    <div className="col-span-7 relative min-h-[44px]">
+                      {/* Vertical grid lines */}
+                      <div className="absolute inset-0 grid grid-cols-7 pointer-events-none" aria-hidden>
+                        {weekDays.map((_, i) => (
+                          <div key={i} className={`border-r border-gray-100 dark:border-slate-700/50 ${i === 6 ? 'border-r-0' : ''}`} />
                         ))}
                       </div>
-                    )}
+
+                      {/* Bars using CSS grid for automatic stacking */}
+                      <div className="grid grid-cols-7 gap-y-0.5 py-1.5 px-0.5 relative">
+                        {row.bars.map(bar => {
+                          const hasConflicts = bar.schedule.conflicts && bar.schedule.conflicts.length > 0;
+                          const color = hasConflicts ? CONFLICT_BAR : BAR_COLORS[colorIdx];
+
+                          const roundedLeft = bar.startsBeforeWeek ? 'rounded-l-sm' : 'rounded-l-full';
+                          const roundedRight = bar.endsAfterWeek ? 'rounded-r-sm' : 'rounded-r-full';
+
+                          return (
+                            <button
+                              key={bar.schedule.id}
+                              onClick={() => setSelectedSchedule(bar.schedule)}
+                              className={`h-7 flex items-center gap-1.5 px-2.5 text-xs font-medium truncate border transition-colors cursor-pointer ${roundedLeft} ${roundedRight} ${color.bg} ${color.text} ${color.border} ${color.hover}`}
+                              style={{ gridColumn: `${bar.startCol + 1} / ${bar.endCol + 2}` }}
+                              title={`${bar.schedule.pet_details.name} — ${bar.schedule.start_date} to ${bar.schedule.end_date} (${bar.schedule.start_time.slice(0, 5)}–${bar.schedule.end_time.slice(0, 5)})`}
+                            >
+                              <span className="truncate">{bar.schedule.pet_details.name}</span>
+                              <span className="opacity-60 whitespace-nowrap text-[10px]">
+                                {bar.schedule.start_time.slice(0, 5)}–{bar.schedule.end_time.slice(0, 5)}
+                              </span>
+                              {hasConflicts && (
+                                <AlertTriangle className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    {daySchedules.length > 0 && (
-                      <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
-                        daySchedules.some(s => s.conflicts?.length)
-                          ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300'
-                          : 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
-                      }`}>
-                        {daySchedules.length}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })
+            )}
+          </div>
         </div>
       )}
 
