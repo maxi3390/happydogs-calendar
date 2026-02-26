@@ -63,7 +63,22 @@
       "checked_in": "Checked In",
       "completed": "Completed",
       "cancelled": "Cancelled"
-    }
+    },
+    "pet": "Pet",
+    "dailyStartTime": "Daily Start Time",
+    "dailyEndTime": "Daily End Time",
+    "multiDay": "Multi-day schedule",
+    "checkingConflicts": "Checking conflicts...",
+    "conflictsDetected": "Conflicts Detected!",
+    "conflictsWarning": "You can still create this schedule, but be aware of the potential conflicts.",
+    "noConflicts": "No conflicts detected",
+    "compatiblePets": "{count} compatible pets at this time",
+    "scheduleAnyway": "Schedule Anyway",
+    "createSchedule": "Create Schedule",
+    "updateSchedule": "Update Schedule",
+    "petDetails": "Pet Details",
+    "date": "Date",
+    "time": "Time"
   },
   "pet": {
     "title": "Pets",
@@ -123,7 +138,9 @@
       "fvrcp": "FVRCP",
       "felv": "FeLV",
       "other": "Other"
-    }
+    },
+    "dominanceHint": "1 = Very submissive, 10 = Very dominant",
+    "assignOwnerHint": "Assign this pet to an owner or create a new owner first"
   },
   "owner": {
     "title": "Owners",
@@ -138,7 +155,16 @@
     "address": "Address",
     "pets": "Pets",
     "scheduleAllPets": "Schedule All Pets",
-    "noPets": "No pets registered"
+    "noPets": "No pets registered",
+    "emergencyContact": "Emergency",
+    "emergencyOptional": "Emergency Contact (Optional)",
+    "contactName": "Contact Name",
+    "contactPhone": "Contact Phone",
+    "notes": "Notes",
+    "searchPlaceholder": "Search owners by name, email, or phone...",
+    "noResults": "No owners found matching your search",
+    "noPetsToSchedule": "This owner has no pets to schedule",
+    "scheduleThisPet": "Schedule this pet"
   },
   "multiPet": {
     "title": "Multi-Pet Schedule",
@@ -155,7 +181,13 @@
     "results": "Results",
     "created": "Created",
     "failed": "Failed",
-    "schedulesCreated": "{count} schedules created successfully"
+    "schedulesCreated": "{count} schedules created successfully",
+    "schedulesCreatedTitle": "Schedules Created",
+    "createdFor": "Created for",
+    "done": "Done",
+    "selectedPets": "Selected pets",
+    "notesLabel": "Notes (applied to all schedules)",
+    "creating": "Creating..."
   },
   "common": {
     "save": "Save",
@@ -176,7 +208,11 @@
     "required": "Required",
     "optional": "Optional",
     "years": "years",
-    "new": "New"
+    "new": "New",
+    "saving": "Saving...",
+    "note": "Note",
+    "dom": "Dom",
+    "pets": "Pets"
   },
   "errors": {
     "fetchFailed": "Failed to fetch data",
@@ -184,7 +220,9 @@
     "deleteFailed": "Failed to delete",
     "selectAtLeastOne": "Please select at least one pet",
     "invalidDates": "End date cannot be before start date",
-    "invalidTimes": "End time must be after start time"
+    "invalidTimes": "End time must be after start time",
+    "loginFailed": "Login failed",
+    "registrationFailed": "Registration failed"
   },
   "confirmations": {
     "deletePet": "Are you sure you want to delete this pet? This will also delete all their schedules.",
@@ -213,7 +251,21 @@
     "rule2": "Two pets with dominance levels > 7 cannot be together",
     "rule3": "Large size difference (2+ levels) with dominance difference ≥ 5 is flagged",
     "rule4": "Certain temperament combinations between different species are incompatible",
-    "rule5": "Anxious pets should not be with highly playful pets if dominance differs by > 4"
+    "rule5": "Anxious pets should not be with highly playful pets if dominance differs by > 4",
+    "vaccinationTypes": "Vaccination Types",
+    "vaccinationTypesInfo": "Manage available vaccination types. Disabled types won't appear in the pet form but existing records are preserved.",
+    "addVaccinationType": "Add Type",
+    "newVaccinationType": "New Vaccination Type",
+    "vaxName": "Internal Name",
+    "vaxNamePlaceholder": "e.g., rabies",
+    "vaxLabel": "Display Label",
+    "vaxLabelPlaceholder": "e.g., Rabies",
+    "noVaccinationTypes": "No vaccination types configured",
+    "addFirstVaccinationType": "Add your first vaccination type",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "confirmDeleteVaxType": "Are you sure you want to delete this vaccination type?",
+    "vaxNameExists": "A vaccination type with this name already exists"
   },
   "public": {
     "welcome": "Welcome to Happy Pet Nursery",

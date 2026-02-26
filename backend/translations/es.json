@@ -63,7 +63,22 @@
       "checked_in": "Registrado",
       "completed": "Completado",
       "cancelled": "Cancelado"
-    }
+    },
+    "pet": "Mascota",
+    "dailyStartTime": "Hora de Inicio Diaria",
+    "dailyEndTime": "Hora de Fin Diaria",
+    "multiDay": "Horario de varios días",
+    "checkingConflicts": "Verificando conflictos...",
+    "conflictsDetected": "¡Conflictos Detectados!",
+    "conflictsWarning": "Aún puedes crear este horario, pero ten en cuenta los posibles conflictos.",
+    "noConflicts": "No se detectaron conflictos",
+    "compatiblePets": "{count} mascotas compatibles en este horario",
+    "scheduleAnyway": "Programar de Todos Modos",
+    "createSchedule": "Crear Horario",
+    "updateSchedule": "Actualizar Horario",
+    "petDetails": "Detalles de la Mascota",
+    "date": "Fecha",
+    "time": "Hora"
   },
   "pet": {
     "title": "Mascotas",
@@ -123,7 +138,9 @@
       "fvrcp": "FVRCP",
       "felv": "FeLV",
       "other": "Otro"
-    }
+    },
+    "dominanceHint": "1 = Muy sumiso, 10 = Muy dominante",
+    "assignOwnerHint": "Asigna esta mascota a un dueño o crea uno nuevo primero"
   },
   "owner": {
     "title": "Dueños",
@@ -138,7 +155,16 @@
     "address": "Dirección",
     "pets": "Mascotas",
     "scheduleAllPets": "Programar Todas las Mascotas",
-    "noPets": "Sin mascotas registradas"
+    "noPets": "Sin mascotas registradas",
+    "emergencyContact": "Emergencia",
+    "emergencyOptional": "Contacto de Emergencia (Opcional)",
+    "contactName": "Nombre del Contacto",
+    "contactPhone": "Teléfono del Contacto",
+    "notes": "Notas",
+    "searchPlaceholder": "Buscar dueños por nombre, correo o teléfono...",
+    "noResults": "No se encontraron dueños con esa búsqueda",
+    "noPetsToSchedule": "Este dueño no tiene mascotas para programar",
+    "scheduleThisPet": "Programar esta mascota"
   },
   "multiPet": {
     "title": "Horario Multi-Mascota",
@@ -155,7 +181,13 @@
     "results": "Resultados",
     "created": "Creado",
     "failed": "Fallido",
-    "schedulesCreated": "{count} horarios creados exitosamente"
+    "schedulesCreated": "{count} horarios creados exitosamente",
+    "schedulesCreatedTitle": "Horarios Creados",
+    "createdFor": "Creado para",
+    "done": "Listo",
+    "selectedPets": "Mascotas seleccionadas",
+    "notesLabel": "Notas (aplicadas a todos los horarios)",
+    "creating": "Creando..."
   },
   "common": {
     "save": "Guardar",
@@ -176,7 +208,11 @@
     "required": "Requerido",
     "optional": "Opcional",
     "years": "años",
-    "new": "Nuevo"
+    "new": "Nuevo",
+    "saving": "Guardando...",
+    "note": "Nota",
+    "dom": "Dom",
+    "pets": "Mascotas"
   },
   "errors": {
     "fetchFailed": "Error al obtener datos",
@@ -184,7 +220,9 @@
     "deleteFailed": "Error al eliminar",
     "selectAtLeastOne": "Por favor selecciona al menos una mascota",
     "invalidDates": "La fecha de fin no puede ser anterior a la fecha de inicio",
-    "invalidTimes": "La hora de fin debe ser posterior a la hora de inicio"
+    "invalidTimes": "La hora de fin debe ser posterior a la hora de inicio",
+    "loginFailed": "Error al iniciar sesión",
+    "registrationFailed": "Error al registrarse"
   },
   "confirmations": {
     "deletePet": "¿Estás seguro de que deseas eliminar esta mascota? Esto también eliminará todos sus horarios.",
@@ -213,10 +251,24 @@
     "rule2": "Dos mascotas con niveles de dominancia > 7 no pueden estar juntas",
     "rule3": "Gran diferencia de tamaño (2+ niveles) con diferencia de dominancia ≥ 5 es señalada",
     "rule4": "Ciertas combinaciones de temperamento entre diferentes especies son incompatibles",
-    "rule5": "Las mascotas ansiosas no deben estar con mascotas muy juguetonas si la dominancia difiere por > 4"
+    "rule5": "Las mascotas ansiosas no deben estar con mascotas muy juguetonas si la dominancia difiere por > 4",
+    "vaccinationTypes": "Tipos de Vacunas",
+    "vaccinationTypesInfo": "Administra los tipos de vacunas disponibles. Los tipos deshabilitados no aparecerán en el formulario de mascotas, pero los registros existentes se conservan.",
+    "addVaccinationType": "Agregar Tipo",
+    "newVaccinationType": "Nuevo Tipo de Vacuna",
+    "vaxName": "Nombre Interno",
+    "vaxNamePlaceholder": "ej., rabies",
+    "vaxLabel": "Etiqueta",
+    "vaxLabelPlaceholder": "ej., Rabia",
+    "noVaccinationTypes": "No hay tipos de vacunas configurados",
+    "addFirstVaccinationType": "Agrega tu primer tipo de vacuna",
+    "enabled": "Habilitado",
+    "disabled": "Deshabilitado",
+    "confirmDeleteVaxType": "¿Estás seguro de que deseas eliminar este tipo de vacuna?",
+    "vaxNameExists": "Ya existe un tipo de vacuna con este nombre"
   },
   "public": {
-    "welcome": "Bienvenido a Happy Pet Nursery",
+    "welcome": "Bienvenido a Guardería Happy Dogs",
     "description": "Mira nuestro calendario de disponibilidad. Inicia sesión para gestionar horarios y acceder a todas las funciones.",
     "availabilityCalendar": "Calendario de Disponibilidad",
     "ctaTitle": "¿Quieres programar a tu mascota?",

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Edit2, Trash2, Dog, Cat, Bird, Rabbit, HelpCircle } from 'lucide-react';
 import { api, Pet } from '@/lib/api';
+import { useTranslation } from '@/lib/translations';
 
 interface PetListProps {
   onEdit: (pet: Pet) => void;
@@ -26,6 +27,7 @@ const temperamentColors: Record<string, string> = {
 };
 
 export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
+  const { t } = useTranslation();
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -47,7 +49,7 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
   }, [refreshTrigger]);
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this pet? This will also delete all their schedules.')) {
+    if (!confirm(t('confirmations.deletePet'))) {
       return;
     }
 
@@ -57,7 +59,7 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
       setPets(pets.filter(p => p.id !== id));
     } catch (error) {
       console.error('Failed to delete pet:', error);
-      alert('Failed to delete pet');
+      alert(t('errors.deleteFailed'));
     } finally {
       setDeletingId(null);
     }
@@ -79,8 +81,8 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
     return (
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8 text-center">
         <Dog className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-        <h3 className="text-lg font-medium text-gray-700 dark:text-gray-200">No pets yet</h3>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Add your first pet to get started!</p>
+        <h3 className="text-lg font-medium text-gray-700 dark:text-gray-200">{t('pet.noPets')}</h3>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">{t('pet.addFirst')}</p>
       </div>
     );
   }
@@ -88,7 +90,7 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
       <div className="p-4 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
-        <h3 className="font-semibold text-gray-800 dark:text-gray-100">Registered Pets ({pets.length})</h3>
+        <h3 className="font-semibold text-gray-800 dark:text-gray-100">{t('pet.registeredPets')} ({pets.length})</h3>
       </div>
       <div className="divide-y divide-gray-100 dark:divide-slate-700 max-h-[500px] overflow-y-auto">
         {pets.map(pet => (
@@ -104,7 +106,7 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
                 <div>
                   <h4 className="font-medium text-gray-800 dark:text-gray-100">{pet.name}</h4>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {pet.breed || pet.species} • {pet.age} years
+                    {pet.breed || pet.species} • {pet.age} {t('common.years')}
                   </p>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
                     <span className={`text-xs px-2 py-1 rounded-full ${temperamentColors[pet.temperament]}`}>
@@ -115,7 +117,7 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
                       pet.dominance_level <= 6 ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300' :
                       'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
                     }`}>
-                      Dom: {pet.dominance_level}/10
+                      {t('common.dom')}: {pet.dominance_level}/10
                     </span>
                     <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-slate-600 text-gray-700 dark:text-gray-300">
                       {pet.size}

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { X, AlertTriangle, CheckCircle } from 'lucide-react';
 import { api, Pet, Schedule, ScheduleFormData, ConflictCheckResult } from '@/lib/api';
+import { useTranslation } from '@/lib/translations';
 
 interface ScheduleFormProps {
   schedule?: Schedule;
@@ -25,6 +26,7 @@ const TIME_OPTIONS = (() => {
 })();
 
 export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }: ScheduleFormProps) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [checkingConflicts, setCheckingConflicts] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +100,7 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
       }
       onSave();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save schedule');
+      setError(err instanceof Error ? err.message : t('errors.saveFailed'));
     } finally {
       setLoading(false);
     }
@@ -111,7 +113,7 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-            {schedule ? 'Edit Schedule' : 'New Schedule'}
+            {schedule ? t('schedule.editSchedule') : t('schedule.newSchedule')}
           </h2>
           <button
             onClick={onClose}
@@ -130,7 +132,7 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Pet *
+              {t('schedule.pet')} *
             </label>
             <select
               required
@@ -138,10 +140,10 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
               onChange={e => setFormData({ ...formData, pet: parseInt(e.target.value) })}
               className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
             >
-              <option value="">Select a pet...</option>
+              <option value="">{t('schedule.selectPet')}...</option>
               {pets.map(pet => (
                 <option key={pet.id} value={pet.id}>
-                  {pet.name} ({pet.species}) - {pet.temperament}, Dom: {pet.dominance_level}
+                  {pet.name} ({pet.species}) - {pet.temperament}, {t('common.dom')}: {pet.dominance_level}
                 </option>
               ))}
             </select>
@@ -151,9 +153,9 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
             <div className="p-3 bg-gray-50 dark:bg-slate-700 rounded-lg text-sm">
               <div className="font-medium text-gray-800 dark:text-gray-100">{selectedPet.name}</div>
               <div className="text-gray-600 dark:text-gray-400 mt-1 grid grid-cols-3 gap-2">
-                <span>Species: {selectedPet.species}</span>
-                <span>Temperament: {selectedPet.temperament}</span>
-                <span>Dominance: {selectedPet.dominance_level}/10</span>
+                <span>{t('pet.species')}: {selectedPet.species}</span>
+                <span>{t('pet.temperament')}: {selectedPet.temperament}</span>
+                <span>{t('pet.dominance')}: {selectedPet.dominance_level}/10</span>
               </div>
             </div>
           )}
@@ -161,7 +163,7 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Start Date *
+                {t('schedule.startDate')} *
               </label>
               <input
                 type="date"
@@ -173,7 +175,7 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                End Date *
+                {t('schedule.endDate')} *
               </label>
               <input
                 type="date"
@@ -188,14 +190,14 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
 
           {formData.start_date !== formData.end_date && (
             <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-sm text-indigo-700 dark:text-indigo-300">
-              Multi-day schedule: {formData.start_date} to {formData.end_date}
+              {t('schedule.multiDay')}: {formData.start_date} to {formData.end_date}
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Daily Start Time *
+                {t('schedule.dailyStartTime')} *
               </label>
               <select
                 required
@@ -210,7 +212,7 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Daily End Time *
+                {t('schedule.dailyEndTime')} *
               </label>
               <select
                 required
@@ -234,13 +236,13 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
               {checkingConflicts ? (
                 <div className="flex items-center gap-2 text-gray-600">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600" />
-                  Checking conflicts...
+                  {t('schedule.checkingConflicts')}
                 </div>
               ) : conflictResult.has_conflicts ? (
                 <div>
                   <div className="flex items-center gap-2 text-amber-800 font-medium">
                     <AlertTriangle className="w-5 h-5" />
-                    Conflicts Detected!
+                    {t('schedule.conflictsDetected')}
                   </div>
                   <ul className="mt-2 space-y-2">
                     {conflictResult.conflicts.map((conflict, i) => (
@@ -252,16 +254,16 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
                     ))}
                   </ul>
                   <p className="text-xs text-amber-600 mt-2">
-                    You can still create this schedule, but be aware of the potential conflicts.
+                    {t('schedule.conflictsWarning')}
                   </p>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 text-green-700">
                   <CheckCircle className="w-5 h-5" />
-                  No conflicts detected
+                  {t('schedule.noConflicts')}
                   {conflictResult.overlapping_pets_count > 0 && (
                     <span className="text-green-600">
-                      ({conflictResult.overlapping_pets_count} compatible pets at this time)
+                      ({t('schedule.compatiblePets').replace('{count}', String(conflictResult.overlapping_pets_count))})
                     </span>
                   )}
                 </div>
@@ -271,23 +273,23 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Status
+              {t('schedule.status')}
             </label>
             <select
               value={formData.status}
               onChange={e => setFormData({ ...formData, status: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
             >
-              <option value="scheduled">Scheduled</option>
-              <option value="checked_in">Checked In</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="scheduled">{t('schedule.statuses.scheduled')}</option>
+              <option value="checked_in">{t('schedule.statuses.checked_in')}</option>
+              <option value="completed">{t('schedule.statuses.completed')}</option>
+              <option value="cancelled">{t('schedule.statuses.cancelled')}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Notes
+              {t('schedule.notes')}
             </label>
             <textarea
               value={formData.notes}
@@ -304,7 +306,7 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
               onClick={onClose}
               className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -315,8 +317,8 @@ export default function ScheduleForm({ schedule, selectedDate, onClose, onSave }
                   : 'bg-indigo-600 hover:bg-indigo-700 text-white'
               }`}
             >
-              {loading ? 'Saving...' : schedule ? 'Update Schedule' :
-                conflictResult?.has_conflicts ? 'Schedule Anyway' : 'Create Schedule'}
+              {loading ? t('common.saving') : schedule ? t('schedule.updateSchedule') :
+                conflictResult?.has_conflicts ? t('schedule.scheduleAnyway') : t('schedule.createSchedule')}
             </button>
           </div>
         </form>

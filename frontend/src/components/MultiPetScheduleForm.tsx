@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { X, AlertTriangle, CheckCircle, Users } from 'lucide-react';
 import { api, Pet, PetListItem, BatchScheduleFormData, BatchScheduleResult, OwnerListItem } from '@/lib/api';
+import { useTranslation } from '@/lib/translations';
 
 interface MultiPetScheduleFormProps {
   selectedDate: Date;
@@ -25,6 +26,7 @@ const TIME_OPTIONS = (() => {
 })();
 
 export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, onClose, onSave }: MultiPetScheduleFormProps) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pets, setPets] = useState<Pet[]>([]);
@@ -95,7 +97,7 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.pet_ids.length === 0) {
-      setError('Please select at least one pet');
+      setError(t('errors.selectAtLeastOne'));
       return;
     }
 
@@ -106,7 +108,7 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
       const batchResult = await api.schedules.batchCreate(formData);
       setResult(batchResult);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create schedules');
+      setError(err instanceof Error ? err.message : t('errors.saveFailed'));
     } finally {
       setLoading(false);
     }
@@ -114,7 +116,7 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
 
   const selectedPets = pets.filter(p => formData.pet_ids.includes(p.id));
   const getOwnerName = (ownerId: number | null) => {
-    if (!ownerId) return 'No owner';
+    if (!ownerId) return t('multiPet.noOwner');
     const owner = owners.find(o => o.id === ownerId);
     return owner ? owner.full_name : 'Unknown';
   };
@@ -125,7 +127,7 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-              Schedules Created
+              {t('multiPet.schedulesCreatedTitle')}
             </h2>
             <button
               onClick={() => { onSave(); onClose(); }}
@@ -140,7 +142,7 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
               <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
               <div>
                 <div className="font-semibold text-green-800 dark:text-green-200">
-                  {result.created_count} schedule{result.created_count !== 1 ? 's' : ''} created successfully!
+                  {t('multiPet.schedulesCreated').replace('{count}', String(result.created_count))}
                 </div>
                 <div className="text-sm text-green-600 dark:text-green-400">
                   {formData.start_date} {formData.start_date !== formData.end_date && `to ${formData.end_date}`}
@@ -152,7 +154,7 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
               <div className="p-4 bg-amber-50 dark:bg-amber-900/30 rounded-lg">
                 <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200 font-medium mb-2">
                   <AlertTriangle className="w-5 h-5" />
-                  Conflicts Detected
+                  {t('schedule.conflictsDetected')}
                 </div>
                 <ul className="space-y-2">
                   {result.warnings.map((warning, i) => (
@@ -170,7 +172,7 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
             )}
 
             <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
-              <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Created for:</h3>
+              <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-2">{t('multiPet.createdFor')}:</h3>
               <div className="flex flex-wrap gap-2">
                 {result.schedules.map(schedule => (
                   <span
@@ -187,7 +189,7 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
               onClick={() => { onSave(); onClose(); }}
               className="w-full mt-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
             >
-              Done
+              {t('multiPet.done')}
             </button>
           </div>
         </div>
@@ -202,7 +204,7 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
           <div className="flex items-center gap-3">
             <Users className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-              Multi-Pet Schedule
+              {t('multiPet.title')}
             </h2>
           </div>
           <button
@@ -222,27 +224,27 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Filter by Owner
+              {t('multiPet.filterByOwner')}
             </label>
             <select
               value={selectedOwner || ''}
               onChange={e => setSelectedOwner(e.target.value ? Number(e.target.value) : null)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 mb-4"
             >
-              <option value="">All Owners ({pets.length} pets)</option>
+              <option value="">{t('multiPet.allOwners')} ({t('multiPet.petsCount').replace('{count}', String(pets.length))})</option>
               {owners.map(owner => (
                 <option key={owner.id} value={owner.id}>
                   {owner.full_name} ({pets.filter(p => p.owner === owner.id).length} pets)
                 </option>
               ))}
-              <option value={-1}>No Owner ({pets.filter(p => !p.owner).length} pets)</option>
+              <option value={-1}>{t('multiPet.noOwner')} ({t('multiPet.petsCount').replace('{count}', String(pets.filter(p => !p.owner).length))})</option>
             </select>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Select Pets * ({formData.pet_ids.length} selected{selectedOwner ? ` from ${filteredPets.length} shown` : ''})
+                {t('schedule.selectPets')} * ({formData.pet_ids.length} {t('schedule.selected')}{selectedOwner ? ` ${t('multiPet.selectedFrom').replace('{count}', String(filteredPets.length))}` : ''})
               </label>
               <div className="flex gap-2">
                 <button
@@ -250,21 +252,21 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
                   onClick={selectAllPets}
                   className="text-xs px-2 py-1 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded"
                 >
-                  Select All{selectedOwner ? ' Shown' : ''}
+                  {selectedOwner ? t('multiPet.selectAllShown') : t('multiPet.selectAll')}
                 </button>
                 <button
                   type="button"
                   onClick={clearAllPets}
                   className="text-xs px-2 py-1 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
                 >
-                  Clear
+                  {t('multiPet.clear')}
                 </button>
               </div>
             </div>
             <div className="border border-gray-300 dark:border-slate-600 rounded-lg max-h-48 overflow-y-auto">
               {filteredPets.length === 0 ? (
                 <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                  {pets.length === 0 ? 'Loading pets...' : 'No pets found for this owner'}
+                  {pets.length === 0 ? t('multiPet.loadingPets') : t('multiPet.noPetsFound')}
                 </div>
               ) : (
                 <div className="divide-y divide-gray-200 dark:divide-slate-700">
@@ -284,7 +286,7 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
                       <div className="flex-1">
                         <div className="font-medium text-gray-800 dark:text-gray-200">{pet.name}</div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {pet.species} • {pet.temperament} • Dom: {pet.dominance_level}
+                          {pet.species} • {pet.temperament} • {t('common.dom')}: {pet.dominance_level}
                         </div>
                       </div>
                     </label>
@@ -296,7 +298,7 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
 
           {selectedPets.length > 0 && (
             <div className="p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
-              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Selected pets:</div>
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('multiPet.selectedPets')}:</div>
               <div className="flex flex-wrap gap-2">
                 {selectedPets.map(pet => (
                   <span
@@ -320,7 +322,7 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Start Date *
+                {t('schedule.startDate')} *
               </label>
               <input
                 type="date"
@@ -332,7 +334,7 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                End Date *
+                {t('schedule.endDate')} *
               </label>
               <input
                 type="date"
@@ -347,14 +349,14 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
 
           {formData.start_date !== formData.end_date && (
             <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-sm text-indigo-700 dark:text-indigo-300">
-              Multi-day schedule: {formData.start_date} to {formData.end_date}
+              {t('schedule.multiDay')}: {formData.start_date} to {formData.end_date}
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Daily Start Time *
+                {t('schedule.dailyStartTime')} *
               </label>
               <select
                 required
@@ -369,7 +371,7 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Daily End Time *
+                {t('schedule.dailyEndTime')} *
               </label>
               <select
                 required
@@ -386,30 +388,30 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Status
+              {t('schedule.status')}
             </label>
             <select
               value={formData.status}
               onChange={e => setFormData({ ...formData, status: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
             >
-              <option value="scheduled">Scheduled</option>
-              <option value="checked_in">Checked In</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="scheduled">{t('schedule.statuses.scheduled')}</option>
+              <option value="checked_in">{t('schedule.statuses.checked_in')}</option>
+              <option value="completed">{t('schedule.statuses.completed')}</option>
+              <option value="cancelled">{t('schedule.statuses.cancelled')}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Notes (applied to all schedules)
+              {t('multiPet.notesLabel')}
             </label>
             <textarea
               value={formData.notes}
               onChange={e => setFormData({ ...formData, notes: e.target.value })}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-              placeholder="Any special instructions for these visits..."
+              placeholder=""
             />
           </div>
 
@@ -419,14 +421,14 @@ export default function MultiPetScheduleForm({ selectedDate, preselectedPetIds, 
               onClick={onClose}
               className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading || formData.pet_ids.length === 0}
               className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50"
             >
-              {loading ? 'Creating...' : `Create ${formData.pet_ids.length} Schedule${formData.pet_ids.length !== 1 ? 's' : ''}`}
+              {loading ? t('multiPet.creating') : t('schedule.createSchedule')}
             </button>
           </div>
         </form>

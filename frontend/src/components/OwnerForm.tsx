@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, User, Mail, Phone, MapPin, AlertCircle } from 'lucide-react';
 import { api, Owner, OwnerFormData } from '@/lib/api';
+import { useTranslation } from '@/lib/translations';
 
 interface OwnerFormProps {
   owner?: Owner;
@@ -11,6 +12,7 @@ interface OwnerFormProps {
 }
 
 export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<OwnerFormData>({
     first_name: '',
     last_name: '',
@@ -52,7 +54,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
       }
       onSave();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save owner');
+      setError(err instanceof Error ? err.message : t('errors.saveFailed'));
     } finally {
       setLoading(false);
     }
@@ -63,7 +65,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
-            {owner ? 'Edit Owner' : 'Add New Owner'}
+            {owner ? t('owner.editOwner') : t('owner.addOwner')}
           </h2>
           <button
             onClick={onClose}
@@ -84,7 +86,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                First Name *
+                {t('owner.firstName')} *
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -100,7 +102,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Last Name *
+                {t('owner.lastName')} *
               </label>
               <input
                 type="text"
@@ -115,7 +117,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Email *
+              {t('owner.email')} *
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -125,14 +127,14 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
                 value={formData.email}
                 onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
                 className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="john@example.com"
+                placeholder={t('owner.emailPlaceholder')}
               />
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Phone *
+              {t('owner.phone')} *
             </label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -142,14 +144,14 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
                 value={formData.phone}
                 onChange={e => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                 className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="+1 (555) 123-4567"
+                placeholder={t('owner.phonePlaceholder')}
               />
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Address
+              {t('owner.address')}
             </label>
             <div className="relative">
               <MapPin className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
@@ -165,12 +167,12 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
 
           <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
             <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Emergency Contact (Optional)
+              {t('owner.emergencyOptional')}
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
-                  Contact Name
+                  {t('owner.contactName')}
                 </label>
                 <input
                   type="text"
@@ -182,7 +184,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
               </div>
               <div>
                 <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
-                  Contact Phone
+                  {t('owner.contactPhone')}
                 </label>
                 <input
                   type="tel"
@@ -197,7 +199,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Notes
+              {t('owner.notes')}
             </label>
             <textarea
               value={formData.notes}
@@ -214,14 +216,14 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
               onClick={onClose}
               className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? 'Saving...' : owner ? 'Update Owner' : 'Add Owner'}
+              {loading ? t('common.saving') : owner ? t('owner.editOwner') : t('owner.addOwner')}
             </button>
           </div>
         </form>

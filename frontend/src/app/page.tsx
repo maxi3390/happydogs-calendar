@@ -48,7 +48,7 @@ export default function Home() {
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="animate-pulse flex flex-col items-center gap-4">
           <PawPrint className="w-16 h-16 text-indigo-500" />
-          <p className="text-gray-500 dark:text-gray-400">Loading...</p>
+          <p className="text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
         </div>
       </div>
     );

@@ -54,7 +54,7 @@ export default function OwnersPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this owner? This will also delete all their pets.')) {
+    if (!confirm(t('confirmations.deleteOwner'))) {
       return;
     }
 
@@ -74,7 +74,7 @@ export default function OwnersPage() {
 
   const handleScheduleOwnerPets = (ownerData: OwnerWithPets) => {
     if (ownerData.pets.length === 0) {
-      alert('This owner has no pets to schedule');
+      alert(t('owner.noPetsToSchedule'));
       return;
     }
     setSchedulePetIds(ownerData.pets.map(p => p.id));
@@ -121,7 +121,7 @@ export default function OwnersPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search owners by name, email, or phone..."
+              placeholder={t('owner.searchPlaceholder')}
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
@@ -137,14 +137,14 @@ export default function OwnersPage() {
           <div className="text-center py-12">
             <User className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-gray-400">
-              {searchTerm ? 'No owners found matching your search' : 'No owners registered yet'}
+              {searchTerm ? t('owner.noResults') : t('owner.noOwners')}
             </p>
             {!searchTerm && (
               <button
                 onClick={() => setShowOwnerForm(true)}
                 className="mt-4 text-indigo-600 dark:text-indigo-400 hover:underline"
               >
-                Add your first owner
+                {t('owner.addFirst')}
               </button>
             )}
           </div>
@@ -185,7 +185,7 @@ export default function OwnersPage() {
                     <div className="flex items-center gap-3">
                       <span className="flex items-center gap-1 px-3 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full text-sm">
                         <PawPrint className="w-4 h-4" />
-                        {owner.pet_count || 0} pets
+                        {owner.pet_count || 0} {t('common.pets')}
                       </span>
                       <button
                         onClick={e => {
@@ -219,23 +219,23 @@ export default function OwnersPage() {
                   <div className="border-t border-gray-100 dark:border-slate-700 p-4 bg-gray-50 dark:bg-slate-900/50">
                     {ownerDetails[owner.id].address && (
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                        <span className="font-medium">Address:</span> {ownerDetails[owner.id].address}
+                        <span className="font-medium">{t('owner.address')}:</span> {ownerDetails[owner.id].address}
                       </p>
                     )}
                     {ownerDetails[owner.id].emergency_contact && (
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                        <span className="font-medium">Emergency:</span> {ownerDetails[owner.id].emergency_contact} ({ownerDetails[owner.id].emergency_phone})
+                        <span className="font-medium">{t('owner.emergencyContact')}:</span> {ownerDetails[owner.id].emergency_contact} ({ownerDetails[owner.id].emergency_phone})
                       </p>
                     )}
                     {ownerDetails[owner.id].notes && (
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                        <span className="font-medium">Notes:</span> {ownerDetails[owner.id].notes}
+                        <span className="font-medium">{t('schedule.notes')}:</span> {ownerDetails[owner.id].notes}
                       </p>
                     )}
 
                     <div className="flex items-center justify-between mt-4 mb-3">
                       <h4 className="font-medium text-gray-800 dark:text-gray-200">
-                        Pets ({ownerDetails[owner.id].pets.length})
+                        {t('common.pets')} ({ownerDetails[owner.id].pets.length})
                       </h4>
                       {ownerDetails[owner.id].pets.length > 0 && (
                         <button
@@ -243,12 +243,12 @@ export default function OwnersPage() {
                           className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 transition-colors"
                         >
                           <Calendar className="w-4 h-4" />
-                          Schedule All Pets
+                          {t('owner.scheduleAllPets')}
                         </button>
                       )}
                     </div>
                     {ownerDetails[owner.id].pets.length === 0 ? (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 italic">No pets registered</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 italic">{t('owner.noPets')}</p>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {ownerDetails[owner.id].pets.map(pet => (
@@ -269,7 +269,7 @@ export default function OwnersPage() {
                               <button
                                 onClick={() => handleScheduleSinglePet(pet.id)}
                                 className="p-1.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
-                                title="Schedule this pet"
+                                title={t('owner.scheduleThisPet')}
                               >
                                 <Calendar className="w-4 h-4" />
                               </button>

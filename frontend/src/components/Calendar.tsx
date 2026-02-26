@@ -113,10 +113,10 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
       </div>
 
       <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1 sm:mb-2">
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+        {['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'].map((day, i) => (
           <div key={i} className="text-center text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 py-1 sm:py-2">
-            <span className="sm:hidden">{day}</span>
-            <span className="hidden sm:inline">{['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i]}</span>
+            <span className="sm:hidden">{t(`calendar.daysShort.${day}`)}</span>
+            <span className="hidden sm:inline">{t(`calendar.days.${day}`)}</span>
           </div>
         ))}
       </div>
@@ -188,7 +188,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                 ))}
                 {daySchedules.length > 2 && (
                   <div className="text-xs text-gray-500 dark:text-gray-400 px-1">
-                    +{daySchedules.length - 2} more
+                    {t('calendar.more').replace('{count}', String(daySchedules.length - 2))}
                   </div>
                 )}
               </div>

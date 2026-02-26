@@ -50,7 +50,7 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: Da
   }, [date, refreshTrigger]);
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this schedule?')) {
+    if (!confirm(t('confirmations.deleteSchedule'))) {
       return;
     }
 
@@ -60,7 +60,7 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: Da
       setSchedules(schedules.filter(s => s.id !== id));
     } catch (error) {
       console.error('Failed to delete schedule:', error);
-      alert('Failed to delete schedule');
+      alert(t('errors.deleteFailed'));
     } finally {
       setDeletingId(null);
     }
@@ -121,7 +121,7 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: Da
                     {schedule.conflicts?.length > 0 && (
                       <span className="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/50 px-2 py-0.5 rounded-full">
                         <AlertTriangle className="w-3 h-3" />
-                        {schedule.conflicts.length} conflict{schedule.conflicts.length > 1 ? 's' : ''}
+                        {schedule.conflicts.length} {t('schedule.conflicts')}
                       </span>
                     )}
                   </div>
@@ -162,7 +162,7 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: Da
 
                   {schedule.notes && (
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 italic">
-                      Note: {schedule.notes}
+                      {t('common.note')}: {schedule.notes}
                     </p>
                   )}
                 </div>
