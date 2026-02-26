@@ -11,12 +11,14 @@ export interface Owner {
   emergency_phone: string;
   notes: string;
   pet_count?: number;
+  profile_picture_url?: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface OwnerWithPets extends Owner {
   pets: PetListItem[];
+  profile_picture_url?: string | null;
 }
 
 export interface OwnerFormData {
@@ -72,8 +74,20 @@ export interface Pet {
   owner: number | null;
   owner_details?: OwnerListItem;
   vaccinations: Vaccination[];
+  profile_picture_url?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface DocumentItem {
+  id: number;
+  pet: number | null;
+  owner: number | null;
+  file: string;
+  file_url: string;
+  original_filename: string;
+  description: string;
+  uploaded_at: string;
 }
 
 export interface PetFormData {
@@ -197,6 +211,20 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
   return res.json();
 }
 
+async function uploadFile<T>(endpoint: string, formData: FormData): Promise<T> {
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || error.detail || `Upload Error: ${res.status}`);
+  }
+
+  return res.json();
+}
+
 export const api = {
   owners: {
     list: () => fetchApi<Owner[]>('/owners/'),
@@ -211,6 +239,12 @@ export const api = {
     }),
     delete: (id: number) => fetchApi<void>(`/owners/${id}/`, { method: 'DELETE' }),
     dropdown: () => fetchApi<OwnerListItem[]>('/owners/dropdown/'),
+    uploadProfilePicture: (id: number, file: File) => {
+      const formData = new FormData();
+      formData.append('profile_picture', file);
+      return uploadFile<Owner>(`/owners/${id}/upload_profile_picture/`, formData);
+    },
+    deleteProfilePicture: (id: number) => fetchApi<void>(`/owners/${id}/delete_profile_picture/`, { method: 'DELETE' }),
   },
 
   pets: {
@@ -231,6 +265,12 @@ export const api = {
       is_compatible: boolean;
       reason: string;
     }>>(`/pets/${id}/compatibility/`),
+    uploadProfilePicture: (id: number, file: File) => {
+      const formData = new FormData();
+      formData.append('profile_picture', file);
+      return uploadFile<Pet>(`/pets/${id}/upload_profile_picture/`, formData);
+    },
+    deleteProfilePicture: (id: number) => fetchApi<void>(`/pets/${id}/delete_profile_picture/`, { method: 'DELETE' }),
   },
 
   vaccinationTypes: {
@@ -296,5 +336,24 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
+  },
+
+  documents: {
+    list: (params?: { pet_id?: number; owner_id?: number }) => {
+      const searchParams = new URLSearchParams();
+      if (params?.pet_id) searchParams.set('pet_id', params.pet_id.toString());
+      if (params?.owner_id) searchParams.set('owner_id', params.owner_id.toString());
+      const query = searchParams.toString();
+      return fetchApi<DocumentItem[]>(`/documents/${query ? `?${query}` : ''}`);
+    },
+    upload: (file: File, data: { pet?: number; owner?: number; description?: string }) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (data.pet) formData.append('pet', data.pet.toString());
+      if (data.owner) formData.append('owner', data.owner.toString());
+      if (data.description) formData.append('description', data.description);
+      return uploadFile<DocumentItem>('/documents/', formData);
+    },
+    delete: (id: number) => fetchApi<void>(`/documents/${id}/`, { method: 'DELETE' }),
   },
 };

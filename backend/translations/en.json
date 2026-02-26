@@ -147,7 +147,11 @@
       "other": "Other"
     },
     "dominanceHint": "1 = Very submissive, 10 = Very dominant",
-    "assignOwnerHint": "Assign this pet to an owner or create a new owner first"
+    "assignOwnerHint": "Assign this pet to an owner or create a new owner first",
+    "profilePicture": "Profile Picture",
+    "uploadPhoto": "Upload Photo",
+    "removePhoto": "Remove Photo",
+    "changePhoto": "Change Photo"
   },
   "owner": {
     "title": "Owners",
@@ -171,7 +175,11 @@
     "searchPlaceholder": "Search owners by name, email, or phone...",
     "noResults": "No owners found matching your search",
     "noPetsToSchedule": "This owner has no pets to schedule",
-    "scheduleThisPet": "Schedule this pet"
+    "scheduleThisPet": "Schedule this pet",
+    "profilePicture": "Profile Picture",
+    "uploadPhoto": "Upload Photo",
+    "removePhoto": "Remove Photo",
+    "changePhoto": "Change Photo"
   },
   "multiPet": {
     "title": "Multi-Pet Schedule",
@@ -291,6 +299,31 @@
     "busy": "Busy",
     "adminMode": "Admin Mode",
     "fullAccess": "You have full access to all features"
+  },
+  "documents": {
+    "title": "Documents",
+    "upload": "Upload Document",
+    "noDocuments": "No documents uploaded yet",
+    "addFirst": "Upload your first document",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional description...",
+    "selectFile": "Select file",
+    "dragOrClick": "Drag & drop or click to select",
+    "supportedFormats": "JPEG, PNG, GIF, WEBP, PDF, DOC, DOCX — max 5 MB",
+    "uploading": "Uploading...",
+    "uploadSuccess": "Document uploaded successfully",
+    "uploadFailed": "Failed to upload document",
+    "confirmDelete": "Are you sure you want to delete this document?",
+    "fileTooLarge": "File is too large. Maximum size is 5 MB.",
+    "invalidFormat": "Invalid file format. Supported: JPEG, PNG, GIF, WEBP, PDF, DOC, DOCX",
+    "profilePicture": "Profile Picture",
+    "uploadPhoto": "Upload Photo",
+    "removePhoto": "Remove",
+    "changePhoto": "Change",
+    "photoUploading": "Uploading photo...",
+    "photoUploadFailed": "Failed to upload photo",
+    "photoFormatError": "Only JPEG, PNG, GIF, or WEBP images are allowed.",
+    "photoSizeError": "Image must be smaller than 5 MB."
   },
   "auth": {
     "signIn": "Sign In",

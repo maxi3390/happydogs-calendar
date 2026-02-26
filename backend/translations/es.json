@@ -147,7 +147,11 @@
       "other": "Otro"
     },
     "dominanceHint": "1 = Muy sumiso, 10 = Muy dominante",
-    "assignOwnerHint": "Asigna esta mascota a un dueño o crea uno nuevo primero"
+    "assignOwnerHint": "Asigna esta mascota a un dueño o crea uno nuevo primero",
+    "profilePicture": "Foto de Perfil",
+    "uploadPhoto": "Subir Foto",
+    "removePhoto": "Eliminar Foto",
+    "changePhoto": "Cambiar Foto"
   },
   "owner": {
     "title": "Dueños",
@@ -171,7 +175,11 @@
     "searchPlaceholder": "Buscar dueños por nombre, correo o teléfono...",
     "noResults": "No se encontraron dueños con esa búsqueda",
     "noPetsToSchedule": "Este dueño no tiene mascotas para programar",
-    "scheduleThisPet": "Programar esta mascota"
+    "scheduleThisPet": "Programar esta mascota",
+    "profilePicture": "Foto de Perfil",
+    "uploadPhoto": "Subir Foto",
+    "removePhoto": "Eliminar Foto",
+    "changePhoto": "Cambiar Foto"
   },
   "multiPet": {
     "title": "Horario Multi-Mascota",
@@ -291,6 +299,31 @@
     "busy": "Ocupado",
     "adminMode": "Modo Administrador",
     "fullAccess": "Tienes acceso completo a todas las funciones"
+  },
+  "documents": {
+    "title": "Documentos",
+    "upload": "Subir Documento",
+    "noDocuments": "No hay documentos subidos",
+    "addFirst": "Sube tu primer documento",
+    "description": "Descripción",
+    "descriptionPlaceholder": "Descripción opcional...",
+    "selectFile": "Seleccionar archivo",
+    "dragOrClick": "Arrastra o haz clic para seleccionar",
+    "supportedFormats": "JPEG, PNG, GIF, WEBP, PDF, DOC, DOCX — máx 5 MB",
+    "uploading": "Subiendo...",
+    "uploadSuccess": "Documento subido exitosamente",
+    "uploadFailed": "Error al subir documento",
+    "confirmDelete": "¿Estás seguro de que deseas eliminar este documento?",
+    "fileTooLarge": "El archivo es demasiado grande. Tamaño máximo: 5 MB.",
+    "invalidFormat": "Formato de archivo inválido. Soportados: JPEG, PNG, GIF, WEBP, PDF, DOC, DOCX",
+    "profilePicture": "Foto de Perfil",
+    "uploadPhoto": "Subir Foto",
+    "removePhoto": "Eliminar",
+    "changePhoto": "Cambiar",
+    "photoUploading": "Subiendo foto...",
+    "photoUploadFailed": "Error al subir foto",
+    "photoFormatError": "Solo se permiten imágenes JPEG, PNG, GIF o WEBP.",
+    "photoSizeError": "La imagen debe ser menor a 5 MB."
   },
   "auth": {
     "signIn": "Iniciar Sesión",

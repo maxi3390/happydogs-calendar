@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { X, Plus } from 'lucide-react';
 import { api, Pet, PetFormData, OwnerListItem, Vaccination, VaccinationType } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import ProfilePictureUpload from '@/components/ProfilePictureUpload';
+import DocumentUpload from '@/components/DocumentUpload';
 
 interface PetFormProps {
   pet?: Pet;
@@ -21,6 +23,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [owners, setOwners] = useState<OwnerListItem[]>([]);
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(pet?.profile_picture_url || null);
   const [vaxTypes, setVaxTypes] = useState<VaccinationType[]>([]);
   const [vaccinations, setVaccinations] = useState<Array<{ vax_type: string; date: string }>>([
     ...(pet?.vaccinations?.map(v => ({ vax_type: v.vax_type, date: v.date })) || []),
@@ -355,6 +358,29 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
               placeholder="Any special care instructions, medical conditions, etc."
             />
           </div>
+
+          {pet && (
+            <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
+              <div className="flex flex-col items-center mb-4">
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  {t('pet.profilePicture')}
+                </h3>
+                <ProfilePictureUpload
+                  currentUrl={profilePictureUrl}
+                  initials={formData.name?.[0]?.toUpperCase() || '?'}
+                  onUpload={async (file) => {
+                    const updated = await api.pets.uploadProfilePicture(pet.id, file);
+                    setProfilePictureUrl(updated.profile_picture_url || null);
+                  }}
+                  onDelete={async () => {
+                    await api.pets.deleteProfilePicture(pet.id);
+                    setProfilePictureUrl(null);
+                  }}
+                />
+              </div>
+              <DocumentUpload petId={pet.id} />
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
             <button

@@ -161,10 +161,14 @@ export default function OwnersPage() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
-                        <span className="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
-                          {owner.first_name[0]}{owner.last_name[0]}
-                        </span>
+                      <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center overflow-hidden">
+                        {owner.profile_picture_url ? (
+                          <img src={owner.profile_picture_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
+                            {owner.first_name[0]}{owner.last_name[0]}
+                          </span>
+                        )}
                       </div>
                       <div>
                         <h3 className="font-semibold text-gray-900 dark:text-white">

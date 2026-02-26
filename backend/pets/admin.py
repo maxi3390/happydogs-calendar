@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Owner, Pet, Schedule, Vaccination
+from .models import Owner, Pet, Schedule, Vaccination, Document
 
 
 @admin.register(Owner)
@@ -38,3 +38,10 @@ class ScheduleAdmin(admin.ModelAdmin):
     list_display = ['pet', 'start_date', 'end_date', 'start_time', 'end_time', 'status']
     list_filter = ['start_date', 'status']
     search_fields = ['pet__name']
+
+
+@admin.register(Document)
+class DocumentAdmin(admin.ModelAdmin):
+    list_display = ['original_filename', 'pet', 'owner', 'description', 'uploaded_at']
+    list_filter = ['uploaded_at']
+    search_fields = ['original_filename', 'description', 'pet__name', 'owner__first_name', 'owner__last_name']

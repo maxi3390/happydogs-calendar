@@ -2,12 +2,13 @@ import json
 import os
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from django.db.models import Q
 from django.conf import settings
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
-from .models import Owner, Pet, Schedule, VaccinationType
+from .models import Owner, Pet, Schedule, VaccinationType, Document
 from nursery_settings.models import NurserySetting
 from .serializers import (
     OwnerSerializer,
@@ -20,6 +21,7 @@ from .serializers import (
     ConflictCheckSerializer,
     BatchScheduleCreateSerializer,
     VaccinationTypeSerializer,
+    DocumentSerializer,
 )
 
 
@@ -79,6 +81,43 @@ class OwnerViewSet(viewsets.ModelViewSet):
         serializer = OwnerListSerializer(owners, many=True)
         return Response(serializer.data)
 
+    @extend_schema(
+        summary="Upload owner profile picture",
+        description="Upload or replace the profile picture for an owner.",
+        request={'content': {'multipart/form-data': {'type': 'object', 'properties': {'profile_picture': {'type': 'string', 'format': 'binary'}}}}},
+        tags=['owners']
+    )
+    @action(detail=True, methods=['post'], parser_classes=[MultiPartParser, FormParser])
+    def upload_profile_picture(self, request, pk=None):
+        """Upload a profile picture for an owner"""
+        owner = self.get_object()
+        file = request.FILES.get('profile_picture')
+        if not file:
+            return Response({'error': 'No file provided.'}, status=status.HTTP_400_BAD_REQUEST)
+        if owner.profile_picture:
+            owner.profile_picture.delete(save=False)
+        owner.profile_picture = file
+        try:
+            owner.full_clean()
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        owner.save()
+        serializer = OwnerSerializer(owner, context={'request': request})
+        return Response(serializer.data)
+
+    @extend_schema(
+        summary="Delete owner profile picture",
+        description="Remove the profile picture for an owner.",
+        tags=['owners']
+    )
+    @action(detail=True, methods=['delete'], url_path='delete_profile_picture')
+    def delete_profile_picture(self, request, pk=None):
+        """Delete an owner's profile picture"""
+        owner = self.get_object()
+        if owner.profile_picture:
+            owner.profile_picture.delete(save=True)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 @extend_schema_view(
     list=extend_schema(
@@ -118,6 +157,43 @@ class PetViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         return PetSerializer
+
+    @extend_schema(
+        summary="Upload pet profile picture",
+        description="Upload or replace the profile picture for a pet.",
+        request={'content': {'multipart/form-data': {'type': 'object', 'properties': {'profile_picture': {'type': 'string', 'format': 'binary'}}}}},
+        tags=['pets']
+    )
+    @action(detail=True, methods=['post'], parser_classes=[MultiPartParser, FormParser])
+    def upload_profile_picture(self, request, pk=None):
+        """Upload a profile picture for a pet"""
+        pet = self.get_object()
+        file = request.FILES.get('profile_picture')
+        if not file:
+            return Response({'error': 'No file provided.'}, status=status.HTTP_400_BAD_REQUEST)
+        if pet.profile_picture:
+            pet.profile_picture.delete(save=False)
+        pet.profile_picture = file
+        try:
+            pet.full_clean()
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        pet.save()
+        serializer = PetSerializer(pet, context={'request': request})
+        return Response(serializer.data)
+
+    @extend_schema(
+        summary="Delete pet profile picture",
+        description="Remove the profile picture for a pet.",
+        tags=['pets']
+    )
+    @action(detail=True, methods=['delete'], url_path='delete_profile_picture')
+    def delete_profile_picture(self, request, pk=None):
+        """Delete a pet's profile picture"""
+        pet = self.get_object()
+        if pet.profile_picture:
+            pet.profile_picture.delete(save=True)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(
         summary="Check pet compatibility",
@@ -492,6 +568,50 @@ class ScheduleViewSet(viewsets.ModelViewSet):
 class VaccinationTypeViewSet(viewsets.ModelViewSet):
     queryset = VaccinationType.objects.all()
     serializer_class = VaccinationTypeSerializer
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List documents",
+        description="List documents, optionally filtered by pet_id or owner_id.",
+        parameters=[
+            OpenApiParameter(name='pet_id', type=OpenApiTypes.INT, description='Filter by pet ID'),
+            OpenApiParameter(name='owner_id', type=OpenApiTypes.INT, description='Filter by owner ID'),
+        ],
+        tags=['documents']
+    ),
+    create=extend_schema(
+        summary="Upload a document",
+        description="Upload a document and attach it to a pet or an owner. Supported formats: JPEG, PNG, GIF, WEBP, PDF, DOC, DOCX. Max size: 5 MB.",
+        tags=['documents']
+    ),
+    destroy=extend_schema(
+        summary="Delete a document",
+        description="Remove an uploaded document.",
+        tags=['documents']
+    ),
+)
+class DocumentViewSet(viewsets.ModelViewSet):
+    queryset = Document.objects.all()
+    serializer_class = DocumentSerializer
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_queryset(self):
+        queryset = Document.objects.all()
+        pet_id = self.request.query_params.get('pet_id')
+        owner_id = self.request.query_params.get('owner_id')
+        if pet_id:
+            queryset = queryset.filter(pet_id=pet_id)
+        if owner_id:
+            queryset = queryset.filter(owner_id=owner_id)
+        return queryset
+
+    def perform_create(self, serializer):
+        file_obj = self.request.FILES.get('file')
+        if file_obj:
+            serializer.save(original_filename=file_obj.name)
+        else:
+            serializer.save()
 
 
 @extend_schema(

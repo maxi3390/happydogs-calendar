@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from .validators import validate_file_size, validate_image_type, validate_document_type
 
 
 class Owner(models.Model):
@@ -12,6 +13,13 @@ class Owner(models.Model):
     emergency_contact = models.CharField(max_length=100, blank=True)
     emergency_phone = models.CharField(max_length=20, blank=True)
     notes = models.TextField(blank=True)
+    profile_picture = models.ImageField(
+        upload_to='profile_pictures/owners/',
+        blank=True,
+        null=True,
+        validators=[validate_file_size, validate_image_type],
+        help_text="Profile picture (JPEG, PNG, GIF, WEBP — max 5 MB)",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -69,6 +77,13 @@ class Pet(models.Model):
     birth_date = models.DateField(null=True, blank=True, help_text="Date of birth (dd/mm/yyyy)")
     special_notes = models.TextField(blank=True)
     owner = models.ForeignKey(Owner, on_delete=models.CASCADE, related_name='pets', null=True, blank=True)
+    profile_picture = models.ImageField(
+        upload_to='profile_pictures/pets/',
+        blank=True,
+        null=True,
+        validators=[validate_file_size, validate_image_type],
+        help_text="Profile picture (JPEG, PNG, GIF, WEBP — max 5 MB)",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -206,3 +221,37 @@ class Schedule(models.Model):
                 })
 
         return conflicts
+
+
+class Document(models.Model):
+    """Model representing a document attached to a pet or an owner."""
+    pet = models.ForeignKey(
+        Pet, on_delete=models.CASCADE, related_name='documents',
+        null=True, blank=True,
+    )
+    owner = models.ForeignKey(
+        Owner, on_delete=models.CASCADE, related_name='documents',
+        null=True, blank=True,
+    )
+    file = models.FileField(
+        upload_to='documents/%Y/%m/',
+        validators=[validate_file_size, validate_document_type],
+        help_text="Supported formats: JPEG, PNG, GIF, WEBP, PDF, DOC, DOCX — max 5 MB",
+    )
+    original_filename = models.CharField(max_length=255)
+    description = models.CharField(max_length=255, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        target = self.pet or self.owner or "unlinked"
+        return f"{self.original_filename} ({target})"
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if not self.pet and not self.owner:
+            raise ValidationError("A document must be linked to a pet or an owner.")
+        if self.pet and self.owner:
+            raise ValidationError("A document cannot be linked to both a pet and an owner.")

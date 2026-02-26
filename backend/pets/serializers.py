@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.db import transaction
-from .models import Owner, Pet, Schedule, Vaccination, VaccinationType
+from .models import Owner, Pet, Schedule, Vaccination, VaccinationType, Document
 
 
 class VaccinationTypeSerializer(serializers.ModelSerializer):
@@ -11,6 +11,7 @@ class VaccinationTypeSerializer(serializers.ModelSerializer):
 
 class OwnerSerializer(serializers.ModelSerializer):
     pet_count = serializers.SerializerMethodField()
+    profile_picture_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Owner
@@ -19,6 +20,14 @@ class OwnerSerializer(serializers.ModelSerializer):
 
     def get_pet_count(self, obj):
         return obj.pets.count()
+
+    def get_profile_picture_url(self, obj):
+        if obj.profile_picture:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.profile_picture.url)
+            return obj.profile_picture.url
+        return None
 
 
 class OwnerListSerializer(serializers.ModelSerializer):
@@ -40,11 +49,20 @@ class VaccinationSerializer(serializers.ModelSerializer):
 class PetSerializer(serializers.ModelSerializer):
     owner_details = OwnerListSerializer(source='owner', read_only=True)
     vaccinations = VaccinationSerializer(many=True, required=False)
+    profile_picture_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Pet
         fields = '__all__'
         read_only_fields = ['created_at', 'updated_at']
+
+    def get_profile_picture_url(self, obj):
+        if obj.profile_picture:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.profile_picture.url)
+            return obj.profile_picture.url
+        return None
 
     @transaction.atomic
     def create(self, validated_data):
@@ -87,10 +105,19 @@ class PetWithOwnerSerializer(serializers.ModelSerializer):
 class OwnerWithPetsSerializer(serializers.ModelSerializer):
     """Serializer for owner with their pets"""
     pets = PetListSerializer(many=True, read_only=True)
+    profile_picture_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Owner
-        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'address', 'emergency_contact', 'emergency_phone', 'notes', 'pets', 'created_at']
+        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'address', 'emergency_contact', 'emergency_phone', 'notes', 'profile_picture_url', 'pets', 'created_at']
+
+    def get_profile_picture_url(self, obj):
+        if obj.profile_picture:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.profile_picture.url)
+            return obj.profile_picture.url
+        return None
 
 
 class ScheduleSerializer(serializers.ModelSerializer):
@@ -155,3 +182,38 @@ class BatchScheduleCreateSerializer(serializers.Serializer):
         if data['start_date'] > data['end_date']:
             raise serializers.ValidationError("End date must be on or after start date")
         return data
+
+
+class DocumentSerializer(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Document
+        fields = ['id', 'pet', 'owner', 'file', 'file_url', 'original_filename',
+                  'description', 'uploaded_at']
+        read_only_fields = ['uploaded_at', 'original_filename']
+
+    def get_file_url(self, obj):
+        if obj.file:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.file.url)
+            return obj.file.url
+        return None
+
+    def validate(self, data):
+        pet = data.get('pet')
+        owner = data.get('owner')
+        if not pet and not owner:
+            raise serializers.ValidationError(
+                "A document must be linked to a pet or an owner.")
+        if pet and owner:
+            raise serializers.ValidationError(
+                "A document cannot be linked to both a pet and an owner.")
+        return data
+
+    def create(self, validated_data):
+        file_obj = validated_data.get('file')
+        if file_obj:
+            validated_data['original_filename'] = file_obj.name
+        return super().create(validated_data)

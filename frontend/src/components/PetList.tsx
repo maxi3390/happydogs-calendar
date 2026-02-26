@@ -100,9 +100,15 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
           >
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-lg">
-                  {speciesIcons[pet.species] || speciesIcons.other}
-                </div>
+                {pet.profile_picture_url ? (
+                  <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                    <img src={pet.profile_picture_url} alt={pet.name} className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                    {speciesIcons[pet.species] || speciesIcons.other}
+                  </div>
+                )}
                 <div>
                   <h4 className="font-medium text-gray-800 dark:text-gray-100">{pet.name}</h4>
                   <p className="text-sm text-gray-500 dark:text-gray-400">

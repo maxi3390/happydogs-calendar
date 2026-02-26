@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { X, User, Mail, Phone, MapPin, AlertCircle } from 'lucide-react';
 import { api, Owner, OwnerFormData } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import ProfilePictureUpload from '@/components/ProfilePictureUpload';
+import DocumentUpload from '@/components/DocumentUpload';
 
 interface OwnerFormProps {
   owner?: Owner;
@@ -25,6 +27,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(owner?.profile_picture_url || null);
 
   useEffect(() => {
     if (owner) {
@@ -38,6 +41,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
         emergency_phone: owner.emergency_phone || '',
         notes: owner.notes || '',
       });
+      setProfilePictureUrl(owner.profile_picture_url || null);
     }
   }, [owner]);
 
@@ -209,6 +213,29 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
               placeholder="Any additional notes about this owner..."
             />
           </div>
+
+          {owner && (
+            <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
+              <div className="flex flex-col items-center mb-4">
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  {t('owner.profilePicture')}
+                </h3>
+                <ProfilePictureUpload
+                  currentUrl={profilePictureUrl}
+                  initials={`${formData.first_name?.[0] || ''}${formData.last_name?.[0] || ''}`}
+                  onUpload={async (file) => {
+                    const updated = await api.owners.uploadProfilePicture(owner.id, file);
+                    setProfilePictureUrl(updated.profile_picture_url || null);
+                  }}
+                  onDelete={async () => {
+                    await api.owners.deleteProfilePicture(owner.id);
+                    setProfilePictureUrl(null);
+                  }}
+                />
+              </div>
+              <DocumentUpload ownerId={owner.id} />
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
             <button
