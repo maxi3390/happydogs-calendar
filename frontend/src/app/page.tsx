@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Calendar from '@/components/Calendar';
 import ScheduleForm from '@/components/ScheduleForm';
-import MultiPetScheduleForm from '@/components/MultiPetScheduleForm';
 import DaySchedule from '@/components/DaySchedule';
 import WeekView from '@/components/WeekView';
 import Navigation from '@/components/Navigation';
@@ -223,7 +222,8 @@ export default function Home() {
       )}
 
       {showMultiScheduleForm && (
-        <MultiPetScheduleForm
+        <ScheduleForm
+          mode="multi"
           selectedDate={selectedDate}
           onClose={() => setShowMultiScheduleForm(false)}
           onSave={handleMultiScheduleSave}

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Search, User, Mail, Phone, PawPrint, Edit2, Trash2, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 import { api, Owner, OwnerWithPets } from '@/lib/api';
 import OwnerForm from '@/components/OwnerForm';
-import MultiPetScheduleForm from '@/components/MultiPetScheduleForm';
+import ScheduleForm from '@/components/ScheduleForm';
 import Navigation from '@/components/Navigation';
 import { useTranslation } from '@/lib/translations';
 
@@ -302,7 +302,8 @@ export default function OwnersPage() {
       )}
 
       {showScheduleForm && (
-        <MultiPetScheduleForm
+        <ScheduleForm
+          mode="multi"
           selectedDate={new Date()}
           preselectedPetIds={schedulePetIds}
           onClose={() => {
