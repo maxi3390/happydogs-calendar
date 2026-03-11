@@ -1,22 +1,11 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import type { Language, LanguageInfo, Translations, TranslationValue } from '@/domain/translations/types';
+
+export type { Language, LanguageInfo } from '@/domain/translations/types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-
-export type Language = 'en' | 'es';
-
-export interface LanguageInfo {
-  code: string;
-  name: string;
-  nativeName: string;
-}
-
-type TranslationValue = string | { [key: string]: TranslationValue };
-
-interface Translations {
-  [key: string]: TranslationValue;
-}
 
 interface TranslationContextType {
   language: Language;

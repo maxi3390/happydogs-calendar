@@ -1,45 +1,11 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import type { User, AuthTokens, RegisterData, AuthContextType } from '@/domain/auth/types';
+
+export type { User } from '@/domain/auth/types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-
-export interface User {
-  id: number;
-  email: string;
-  first_name: string;
-  last_name: string;
-  full_name: string;
-  role: 'admin' | 'user';
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-interface AuthTokens {
-  access: string;
-  refresh: string;
-}
-
-interface AuthContextType {
-  user: User | null;
-  tokens: AuthTokens | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  isAdmin: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
-  refreshToken: () => Promise<boolean>;
-}
-
-interface RegisterData {
-  email: string;
-  password: string;
-  password_confirm: string;
-  first_name: string;
-  last_name: string;
-}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
