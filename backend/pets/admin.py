@@ -1,5 +1,9 @@
 from django.contrib import admin
-from .models import Owner, Pet, Schedule, Vaccination, Document
+from domain.owners.models import Owner
+from domain.pets.models import Pet
+from domain.vaccinations.models import Vaccination
+from domain.schedules.models import Schedule
+from domain.documents.models import Document
 
 
 @admin.register(Owner)
