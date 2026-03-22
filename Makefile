@@ -2,14 +2,15 @@
 
 # Default target
 help:
-	@echo "Happy Pet Nursery - Available Commands"
+	@echo "Happy Dogs Nursery - Available Commands"
 	@echo "======================================"
 	@echo ""
 	@echo "Docker Management:"
 	@echo "  make build          - Build all Docker containers"
 	@echo "  make build-no-cache - Build containers without cache"
 	@echo "  make up             - Start all services"
-	@echo "  make down           - Stop all services"
+	@echo "  make stop           - Stop all services"
+	@echo "  make down           - Stop and remove all services"
 	@echo "  make restart        - Restart all services"
 	@echo "  make rebuild        - Rebuild and restart all services"
 	@echo "  make clean          - Stop services and remove volumes"
@@ -52,12 +53,15 @@ build-no-cache:
 up:
 	docker compose up -d
 
+stop:
+	docker compose stop
+
 down:
 	docker compose down
 
-restart: down up
+restart: stop up
 
-rebuild: down build up
+rebuild: stop build up
 
 clean:
 	docker compose down -v --remove-orphans
@@ -95,7 +99,7 @@ makemigrations:
 createsuperuser:
 	docker compose exec backend python manage.py createsuperuser
 
-ADMIN_EMAIL ?= admin@happypet.com
+ADMIN_EMAIL ?= admin@happydogs.com.ar
 ADMIN_PASSWORD ?= admin1234
 ADMIN_FIRST ?= Admin
 ADMIN_LAST ?= User
