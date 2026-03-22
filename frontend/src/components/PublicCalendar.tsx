@@ -5,7 +5,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSam
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/lib/translations';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 interface PublicCalendarProps {
   selectedDate: Date;
@@ -43,15 +43,15 @@ export default function PublicCalendar({ selectedDate, onDateSelect }: PublicCal
     try {
       const startDate = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(currentMonth), 'yyyy-MM-dd');
-      
+
       const response = await fetch(
         `${API_BASE}/schedules/?start_date=${startDate}&end_date=${endDate}`
       );
-      
+
       if (response.ok) {
         const schedules = await response.json();
         const availabilityMap: Record<string, DayAvailability> = {};
-        
+
         // Count schedules per day
         schedules.forEach((schedule: any) => {
           const date = schedule.start_date;

@@ -5,7 +5,7 @@ import type { Language, LanguageInfo, Translations, TranslationValue } from '@/d
 
 export type { Language, LanguageInfo } from '@/domain/translations/types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 interface TranslationContextType {
   language: Language;
