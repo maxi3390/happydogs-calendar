@@ -93,19 +93,19 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
       <div className="p-4 border-b border-gray-100 dark:border-slate-700 bg-muted/50 dark:bg-slate-700/50">
         <h3 className="font-semibold text-gray-800 dark:text-gray-100">{t('pet.registeredPets')} ({pets.length})</h3>
       </div>
-      <div className="divide-y divide-gray-100 dark:divide-slate-700 max-h-[500px] overflow-y-auto">
+      <div className="divide-y divide-gray-100 dark:divide-slate-700">
         {pets.map(pet => (
           <div
             key={pet.id}
             className="p-4 hover:bg-muted/50 dark:hover:bg-slate-700/50 transition-colors border-b border-border/10 last:border-0"
           >
-            <div 
+            <div
               className="flex items-start justify-between cursor-pointer group"
               onClick={() => setExpandedPetId(expandedPetId === pet.id ? null : pet.id)}
             >
               <div className="flex items-start gap-4 flex-1">
                 {pet.profile_picture_url ? (
-                  <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 border border-border/50 shadow-sm relative group">
+                  <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 border border-border/50 shadow-sm relative">
                     <img src={pet.profile_picture_url} alt={pet.name} className="w-full h-full object-cover" />
                   </div>
                 ) : (
@@ -114,7 +114,7 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
                   </div>
                 )}
                 <div className="flex-1 mt-1">
-                  <h4 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors">{pet.name}</h4>
+                  <h4 className={`font-semibold text-lg transition-colors ${expandedPetId === pet.id ? 'text-primary' : 'text-foreground group-hover:text-primary'}`}>{pet.name}</h4>
                   <p className="text-sm text-muted-foreground font-medium">
                     {pet.breed || pet.species} • {pet.age} {t('common.years')}
                   </p>
@@ -134,7 +134,7 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
-                <div className="p-2 ml-1 text-muted-foreground group-hover:bg-secondary rounded-lg transition-colors">
+                <div className={`p-2 ml-1 rounded-lg transition-colors ${expandedPetId === pet.id ? 'text-foreground bg-secondary' : 'text-muted-foreground group-hover:bg-secondary'}`}>
                   <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${expandedPetId === pet.id ? 'rotate-180' : ''}`} />
                 </div>
               </div>
@@ -156,7 +156,7 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Profile Basics */}
                   <div className="flex-1 space-y-4">
                     <div>
@@ -177,7 +177,7 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
                         </span>
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-secondary/30 p-3 rounded-xl">
                         <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">{t('pet.sex')}</span>
@@ -188,7 +188,7 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
                         <p className="font-semibold text-sm text-foreground mt-0.5 capitalize">{pet.neutered ? t('common.yes') : t('common.no')}</p>
                       </div>
                     </div>
-                    
+
                     {pet.special_notes && (
                       <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl">
                         <span className="text-[10px] text-amber-600 dark:text-amber-500 uppercase font-bold tracking-wider">{t('pet.specialNotes')}</span>

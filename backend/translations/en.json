@@ -154,7 +154,8 @@
     "profilePicture": "Profile Picture",
     "uploadPhoto": "Upload Photo",
     "removePhoto": "Remove Photo",
-    "changePhoto": "Change Photo"
+    "changePhoto": "Change Photo",
+    "traits": "Traits"
   },
   "owner": {
     "title": "Owners",
