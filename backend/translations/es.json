@@ -173,6 +173,8 @@
     "contactPhone": "Teléfono del Contacto",
     "notes": "Notas",
     "searchPlaceholder": "Buscar dueños por nombre, correo o teléfono...",
+    "emailPlaceholder": "duenio@email.com",
+    "phonePlaceholder": "3424666555",
     "noResults": "No se encontraron dueños con esa búsqueda",
     "noPetsToSchedule": "Este dueño no tiene mascotas para programar",
     "scheduleThisPet": "Programar esta mascota",
