@@ -43,6 +43,12 @@ services:
       - traefik.http.routers.api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)
       - traefik.http.routers.api.entrypoints=websecure
       - traefik.http.routers.api.tls=true
+
+      # Router: serve /media/ directly from Django
+      - traefik.http.routers.media.rule=Host(`${DOMAIN}`) && PathPrefix(`/media`)
+      - traefik.http.routers.media.entrypoints=websecure
+      - traefik.http.routers.media.tls=true
+      - traefik.http.routers.media.service=api
       # Uncomment the line below to use Let's Encrypt instead of self-signed:
       # - traefik.http.routers.api.tls.certresolver=letsencrypt
     networks:
