@@ -48,6 +48,11 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
     throw new Error(error.detail || `API Error: ${res.status}`);
   }
 
+  // Handle 204 No Content responses
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
   return res.json();
 }
 
