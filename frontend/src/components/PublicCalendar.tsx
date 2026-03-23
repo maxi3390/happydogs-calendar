@@ -124,7 +124,7 @@ export default function PublicCalendar({ selectedDate, onDateSelect }: PublicCal
           onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
           className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
         >
-          <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          <ChevronLeft className="w-5 h-5 text-muted-foreground" />
         </button>
         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
           {format(currentMonth, 'MMMM yyyy')}
@@ -133,7 +133,7 @@ export default function PublicCalendar({ selectedDate, onDateSelect }: PublicCal
           onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
           className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
         >
-          <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          <ChevronRight className="w-5 h-5 text-muted-foreground" />
         </button>
       </div>
 
@@ -142,7 +142,7 @@ export default function PublicCalendar({ selectedDate, onDateSelect }: PublicCal
         {dayNames.map((day, index) => (
           <div
             key={index}
-            className="text-center text-sm font-medium text-gray-500 dark:text-gray-400 py-2"
+            className="text-center text-sm font-medium text-muted-foreground py-2"
           >
             {day}
           </div>
@@ -163,9 +163,9 @@ export default function PublicCalendar({ selectedDate, onDateSelect }: PublicCal
               disabled={!isCurrentMonth}
               className={`
                 aspect-square p-1 rounded-lg transition-all text-sm
-                ${!isCurrentMonth ? 'text-gray-300 dark:text-gray-600 cursor-default' : 'hover:bg-gray-100 dark:hover:bg-slate-700'}
-                ${isSelected ? 'bg-indigo-600 text-white hover:bg-indigo-700' : ''}
-                ${isToday && !isSelected ? 'ring-2 ring-indigo-400 dark:ring-indigo-500' : ''}
+                ${!isCurrentMonth ? 'text-gray-300 dark:text-muted-foreground cursor-default' : 'hover:bg-gray-100 dark:hover:bg-slate-700'}
+                ${isSelected ? 'bg-primary hover:bg-primary/90 text-white hover:bg-indigo-700' : ''}
+                ${isToday && !isSelected ? 'ring-2 ring-indigo-400 dark:ring-ring' : ''}
                 ${isCurrentMonth && !isSelected ? 'text-gray-700 dark:text-gray-300' : ''}
               `}
             >
@@ -181,8 +181,8 @@ export default function PublicCalendar({ selectedDate, onDateSelect }: PublicCal
       </div>
 
       {/* Legend */}
-      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-slate-700">
-        <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+      <div className="mt-4 pt-4 border-t border-border">
+        <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 bg-green-500 rounded-full"></span>
             <span>{t('public.available') || 'Available'}</span>
@@ -199,7 +199,7 @@ export default function PublicCalendar({ selectedDate, onDateSelect }: PublicCal
       </div>
 
       {loading && (
-        <div className="absolute inset-0 bg-white/50 dark:bg-slate-800/50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-card text-card-foreground/50 dark:bg-slate-800/50 flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
         </div>
       )}

@@ -1,69 +1,51 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 
-type Theme = 'light' | 'dark' | 'system';
+type Theme = 'light' | 'dark';
 
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>('system');
+  const [theme, setTheme] = useState<Theme>('dark');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     const stored = localStorage.getItem('theme') as Theme | null;
-    if (stored) {
-      setTheme(stored);
-      applyTheme(stored);
+    if (stored === 'light') {
+      setTheme('light');
+      document.documentElement.classList.remove('dark');
     } else {
-      applyTheme('system');
+      setTheme('dark');
+      document.documentElement.classList.add('dark');
+      if (!stored) localStorage.setItem('theme', 'dark');
     }
   }, []);
-
-  const applyTheme = (newTheme: Theme) => {
-    const root = document.documentElement;
-
-    if (newTheme === 'system') {
-      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      root.classList.toggle('dark', systemDark);
-    } else {
-      root.classList.toggle('dark', newTheme === 'dark');
-    }
-  };
 
   const handleThemeChange = (newTheme: Theme) => {
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
-    applyTheme(newTheme);
-  };
-
-  useEffect(() => {
-    if (theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handler = (e: MediaQueryListEvent) => {
-        document.documentElement.classList.toggle('dark', e.matches);
-      };
-      mediaQuery.addEventListener('change', handler);
-      return () => mediaQuery.removeEventListener('change', handler);
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
-  }, [theme]);
+  };
 
   if (!mounted) {
     return (
-      <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-slate-700 rounded-lg">
-        <div className="w-8 h-8" />
-      </div>
+      <div className="flex items-center gap-1 p-1 bg-secondary rounded-full w-[72px] h-9 animate-pulse" />
     );
   }
 
   return (
-    <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-slate-700 rounded-lg">
+    <div className="flex items-center gap-1 p-1 bg-secondary/80 backdrop-blur-md rounded-full border border-border/50 shadow-inner">
       <button
         onClick={() => handleThemeChange('light')}
-        className={`p-2 rounded-md transition-colors ${
+        className={`p-1.5 rounded-full transition-all duration-300 ${
           theme === 'light'
-            ? 'bg-white dark:bg-slate-600 text-amber-500 shadow-sm'
-            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+            ? 'bg-card text-card-foreground text-orange-500 shadow-md scale-100'
+            : 'text-muted-foreground hover:text-foreground scale-90 opacity-70'
         }`}
         title="Light mode"
         aria-label="Light mode"
@@ -71,23 +53,11 @@ export default function ThemeToggle() {
         <Sun className="w-4 h-4" />
       </button>
       <button
-        onClick={() => handleThemeChange('system')}
-        className={`p-2 rounded-md transition-colors ${
-          theme === 'system'
-            ? 'bg-white dark:bg-slate-600 text-indigo-500 shadow-sm'
-            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-        }`}
-        title="System preference"
-        aria-label="System preference"
-      >
-        <Monitor className="w-4 h-4" />
-      </button>
-      <button
         onClick={() => handleThemeChange('dark')}
-        className={`p-2 rounded-md transition-colors ${
+        className={`p-1.5 rounded-full transition-all duration-300 ${
           theme === 'dark'
-            ? 'bg-white dark:bg-slate-600 text-indigo-400 shadow-sm'
-            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+            ? 'bg-slate-800 text-indigo-400 shadow-md scale-100'
+            : 'text-muted-foreground hover:text-foreground scale-90 opacity-70'
         }`}
         title="Dark mode"
         aria-label="Dark mode"

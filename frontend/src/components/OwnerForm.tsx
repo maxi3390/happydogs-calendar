@@ -66,14 +66,14 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700">
+      <div className="bg-card text-card-foreground rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
             {owner ? t('owner.editOwner') : t('owner.addOwner')}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-500 dark:text-gray-400"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-muted-foreground"
           >
             <X className="w-5 h-5" />
           </button>
@@ -99,7 +99,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
                   required
                   value={formData.first_name}
                   onChange={e => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full pl-10 pr-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent"
                   placeholder="John"
                 />
               </div>
@@ -113,7 +113,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
                 required
                 value={formData.last_name}
                 onChange={e => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent"
                 placeholder="Doe"
               />
             </div>
@@ -130,7 +130,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
                 required
                 value={formData.email}
                 onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full pl-10 pr-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent"
                 placeholder={t('owner.emailPlaceholder')}
               />
             </div>
@@ -147,7 +147,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
                 required
                 value={formData.phone}
                 onChange={e => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full pl-10 pr-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent"
                 placeholder={t('owner.phonePlaceholder')}
               />
             </div>
@@ -163,38 +163,38 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
                 value={formData.address}
                 onChange={e => setFormData(prev => ({ ...prev, address: e.target.value }))}
                 rows={2}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                className="w-full pl-10 pr-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
                 placeholder="123 Main St, City, State 12345"
               />
             </div>
           </div>
 
-          <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
+          <div className="border-t border-border pt-4">
             <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               {t('owner.emergencyOptional')}
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                <label className="block text-sm text-muted-foreground mb-1">
                   {t('owner.contactName')}
                 </label>
                 <input
                   type="text"
                   value={formData.emergency_contact}
                   onChange={e => setFormData(prev => ({ ...prev, emergency_contact: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent"
                   placeholder="Jane Doe"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                <label className="block text-sm text-muted-foreground mb-1">
                   {t('owner.contactPhone')}
                 </label>
                 <input
                   type="tel"
                   value={formData.emergency_phone}
                   onChange={e => setFormData(prev => ({ ...prev, emergency_phone: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent"
                   placeholder="+1 (555) 987-6543"
                 />
               </div>
@@ -209,13 +209,13 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
               value={formData.notes}
               onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
               placeholder="Any additional notes about this owner..."
             />
           </div>
 
           {owner && (
-            <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
+            <div className="border-t border-border pt-4">
               <div className="flex flex-col items-center mb-4">
                 <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   {t('owner.profilePicture')}
@@ -237,7 +237,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
+          <div className="flex justify-end gap-3 pt-4 border-t border-border">
             <button
               type="button"
               onClick={onClose}
@@ -248,7 +248,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? t('common.saving') : owner ? t('owner.editOwner') : t('owner.addOwner')}
             </button>

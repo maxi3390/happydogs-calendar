@@ -189,7 +189,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
   }, [weeks, uniqueSchedules]);
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-3 sm:p-6">
+    <div className="bg-card text-card-foreground rounded-xl shadow-lg p-3 sm:p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
         <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 text-center sm:text-left">
@@ -202,8 +202,8 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                 onClick={() => onViewChange('month')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex-1 sm:flex-none justify-center ${
                   calendarView === 'month'
-                    ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                    ? 'bg-card text-card-foreground dark:bg-slate-600 text-primary shadow-sm'
+                    : 'text-muted-foreground hover:text-gray-800 dark:hover:text-gray-200'
                 }`}
               >
                 <CalendarDays className="w-4 h-4" />
@@ -213,8 +213,8 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                 onClick={() => onViewChange('week')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex-1 sm:flex-none justify-center ${
                   calendarView === 'week'
-                    ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                    ? 'bg-card text-card-foreground dark:bg-slate-600 text-primary shadow-sm'
+                    : 'text-muted-foreground hover:text-gray-800 dark:hover:text-gray-200'
                 }`}
               >
                 <CalendarRange className="w-4 h-4" />
@@ -246,9 +246,9 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
       </div>
 
       {/* Day-of-week headers */}
-      <div className="grid grid-cols-7 border-b border-gray-200 dark:border-slate-700">
+      <div className="grid grid-cols-7 border-b border-border">
         {['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'].map((day, i) => (
-          <div key={i} className="text-center text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 py-1.5 sm:py-2 border-r last:border-r-0 border-gray-100 dark:border-slate-700/50">
+          <div key={i} className="text-center text-xs sm:text-sm font-medium text-muted-foreground py-1.5 sm:py-2 border-r last:border-r-0 border-gray-100 dark:border-slate-700/50">
             <span className="sm:hidden">{t(`calendar.daysShort.${day}`)}</span>
             <span className="hidden sm:inline">{t(`calendar.days.${day}`)}</span>
           </div>
@@ -272,8 +272,8 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
               return (
                 <div
                   key={colIdx}
-                  className={`border-r last:border-r-0 border-gray-100 dark:border-slate-700/50 pt-1 px-0.5 sm:px-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors ${
-                    isSelected ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : ''
+                  className={`border-r last:border-r-0 border-gray-100 dark:border-slate-700/50 pt-1 px-0.5 sm:px-1 cursor-pointer hover:bg-muted/50 dark:hover:bg-slate-700/30 transition-colors ${
+                    isSelected ? 'bg-primary/10/50 dark:bg-indigo-900/10' : ''
                   } ${!inMonth && day ? 'opacity-30' : ''}`}
                   onClick={() => day && onDateSelect(day)}
                   style={{ minHeight: `${28 + Math.min(dayBarCounts[colIdx], MAX_VISIBLE_BARS + 1) * 22}px` }}
@@ -283,9 +283,9 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                       <span
                         className={`inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full text-xs sm:text-sm font-medium ${
                           isToday
-                            ? 'bg-indigo-600 dark:bg-indigo-500 text-white font-bold'
+                            ? 'bg-primary hover:bg-primary/90 dark:bg-primary hover:bg-primary/90 text-white font-bold'
                             : isSelected
-                              ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
+                              ? 'text-primary font-semibold'
                               : 'text-gray-700 dark:text-gray-300'
                         }`}
                       >
@@ -358,7 +358,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                   return (
                     <div
                       key={`more-${colIdx}`}
-                      className="absolute text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium px-1 sm:px-1.5 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400"
+                      className="absolute text-[10px] sm:text-xs text-muted-foreground font-medium px-1 sm:px-1.5 cursor-pointer hover:text-primary dark:hover:text-indigo-400"
                       style={{
                         left: `${(colIdx / 7) * 100}%`,
                         top: `${MAX_VISIBLE_BARS * 22}px`,
@@ -382,7 +382,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
       })}
 
       {loading && (
-        <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 flex items-center justify-center rounded-xl">
+        <div className="absolute inset-0 bg-card text-card-foreground/50 dark:bg-slate-900/50 flex items-center justify-center rounded-xl">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 dark:border-indigo-400" />
         </div>
       )}

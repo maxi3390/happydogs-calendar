@@ -67,7 +67,7 @@ export default function ProfilePictureUpload({
   return (
     <div className="flex flex-col items-center gap-2">
       <div className="relative group">
-        <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200 dark:border-slate-600 bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
+        <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-border bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
           {currentUrl ? (
             <img
               src={currentUrl}
@@ -75,7 +75,7 @@ export default function ProfilePictureUpload({
               className="w-full h-full object-cover"
             />
           ) : (
-            <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+            <span className="text-2xl font-bold text-primary">
               {initials}
             </span>
           )}
@@ -89,7 +89,7 @@ export default function ProfilePictureUpload({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="absolute bottom-0 right-0 w-8 h-8 bg-indigo-600 dark:bg-indigo-500 text-white rounded-full flex items-center justify-center hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors shadow-md"
+            className="absolute bottom-0 right-0 w-8 h-8 bg-primary hover:bg-primary/90 dark:bg-primary text-white rounded-full flex items-center justify-center hover:bg-indigo-700 dark:hover:bg-primary transition-colors shadow-md"
             title={currentUrl ? t('documents.changePhoto') : t('documents.uploadPhoto')}
           >
             <Camera className="w-4 h-4" />

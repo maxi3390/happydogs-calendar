@@ -67,7 +67,7 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6">
+      <div className="bg-card text-card-foreground rounded-xl shadow-lg p-6">
         <div className="animate-pulse space-y-4">
           {[1, 2, 3].map(i => (
             <div key={i} className="h-20 bg-gray-100 dark:bg-slate-700 rounded-lg" />
@@ -79,24 +79,24 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
 
   if (pets.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8 text-center">
-        <Dog className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+      <div className="bg-card text-card-foreground rounded-xl shadow-lg p-8 text-center">
+        <Dog className="w-16 h-16 mx-auto text-gray-300 dark:text-muted-foreground mb-4" />
         <h3 className="text-lg font-medium text-gray-700 dark:text-gray-200">{t('pet.noPets')}</h3>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">{t('pet.addFirst')}</p>
+        <p className="text-muted-foreground mt-1">{t('pet.addFirst')}</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
-      <div className="p-4 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
+    <div className="bg-card text-card-foreground rounded-xl shadow-lg overflow-hidden">
+      <div className="p-4 border-b border-gray-100 dark:border-slate-700 bg-muted/50 dark:bg-slate-700/50">
         <h3 className="font-semibold text-gray-800 dark:text-gray-100">{t('pet.registeredPets')} ({pets.length})</h3>
       </div>
       <div className="divide-y divide-gray-100 dark:divide-slate-700 max-h-[500px] overflow-y-auto">
         {pets.map(pet => (
           <div
             key={pet.id}
-            className="p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
+            className="p-4 hover:bg-muted/50 dark:hover:bg-slate-700/50 transition-colors"
           >
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3">
@@ -105,13 +105,13 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
                     <img src={pet.profile_picture_url} alt={pet.name} className="w-full h-full object-cover" />
                   </div>
                 ) : (
-                  <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                  <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 text-primary rounded-lg">
                     {speciesIcons[pet.species] || speciesIcons.other}
                   </div>
                 )}
                 <div>
                   <h4 className="font-medium text-gray-800 dark:text-gray-100">{pet.name}</h4>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     {pet.breed || pet.species} • {pet.age} {t('common.years')}
                   </p>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -134,14 +134,14 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => onEdit(pet)}
-                  className="p-2 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                  className="p-2 text-muted-foreground hover:text-primary dark:hover:text-indigo-400 hover:bg-primary/10 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
                 >
                   <Edit2 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleDelete(pet.id)}
                   disabled={deletingId === pet.id}
-                  className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50"
+                  className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

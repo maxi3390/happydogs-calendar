@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { TranslationProvider } from "@/lib/translations";
 import { AuthProvider } from "@/lib/auth";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Happy Pet Nursery - Schedule Management",
@@ -14,8 +17,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
-      <body className="antialiased">
+    <html lang="es" suppressHydrationWarning className="dark">
+      <body className={`${inter.className} antialiased bg-background text-foreground`}>
         <AuthProvider>
           <TranslationProvider>{children}</TranslationProvider>
         </AuthProvider>

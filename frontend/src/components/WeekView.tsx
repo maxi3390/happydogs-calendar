@@ -123,8 +123,8 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
   }, [petRows]);
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
-      <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-slate-700">
+    <div className="bg-card text-card-foreground rounded-xl shadow-lg overflow-hidden">
+      <div className="p-3 sm:p-4 border-b border-border">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 text-center sm:text-left">
             {t('calendar.weekOf')} {format(currentWeekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
@@ -136,8 +136,8 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
                   onClick={() => onViewChange('month')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex-1 sm:flex-none justify-center ${
                     calendarView === 'month'
-                      ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                      ? 'bg-card text-card-foreground dark:bg-slate-600 text-primary shadow-sm'
+                      : 'text-muted-foreground hover:text-gray-800 dark:hover:text-gray-200'
                   }`}
                 >
                   <CalendarDays className="w-4 h-4" />
@@ -147,8 +147,8 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
                   onClick={() => onViewChange('week')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex-1 sm:flex-none justify-center ${
                     calendarView === 'week'
-                      ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                      ? 'bg-card text-card-foreground dark:bg-slate-600 text-primary shadow-sm'
+                      : 'text-muted-foreground hover:text-gray-800 dark:hover:text-gray-200'
                   }`}
                 >
                   <CalendarRange className="w-4 h-4" />
@@ -188,22 +188,22 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
         <div className="overflow-x-auto">
           <div className="min-w-[640px]">
             {/* Day column headers */}
-            <div className="grid border-b border-gray-200 dark:border-slate-700" style={{ gridTemplateColumns: '110px repeat(7, 1fr)' }}>
-              <div className="p-2 border-r border-gray-200 dark:border-slate-700" />
+            <div className="grid border-b border-border" style={{ gridTemplateColumns: '110px repeat(7, 1fr)' }}>
+              <div className="p-2 border-r border-border" />
               {weekDays.map(day => {
                 const isToday = isSameDay(day, new Date());
                 const isSelected = isSameDay(day, selectedDate);
                 return (
                   <div
                     key={day.toISOString()}
-                    className={`p-2 text-center border-r last:border-r-0 border-gray-200 dark:border-slate-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors ${
-                      isSelected ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
+                    className={`p-2 text-center border-r last:border-r-0 border-border cursor-pointer hover:bg-muted/50 dark:hover:bg-slate-700/50 transition-colors ${
+                      isSelected ? 'bg-primary/10' : ''
                     }`}
                     onClick={() => onDateSelect(day)}
                   >
-                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">{format(day, 'EEE')}</p>
+                    <p className="text-xs text-muted-foreground uppercase">{format(day, 'EEE')}</p>
                     <p className={`text-lg font-bold ${
-                      isToday ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-800 dark:text-gray-200'
+                      isToday ? 'text-primary' : 'text-gray-800 dark:text-gray-200'
                     }`}>
                       {format(day, 'd')}
                     </p>
@@ -214,7 +214,7 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
 
             {/* Pet schedule rows */}
             {petRows.length === 0 ? (
-              <div className="p-8 text-center text-gray-400 dark:text-gray-500 italic">
+              <div className="p-8 text-center text-gray-400 dark:text-muted-foreground italic">
                 {t('schedule.noSchedules')}
               </div>
             ) : (
@@ -227,10 +227,10 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
                     style={{ gridTemplateColumns: '110px repeat(7, 1fr)' }}
                   >
                     {/* Pet name label */}
-                    <div className="p-2 border-r border-gray-200 dark:border-slate-700 flex items-center min-h-[44px]">
+                    <div className="p-2 border-r border-border flex items-center min-h-[44px]">
                       <div className="truncate">
                         <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{row.petName}</p>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                        <p className="text-[10px] text-muted-foreground truncate">
                           {row.petDetails.species} · {row.petDetails.temperament}
                         </p>
                       </div>
