@@ -4,6 +4,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from django.conf import settings
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
@@ -60,6 +61,7 @@ from .serializers import (
 class OwnerViewSet(viewsets.ModelViewSet):
     queryset = Owner.objects.all()
     serializer_class = OwnerSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -154,6 +156,7 @@ class OwnerViewSet(viewsets.ModelViewSet):
 class PetViewSet(viewsets.ModelViewSet):
     queryset = Pet.objects.select_related('owner').all()
     serializer_class = PetSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         return PetSerializer
@@ -272,6 +275,7 @@ class PetViewSet(viewsets.ModelViewSet):
 )
 class ScheduleViewSet(viewsets.ModelViewSet):
     queryset = Schedule.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -568,6 +572,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
 class VaccinationTypeViewSet(viewsets.ModelViewSet):
     queryset = VaccinationType.objects.all()
     serializer_class = VaccinationTypeSerializer
+    permission_classes = [IsAuthenticated]
 
 
 @extend_schema_view(
@@ -595,6 +600,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
     parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = Document.objects.all()
