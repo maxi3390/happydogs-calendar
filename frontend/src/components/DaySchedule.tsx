@@ -15,7 +15,7 @@ interface DayScheduleProps {
 const statusColors: Record<string, string> = {
   scheduled: 'bg-blue-100 text-blue-800 border-blue-200',
   checked_in: 'bg-green-100 text-green-800 border-green-200',
-  completed: 'bg-gray-100 text-gray-800 border-gray-200',
+  completed: 'bg-gray-100 text-gray-800 border-border',
   cancelled: 'bg-red-100 text-red-800 border-red-200',
 };
 
@@ -79,7 +79,7 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: Da
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6">
+      <div className="bg-card text-card-foreground rounded-xl shadow-lg p-6">
         <div className="animate-pulse space-y-4">
           {[1, 2].map(i => (
             <div key={i} className="h-24 bg-gray-100 dark:bg-slate-700 rounded-lg" />
@@ -90,8 +90,8 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: Da
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
-      <div className="p-4 border-b border-indigo-400 dark:border-indigo-600 bg-gradient-to-r from-indigo-500 to-purple-500 dark:from-indigo-600 dark:to-purple-600">
+    <div className="bg-card text-card-foreground rounded-xl shadow-lg overflow-hidden">
+      <div className="p-4 border-b border-indigo-400 dark:border-indigo-600 bg-background">
         <h3 className="font-semibold text-white">
           {format(date, 'EEEE, MMMM d, yyyy')}
         </h3>
@@ -102,8 +102,8 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: Da
 
       {schedules.length === 0 ? (
         <div className="p-8 text-center">
-          <Clock className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-          <p className="text-gray-500 dark:text-gray-400">{t('schedule.noSchedules')}</p>
+          <Clock className="w-12 h-12 mx-auto text-gray-300 dark:text-muted-foreground mb-3" />
+          <p className="text-muted-foreground">{t('schedule.noSchedules')}</p>
         </div>
       ) : (
         <div className="divide-y divide-gray-100 dark:divide-slate-700 max-h-[400px] overflow-y-auto">
@@ -125,10 +125,10 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: Da
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
                     {schedule.start_date !== schedule.end_date && (
-                      <span className="ml-2 text-indigo-600 dark:text-indigo-400">
+                      <span className="ml-2 text-primary">
                         ({schedule.start_date} to {schedule.end_date})
                       </span>
                     )}
@@ -144,7 +144,7 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: Da
                       <option value="completed">{t('schedule.statuses.completed')}</option>
                       <option value="cancelled">{t('schedule.statuses.cancelled')}</option>
                     </select>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-muted-foreground">
                       {schedule.pet_details.species} • {schedule.pet_details.temperament}
                     </span>
                   </div>
@@ -161,7 +161,7 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: Da
                   )}
 
                   {schedule.notes && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 italic">
+                    <p className="text-xs text-muted-foreground mt-2 italic">
                       {t('common.note')}: {schedule.notes}
                     </p>
                   )}
@@ -170,14 +170,14 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: Da
                 <div className="flex items-center gap-1 ml-4">
                   <button
                     onClick={() => onEditSchedule(schedule)}
-                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                    className="p-2 text-muted-foreground hover:text-primary dark:hover:text-indigo-400 hover:bg-primary/10 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(schedule.id)}
                     disabled={deletingId === schedule.id}
-                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50"
+                    className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

@@ -84,8 +84,8 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
+      <div className="bg-card text-card-foreground rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
             {pet ? t('pet.editPet') : t('pet.addPet')}
           </h2>
@@ -114,7 +114,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                 required
                 value={formData.name}
                 onChange={e => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
               />
             </div>
 
@@ -126,7 +126,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                 required
                 value={formData.species}
                 onChange={e => setFormData({ ...formData, species: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
               >
                 {SPECIES_VALUES.map(val => (
                   <option key={val} value={val}>{t(`pet.speciesOptions.${val}`)}</option>
@@ -142,7 +142,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                 type="text"
                 value={formData.breed}
                 onChange={e => setFormData({ ...formData, breed: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
               />
             </div>
 
@@ -156,7 +156,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                 min="0"
                 value={formData.age}
                 onChange={e => setFormData({ ...formData, age: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
               />
             </div>
 
@@ -168,7 +168,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                 required
                 value={formData.temperament}
                 onChange={e => setFormData({ ...formData, temperament: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
               >
                 {TEMPERAMENT_VALUES.map(val => (
                   <option key={val} value={val}>{t(`pet.temperamentOptions.${val}`)}</option>
@@ -197,7 +197,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                   {formData.dominance_level}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {t('pet.dominanceHint')}
               </p>
             </div>
@@ -210,7 +210,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                 required
                 value={formData.size}
                 onChange={e => setFormData({ ...formData, size: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
               >
                 {SIZE_VALUES.map(val => (
                   <option key={val} value={val}>{t(`pet.sizeOptions.${val}`)}</option>
@@ -226,7 +226,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                 required
                 value={formData.sex}
                 onChange={e => setFormData({ ...formData, sex: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
               >
                 {SEX_VALUES.map(val => (
                   <option key={val} value={val}>{t(`pet.sexOptions.${val}`)}</option>
@@ -242,7 +242,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                 type="date"
                 value={formData.birth_date || ''}
                 onChange={e => setFormData({ ...formData, birth_date: e.target.value || null })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
               />
             </div>
 
@@ -252,7 +252,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                   type="checkbox"
                   checked={formData.neutered}
                   onChange={e => setFormData({ ...formData, neutered: e.target.checked })}
-                  className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                  className="w-4 h-4 text-primary border-border rounded focus:ring-ring"
                 />
                 {t('pet.neutered')}
               </label>
@@ -266,7 +266,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                 <select
                   value={formData.owner || ''}
                   onChange={e => setFormData({ ...formData, owner: e.target.value ? Number(e.target.value) : null })}
-                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                  className="flex-1 px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
                 >
                   <option value="">{t('pet.noOwner')}</option>
                   {owners.map(owner => (
@@ -277,13 +277,13 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                 </select>
                 <Link
                   href="/owners"
-                  className="flex items-center gap-1 px-3 py-2 bg-gray-100 dark:bg-slate-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-500 transition-colors text-sm"
+                  className="flex items-center gap-1 px-3 py-2 bg-gray-100 dark:bg-slate-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-muted/500 transition-colors text-sm"
                 >
                   <Plus className="w-4 h-4" />
                   {t('common.new')}
                 </Link>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {t('pet.assignOwnerHint')}
               </p>
             </div>
@@ -297,14 +297,14 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
               <button
                 type="button"
                 onClick={() => setVaccinations([...vaccinations, { vax_type: enabledVaxTypes[0]?.name || '', date: '' }])}
-                className="flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+                className="flex items-center gap-1 text-sm text-primary hover:text-indigo-700 dark:hover:text-indigo-300"
               >
                 <Plus className="w-4 h-4" />
                 {t('pet.addVaccination')}
               </button>
             </div>
             {vaccinations.length === 0 ? (
-              <p className="text-sm text-gray-400 dark:text-gray-500 italic">{t('pet.noVaccinations')}</p>
+              <p className="text-sm text-gray-400 dark:text-muted-foreground italic">{t('pet.noVaccinations')}</p>
             ) : (
               <div className="space-y-2">
                 {vaccinations.map((vax, index) => (
@@ -316,7 +316,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                         updated[index] = { ...updated[index], vax_type: e.target.value };
                         setVaccinations(updated);
                       }}
-                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 text-sm"
+                      className="flex-1 px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 text-sm"
                     >
                       {enabledVaxTypes.map(vt => (
                         <option key={vt.name} value={vt.name}>{vt.label}</option>
@@ -331,7 +331,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                         updated[index] = { ...updated[index], date: e.target.value };
                         setVaccinations(updated);
                       }}
-                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 text-sm"
+                      className="flex-1 px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 text-sm"
                     />
                     <button
                       type="button"
@@ -354,13 +354,13 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
               value={formData.special_notes}
               onChange={e => setFormData({ ...formData, special_notes: e.target.value })}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
               placeholder="Any special care instructions, medical conditions, etc."
             />
           </div>
 
           {pet && (
-            <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
+            <div className="border-t border-border pt-4">
               <div className="flex flex-col items-center mb-4">
                 <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   {t('pet.profilePicture')}
@@ -382,7 +382,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
+          <div className="flex justify-end gap-3 pt-4 border-t border-border">
             <button
               type="button"
               onClick={onClose}
@@ -393,7 +393,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors disabled:opacity-50"
+              className="px-6 py-2 bg-primary hover:bg-primary/90 dark:bg-primary text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-primary transition-colors disabled:opacity-50"
             >
               {loading ? t('common.saving') : pet ? t('pet.editPet') : t('pet.addPet')}
             </button>

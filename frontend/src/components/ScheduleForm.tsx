@@ -256,8 +256,8 @@ export default function ScheduleForm(props: ScheduleFormProps) {
   if (isMulti && batchResult) {
     return (
       <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
+        <div className="bg-card text-card-foreground rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-between p-6 border-b border-border">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
               {t('multiPet.schedulesCreatedTitle')}
             </h2>
@@ -303,7 +303,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
               </div>
             )}
 
-            <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
+            <div className="pt-4 border-t border-border">
               <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-2">{t('multiPet.createdFor')}:</h3>
               <div className="flex flex-wrap gap-2">
                 {batchResult.schedules.map(s => (
@@ -319,7 +319,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
 
             <button
               onClick={() => { onSave(); onClose(); }}
-              className="w-full mt-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+              className="w-full mt-4 px-6 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors"
             >
               {t('multiPet.done')}
             </button>
@@ -331,11 +331,11 @@ export default function ScheduleForm(props: ScheduleFormProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
-      <div className={`bg-white dark:bg-slate-800 rounded-xl shadow-xl ${isMulti ? 'max-w-2xl' : 'max-w-lg'} w-full max-h-[90vh] overflow-y-auto`}>
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
+      <div className={`bg-card text-card-foreground rounded-xl shadow-xl ${isMulti ? 'max-w-2xl' : 'max-w-lg'} w-full max-h-[90vh] overflow-y-auto`}>
+        <div className="flex items-center justify-between p-6 border-b border-border">
           {isMulti ? (
             <div className="flex items-center gap-3">
-              <Users className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+              <Users className="w-6 h-6 text-primary" />
               <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
                 {t('multiPet.title')}
               </h2>
@@ -370,7 +370,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                 <select
                   value={selectedOwner || ''}
                   onChange={e => setSelectedOwner(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 mb-4"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 mb-4"
                 >
                   <option value="">{t('multiPet.allOwners')} ({t('multiPet.petsCount').replace('{count}', String(pets.length))})</option>
                   {owners.map(owner => (
@@ -391,22 +391,22 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                     <button
                       type="button"
                       onClick={selectAllPets}
-                      className="text-xs px-2 py-1 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded"
+                      className="text-xs px-2 py-1 text-primary hover:bg-primary/10 dark:hover:bg-indigo-900/30 rounded"
                     >
                       {selectedOwner ? t('multiPet.selectAllShown') : t('multiPet.selectAll')}
                     </button>
                     <button
                       type="button"
                       onClick={clearAllPets}
-                      className="text-xs px-2 py-1 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
+                      className="text-xs px-2 py-1 text-muted-foreground hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
                     >
                       {t('multiPet.clear')}
                     </button>
                   </div>
                 </div>
-                <div className="border border-gray-300 dark:border-slate-600 rounded-lg max-h-48 overflow-y-auto">
+                <div className="border border-border rounded-lg max-h-48 overflow-y-auto">
                   {filteredPets.length === 0 ? (
-                    <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                    <div className="p-4 text-center text-muted-foreground">
                       {pets.length === 0 ? t('multiPet.loadingPets') : t('multiPet.noPetsFound')}
                     </div>
                   ) : (
@@ -414,19 +414,19 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                       {filteredPets.map(pet => (
                         <label
                           key={pet.id}
-                          className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors ${
-                            multiPetIds.includes(pet.id) ? 'bg-indigo-50 dark:bg-indigo-900/30' : ''
+                          className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50 dark:hover:bg-slate-700 transition-colors ${
+                            multiPetIds.includes(pet.id) ? 'bg-primary/10' : ''
                           }`}
                         >
                           <input
                             type="checkbox"
                             checked={multiPetIds.includes(pet.id)}
                             onChange={() => togglePet(pet.id)}
-                            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                            className="w-4 h-4 text-primary border-border rounded focus:ring-ring"
                           />
                           <div className="flex-1">
                             <div className="font-medium text-gray-800 dark:text-gray-200">{pet.name}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                            <div className="text-xs text-muted-foreground">
                               {pet.species} • {pet.temperament} • {t('common.dom')}: {pet.dominance_level}
                             </div>
                           </div>
@@ -438,19 +438,19 @@ export default function ScheduleForm(props: ScheduleFormProps) {
               </div>
 
               {selectedPets.length > 0 && (
-                <div className="p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
+                <div className="p-3 bg-muted/50 dark:bg-slate-700 rounded-lg">
                   <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('multiPet.selectedPets')}:</div>
                   <div className="flex flex-wrap gap-2">
                     {selectedPets.map(pet => (
                       <span
                         key={pet.id}
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-white dark:bg-slate-600 border border-gray-200 dark:border-slate-500 rounded-full text-sm text-gray-700 dark:text-gray-200"
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-card text-card-foreground dark:bg-slate-600 border border-border dark:border-slate-500 rounded-full text-sm text-gray-700 dark:text-gray-200"
                       >
                         {pet.name}
                         <button
                           type="button"
                           onClick={() => togglePet(pet.id)}
-                          className="ml-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                          className="ml-1 text-gray-400 hover:text-muted-foreground dark:hover:text-gray-200"
                         >
                           ×
                         </button>
@@ -470,7 +470,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                   required
                   value={singlePetId}
                   onChange={e => setSinglePetId(parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
                 >
                   <option value="">{t('schedule.selectPet')}...</option>
                   {pets.map(pet => (
@@ -482,9 +482,9 @@ export default function ScheduleForm(props: ScheduleFormProps) {
               </div>
 
               {selectedPet && (
-                <div className="p-3 bg-gray-50 dark:bg-slate-700 rounded-lg text-sm">
+                <div className="p-3 bg-muted/50 dark:bg-slate-700 rounded-lg text-sm">
                   <div className="font-medium text-gray-800 dark:text-gray-100">{selectedPet.name}</div>
-                  <div className="text-gray-600 dark:text-gray-400 mt-1 grid grid-cols-3 gap-2">
+                  <div className="text-muted-foreground mt-1 grid grid-cols-3 gap-2">
                     <span>{t('pet.species')}: {selectedPet.species}</span>
                     <span>{t('pet.temperament')}: {selectedPet.temperament}</span>
                     <span>{t('pet.dominance')}: {selectedPet.dominance_level}/10</span>
@@ -505,7 +505,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                 required
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
               />
             </div>
             <div>
@@ -518,13 +518,13 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                 value={endDate}
                 min={startDate}
                 onChange={e => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
               />
             </div>
           </div>
 
           {startDate !== endDate && (
-            <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-sm text-indigo-700 dark:text-indigo-300">
+            <div className="p-3 bg-primary/10 rounded-lg text-sm text-indigo-700 dark:text-indigo-300">
               {t('schedule.multiDay')}: {startDate} to {endDate}
             </div>
           )}
@@ -534,7 +534,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
             <div className={`p-4 rounded-lg border ${
               dailyCount.limit_reached
                 ? 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800'
-                : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                : 'bg-primary/10 border-blue-200 dark:border-blue-800'
             }`}>
               {dailyCount.limit_reached ? (
                 <div>
@@ -570,7 +570,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                 required
                 value={startTime}
                 onChange={e => setStartTime(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
               >
                 {TIME_OPTIONS.map(time => (
                   <option key={time} value={time}>{time}</option>
@@ -585,7 +585,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                 required
                 value={endTime}
                 onChange={e => setEndTime(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
               >
                 {TIME_OPTIONS.filter(t => t > startTime).map(time => (
                   <option key={time} value={time}>{time}</option>
@@ -602,7 +602,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                 : 'bg-green-50 border border-green-200'
             }`}>
               {checkingConflicts ? (
-                <div className="flex items-center gap-2 text-gray-600">
+                <div className="flex items-center gap-2 text-muted-foreground">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600" />
                   {t('schedule.checkingConflicts')}
                 </div>
@@ -647,7 +647,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
             <select
               value={status}
               onChange={e => setStatus(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
             >
               <option value="scheduled">{t('schedule.statuses.scheduled')}</option>
               <option value="checked_in">{t('schedule.statuses.checked_in')}</option>
@@ -665,13 +665,13 @@ export default function ScheduleForm(props: ScheduleFormProps) {
               value={notes}
               onChange={e => setNotes(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
               placeholder={isMulti ? '' : 'Any special instructions for this visit...'}
             />
           </div>
 
           {/* Footer buttons (shared structure, mode-specific labels) */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
+          <div className="flex justify-end gap-3 pt-4 border-t border-border">
             <button
               type="button"
               onClick={onClose}
@@ -686,7 +686,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                 className={`px-6 py-2 rounded-lg transition-colors disabled:opacity-50 ${
                   dailyCount?.limit_reached
                     ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                    : 'bg-primary hover:bg-primary/90 text-white'
                 }`}
               >
                 {loading ? t('multiPet.creating') :
@@ -701,7 +701,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                     ? 'bg-red-600 hover:bg-red-700 text-white'
                     : conflictResult?.has_conflicts
                       ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                      : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                      : 'bg-primary hover:bg-primary/90 text-white'
                 }`}
               >
                 {loading ? t('common.saving') : schedule ? t('schedule.updateSchedule') :
@@ -715,7 +715,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
         {/* Limit confirm dialog (shared) */}
         {showLimitConfirm && (
           <div className="absolute inset-0 bg-black/40 dark:bg-black/60 flex items-center justify-center rounded-xl">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-6 m-4 max-w-sm">
+            <div className="bg-card text-card-foreground rounded-xl shadow-xl p-6 m-4 max-w-sm">
               <div className="flex items-center gap-2 text-red-700 dark:text-red-300 font-bold mb-3">
                 <AlertTriangle className="w-6 h-6" />
                 {t('schedule.confirmOverLimit')}

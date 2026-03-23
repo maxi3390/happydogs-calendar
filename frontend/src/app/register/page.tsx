@@ -62,28 +62,36 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 px-4 py-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12 relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/3 w-[800px] h-[800px] bg-primary/20 rounded-full blur-3xl opacity-50 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-[600px] h-[600px] bg-secondary/20 rounded-full blur-3xl opacity-50 pointer-events-none" />
+
+      <div className="max-w-md w-full space-y-8 relative z-10">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            🐾 Happy Pet Nursery
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 text-primary mb-6 ring-1 ring-primary/20 shadow-sm">
+            <span className="text-3xl">🐾</span>
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Happy Pet Nursery
           </h1>
-          <h2 className="mt-4 text-xl text-gray-600 dark:text-gray-300">
+          <h2 className="mt-2 text-muted-foreground">
             {t('auth.signUpTitle') || 'Create your account'}
           </h2>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
+        <div className="bg-card text-card-foreground rounded-2xl border border-border/50 shadow-xl p-8 backdrop-blur-sm bg-card/95">
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+                <span className="text-destructive font-bold">!</span>
                 {error}
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label htmlFor="first_name" className="block text-sm font-medium mb-1.5">
                   {t('auth.firstName') || 'First Name'}
                 </label>
                 <input
@@ -93,12 +101,12 @@ export default function RegisterPage() {
                   required
                   value={formData.first_name}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-ring focus:border-input transition-colors duration-200 placeholder:text-muted-foreground"
                   placeholder="John"
                 />
               </div>
               <div>
-                <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label htmlFor="last_name" className="block text-sm font-medium mb-1.5">
                   {t('auth.lastName') || 'Last Name'}
                 </label>
                 <input
@@ -108,14 +116,14 @@ export default function RegisterPage() {
                   required
                   value={formData.last_name}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-ring focus:border-input transition-colors duration-200 placeholder:text-muted-foreground"
                   placeholder="Doe"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium mb-1.5">
                 {t('auth.email') || 'Email'}
               </label>
               <input
@@ -125,13 +133,13 @@ export default function RegisterPage() {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                className="w-full px-4 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-ring focus:border-input transition-colors duration-200 placeholder:text-muted-foreground"
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium mb-1.5">
                 {t('auth.password') || 'Password'}
               </label>
               <div className="relative">
@@ -142,13 +150,13 @@ export default function RegisterPage() {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-2 pr-10 bg-background border border-input rounded-xl focus:ring-2 focus:ring-ring focus:border-input transition-colors duration-200 placeholder:text-muted-foreground"
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -156,7 +164,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="password_confirm" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label htmlFor="password_confirm" className="block text-sm font-medium mb-1.5">
                 {t('auth.confirmPassword') || 'Confirm Password'}
               </label>
               <input
@@ -166,7 +174,7 @@ export default function RegisterPage() {
                 required
                 value={formData.password_confirm}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                className="w-full px-4 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-ring focus:border-input transition-colors duration-200 placeholder:text-muted-foreground"
                 placeholder="••••••••"
               />
             </div>
@@ -174,7 +182,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-lg transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground font-medium rounded-xl transition-all shadow-sm active:scale-[0.98]"
             >
               {isLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -186,17 +194,17 @@ export default function RegisterPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               {t('auth.hasAccount') || 'Already have an account?'}{' '}
-              <Link href="/login" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium">
+              <Link href="/login" className="text-primary hover:underline font-medium">
                 {t('auth.signIn') || 'Sign in'}
               </Link>
             </p>
           </div>
         </div>
 
-        <div className="text-center">
-          <Link href="/" className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+        <div className="text-center pt-2">
+          <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-block hover:-translate-x-1 transform duration-200">
             ← {t('auth.backToHome') || 'Back to home'}
           </Link>
         </div>

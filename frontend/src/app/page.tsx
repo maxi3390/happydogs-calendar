@@ -44,10 +44,13 @@ export default function Home() {
   // Show loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 flex items-center justify-center">
-        <div className="animate-pulse flex flex-col items-center gap-4">
-          <PawPrint className="w-16 h-16 text-indigo-500" />
-          <p className="text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse flex flex-col items-center gap-6">
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
+            <PawPrint className="w-20 h-20 text-primary relative z-10" />
+          </div>
+          <p className="text-muted-foreground font-medium uppercase tracking-widest text-sm">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -56,29 +59,30 @@ export default function Home() {
   // Public view for non-authenticated users
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+      <div className="min-h-screen bg-background selection:bg-primary/20">
         {/* Public Header */}
-        <header className="bg-white dark:bg-slate-800 shadow-sm border-b border-indigo-100 dark:border-slate-700">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 transition-all">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-indigo-600 dark:bg-indigo-500">
-                  <PawPrint className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-primary shadow-lg shadow-primary/20">
+                  <PawPrint className="w-6 h-6 sm:w-8 sm:h-8 text-primary-foreground" />
                 </div>
                 <div>
-                  <h1 className="text-lg sm:text-2xl font-bold text-gray-800 dark:text-gray-100">{t('app.name')}</h1>
-                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:block">{t('app.tagline')}</p>
+                  <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-foreground">{t('app.name')}</h1>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wide hidden sm:block">{t('app.tagline')}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3 bg-secondary/30 p-1.5 rounded-2xl border border-border/50">
                 <LanguageSwitcher />
                 <ThemeToggle />
+                <div className="w-px h-5 bg-border mx-1 hidden sm:block" />
                 <Link
                   href="/login"
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm text-sm font-medium"
+                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 text-sm font-medium"
                 >
                   <LogIn className="w-4 h-4" />
-                  <span className="hidden sm:inline">{t('auth.signIn')}</span>
+                  <span>{t('auth.signIn')}</span>
                 </Link>
               </div>
             </div>
@@ -86,48 +90,75 @@ export default function Home() {
         </header>
 
         {/* Hero Section */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-700 dark:to-purple-700 text-white py-8 sm:py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-2">{t('public.welcome') || 'Welcome to Happy Pet Nursery'}</h2>
-            <p className="text-indigo-100 dark:text-indigo-200 max-w-2xl mx-auto">
-              {t('public.description') || 'View our availability calendar below. Sign in to manage schedules and access all features.'}
+        <div className="relative overflow-hidden bg-background pt-16 pb-24 sm:pt-24 sm:pb-32 border-b border-border">
+          {/* Decorative background elements */}
+          <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3">
+            <div className="w-96 h-96 bg-primary/10 dark:bg-primary/5 rounded-full blur-3xl" />
+          </div>
+          <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3">
+            <div className="w-[30rem] h-[30rem] bg-primary hover:bg-primary/90/10 dark:bg-primary hover:bg-primary/90/5 rounded-full blur-3xl" />
+          </div>
+
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground mb-6">
+              {t('public.welcome') || 'Welcome to Happy Pet Nursery'}
+            </h2>
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+              {t('public.description') || 'View our availability calendar below. Sign in to manage schedules and access all features in a premium environment.'}
             </p>
+            <div className="sm:hidden flex justify-center mb-8">
+               <Link
+                  href="/login"
+                  className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl shadow-lg font-medium"
+                >
+                  <LogIn className="w-5 h-5" />
+                  <span>{t('auth.signIn')}</span>
+                </Link>
+            </div>
           </div>
         </div>
 
         {/* Public Calendar */}
-        <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-4 sm:p-6">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              {t('public.availabilityCalendar') || 'Availability Calendar'}
-            </h3>
-            <PublicCalendar
-              selectedDate={selectedDate}
-              onDateSelect={setSelectedDate}
-            />
+        <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 relative z-10 pb-20">
+          <div className="bg-card rounded-3xl shadow-xl shadow-border/10 border border-border/50 p-6 sm:p-8 backdrop-blur-sm">
+            <div className="flex items-center gap-3 mb-8">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+              </span>
+              <h3 className="text-xl font-bold tracking-tight text-foreground">
+                {t('public.availabilityCalendar') || 'Live Availability Calendar'}
+              </h3>
+            </div>
+            <div className="bg-background rounded-2xl border border-border/50 p-2 sm:p-4">
+              <PublicCalendar
+                selectedDate={selectedDate}
+                onDateSelect={setSelectedDate}
+              />
+            </div>
           </div>
 
           {/* Call to Action */}
-          <div className="mt-8 text-center">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 sm:p-8">
-              <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">
-                {t('public.ctaTitle') || 'Want to schedule your pet?'}
+          <div className="mt-16 text-center max-w-2xl mx-auto">
+            <div className="bg-card rounded-3xl shadow-lg border border-border/50 p-8 sm:p-12 relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <h3 className="text-2xl font-bold text-foreground mb-4">
+                {t('public.ctaTitle') || 'Ready to join the family?'}
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                {t('public.ctaDescription') || 'Sign in to create schedules, manage pets, and access all features.'}
+              <p className="text-muted-foreground mb-8 text-lg">
+                {t('public.ctaDescription') || 'Create an account to manage your pets and schedule visits instantly.'}
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
                   href="/login"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-primary text-primary-foreground rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all font-semibold"
                 >
                   <LogIn className="w-5 h-5" />
                   {t('auth.signIn')}
                 </Link>
                 <Link
                   href="/register"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors font-medium"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-xl transition-all font-semibold"
                 >
                   {t('auth.signUp')}
                 </Link>
@@ -136,9 +167,9 @@ export default function Home() {
           </div>
         </main>
 
-        <footer className="border-t border-gray-200 dark:border-slate-700 mt-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <p className="text-center text-gray-500 dark:text-gray-400 text-sm">
+        <footer className="border-t border-border bg-background">
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <p className="text-center text-muted-foreground text-sm font-medium tracking-wide">
               {t('app.footer')}
             </p>
           </div>
@@ -149,7 +180,7 @@ export default function Home() {
 
   // Authenticated view - full featured based on role
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+    <div className="min-h-screen bg-background">
       <Navigation
         onNewSchedule={() => {
           setEditingSchedule(undefined);
@@ -160,50 +191,57 @@ export default function Home() {
 
       {/* Role indicator banner for admins */}
       {isAdmin && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-            <p className="text-sm text-amber-700 dark:text-amber-300 flex items-center gap-2">
+        <div className="bg-amber-500/10 border-b border-amber-500/20 backdrop-blur-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
+            <p className="text-xs sm:text-sm text-amber-600 dark:text-amber-400 font-medium flex items-center justify-center gap-2">
               <Shield className="w-4 h-4" />
-              {t('public.adminMode') || 'Admin Mode'}: {t('public.fullAccess') || 'You have full access to all features'}
+              <span className="uppercase tracking-wider">{t('public.adminMode') || 'Admin Mode'}:</span>
+              {t('public.fullAccess') || 'You have full access to all features'}
             </p>
           </div>
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
+          
           {/* Calendar - Shows first on mobile */}
-          <div className="lg:col-span-2 order-1 lg:order-2">
-            {calendarView === 'month' ? (
-              <Calendar
-                selectedDate={selectedDate}
-                onDateSelect={setSelectedDate}
-                calendarView={calendarView}
-                onViewChange={setCalendarView}
-              />
-            ) : (
-              <WeekView
-                selectedDate={selectedDate}
-                onDateSelect={setSelectedDate}
-                calendarView={calendarView}
-                onViewChange={setCalendarView}
-              />
-            )}
+          <div className="lg:col-span-8 order-1 lg:order-1">
+            <div className="bg-card rounded-3xl shadow-sm border border-border/60 p-4 sm:p-6 h-full transition-all duration-300 hover:shadow-md">
+              {calendarView === 'month' ? (
+                <Calendar
+                  selectedDate={selectedDate}
+                  onDateSelect={setSelectedDate}
+                  calendarView={calendarView}
+                  onViewChange={setCalendarView}
+                />
+              ) : (
+                <WeekView
+                  selectedDate={selectedDate}
+                  onDateSelect={setSelectedDate}
+                  calendarView={calendarView}
+                  onViewChange={setCalendarView}
+                />
+              )}
+            </div>
           </div>
+          
           {/* Day Schedule - Shows second on mobile */}
-          <div className="lg:col-span-1 order-2 lg:order-1">
-            <DaySchedule
-              date={selectedDate}
-              onEditSchedule={handleEditSchedule}
-              refreshTrigger={refreshSchedules}
-            />
+          <div className="lg:col-span-4 order-2 lg:order-2">
+            <div className="bg-card rounded-3xl shadow-sm border border-border/60 p-4 sm:p-6 h-full transition-all duration-300 hover:shadow-md">
+              <DaySchedule
+                date={selectedDate}
+                onEditSchedule={handleEditSchedule}
+                refreshTrigger={refreshSchedules}
+              />
+            </div>
           </div>
         </div>
       </main>
 
-      <footer className="border-t border-gray-200 dark:border-slate-700 mt-8 sm:mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <p className="text-center text-gray-500 dark:text-gray-400 text-sm">
+      <footer className="border-t border-border/50 mt-8 sm:mt-16 bg-background/50 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <p className="text-center text-muted-foreground text-sm font-medium tracking-wide">
             {t('app.footer')}
           </p>
         </div>
