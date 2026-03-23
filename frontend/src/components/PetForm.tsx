@@ -241,7 +241,16 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
               <input
                 type="date"
                 value={formData.birth_date || ''}
-                onChange={e => setFormData({ ...formData, birth_date: e.target.value || null })}
+                onChange={e => {
+                  const newBirthDate = e.target.value || null;
+                  const newAge = newBirthDate
+                    ? Math.max(0, new Date().getFullYear() - new Date(newBirthDate).getFullYear() -
+                        (new Date().getMonth() < new Date(newBirthDate).getMonth() ||
+                        (new Date().getMonth() === new Date(newBirthDate).getMonth() &&
+                         new Date().getDate() < new Date(newBirthDate).getDate()) ? 1 : 0))
+                    : formData.age;
+                  setFormData({ ...formData, birth_date: newBirthDate, age: newAge });
+                }}
                 className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
               />
             </div>
