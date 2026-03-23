@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Edit2, Trash2, Dog, Cat, Bird, Rabbit, HelpCircle } from 'lucide-react';
+import { Edit2, Trash2, Dog, Cat, Bird, Rabbit, HelpCircle, ChevronDown } from 'lucide-react';
 import { api, Pet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 
@@ -31,6 +31,7 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [expandedPetId, setExpandedPetId] = useState<number | null>(null);
 
   const fetchPets = async () => {
     setLoading(true);
@@ -96,55 +97,106 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
         {pets.map(pet => (
           <div
             key={pet.id}
-            className="p-4 hover:bg-muted/50 dark:hover:bg-slate-700/50 transition-colors"
+            className="p-4 hover:bg-muted/50 dark:hover:bg-slate-700/50 transition-colors border-b border-border/10 last:border-0"
           >
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-3">
+            <div 
+              className="flex items-start justify-between cursor-pointer group"
+              onClick={() => setExpandedPetId(expandedPetId === pet.id ? null : pet.id)}
+            >
+              <div className="flex items-start gap-4 flex-1">
                 {pet.profile_picture_url ? (
-                  <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                  <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 border border-border/50 shadow-sm relative group">
                     <img src={pet.profile_picture_url} alt={pet.name} className="w-full h-full object-cover" />
                   </div>
                 ) : (
-                  <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 text-primary rounded-lg">
+                  <div className="w-12 h-12 flex items-center justify-center bg-primary/10 text-primary rounded-xl flex-shrink-0 border border-primary/20">
                     {speciesIcons[pet.species] || speciesIcons.other}
                   </div>
                 )}
-                <div>
-                  <h4 className="font-medium text-gray-800 dark:text-gray-100">{pet.name}</h4>
-                  <p className="text-sm text-muted-foreground">
+                <div className="flex-1 mt-1">
+                  <h4 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors">{pet.name}</h4>
+                  <p className="text-sm text-muted-foreground font-medium">
                     {pet.breed || pet.species} • {pet.age} {t('common.years')}
                   </p>
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <span className={`text-xs px-2 py-1 rounded-full ${temperamentColors[pet.temperament]}`}>
-                      {pet.temperament}
-                    </span>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      pet.dominance_level <= 3 ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' :
-                      pet.dominance_level <= 6 ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300' :
-                      'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
-                    }`}>
-                      {t('common.dom')}: {pet.dominance_level}/10
-                    </span>
-                    <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-slate-600 text-gray-700 dark:text-gray-300">
-                      {pet.size}
-                    </span>
-                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 mt-1">
                 <button
-                  onClick={() => onEdit(pet)}
+                  onClick={(e) => { e.stopPropagation(); onEdit(pet); }}
                   className="p-2 text-muted-foreground hover:text-primary dark:hover:text-indigo-400 hover:bg-primary/10 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
                 >
                   <Edit2 className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => handleDelete(pet.id)}
+                  onClick={(e) => { e.stopPropagation(); handleDelete(pet.id); }}
                   disabled={deletingId === pet.id}
                   className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
+                <div className="p-2 ml-1 text-muted-foreground group-hover:bg-secondary rounded-lg transition-colors">
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${expandedPetId === pet.id ? 'rotate-180' : ''}`} />
+                </div>
+              </div>
+            </div>
+
+            {/* Accordion Content */}
+            <div className={`grid transition-all duration-300 ${expandedPetId === pet.id ? 'grid-rows-[1fr] opacity-100 mt-4' : 'grid-rows-[0fr] opacity-0 mt-0 pointer-events-none'}`}>
+              <div className="overflow-hidden">
+                <div className="pt-4 border-t border-border/50 flex flex-col sm:flex-row gap-6">
+                  {/* Bigger Picture */}
+                  {pet.profile_picture_url ? (
+                    <div className="w-32 h-32 sm:w-48 sm:h-48 rounded-2xl overflow-hidden flex-shrink-0 border-2 border-primary/10 shadow-md">
+                      <img src={pet.profile_picture_url} alt={pet.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                    </div>
+                  ) : (
+                    <div className="w-32 h-32 sm:w-48 sm:h-48 rounded-2xl flex items-center justify-center bg-secondary/50 text-foreground/20 shrink-0 border-2 border-dashed border-border/50">
+                      <div className="w-16 h-16 opacity-50">
+                        {speciesIcons[pet.species] || speciesIcons.other}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Profile Basics */}
+                  <div className="flex-1 space-y-4">
+                    <div>
+                      <h5 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">{t('pet.traits')}</h5>
+                      <div className="flex flex-wrap gap-2">
+                        <span className={`text-xs px-2.5 py-1.5 rounded-full font-medium ${temperamentColors[pet.temperament] || 'bg-secondary text-foreground'}`}>
+                          {t(`pet.temperamentOptions.${pet.temperament}`)}
+                        </span>
+                        <span className={`text-xs px-2.5 py-1.5 rounded-full font-medium ${
+                          pet.dominance_level <= 3 ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300' :
+                          pet.dominance_level <= 6 ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300' :
+                          'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
+                        }`}>
+                          {t('common.dom')}: {pet.dominance_level}/10
+                        </span>
+                        <span className="text-xs px-2.5 py-1.5 rounded-full bg-secondary text-foreground font-medium">
+                          {t(`pet.sizeOptions.${pet.size}`)}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-secondary/30 p-3 rounded-xl">
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">{t('pet.sex')}</span>
+                        <p className="font-semibold text-sm text-foreground mt-0.5 capitalize">{pet.sex ? t(`pet.sexOptions.${pet.sex}`) : '-'}</p>
+                      </div>
+                      <div className="bg-secondary/30 p-3 rounded-xl">
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">{t('pet.neutered')}</span>
+                        <p className="font-semibold text-sm text-foreground mt-0.5 capitalize">{pet.neutered ? t('common.yes') : t('common.no')}</p>
+                      </div>
+                    </div>
+                    
+                    {pet.special_notes && (
+                      <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl">
+                        <span className="text-[10px] text-amber-600 dark:text-amber-500 uppercase font-bold tracking-wider">{t('pet.specialNotes')}</span>
+                        <p className="text-sm text-foreground/90 mt-1 whitespace-pre-wrap">{pet.special_notes}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
