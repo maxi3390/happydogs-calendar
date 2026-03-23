@@ -36,7 +36,7 @@ class OwnerListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Owner
-        fields = ['id', 'first_name', 'last_name', 'full_name', 'phone', 'email']
+        fields = ['id', 'first_name', 'last_name', 'full_name', 'phone', 'email', 'id_number']
 
 
 class VaccinationSerializer(serializers.ModelSerializer):
@@ -109,7 +109,7 @@ class OwnerWithPetsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Owner
-        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'address', 'emergency_contact', 'emergency_phone', 'notes', 'profile_picture_url', 'pets', 'created_at']
+        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'id_number', 'address', 'emergency_contact', 'emergency_phone', 'notes', 'profile_picture_url', 'pets', 'created_at']
 
     def get_profile_picture_url(self, obj):
         if obj.profile_picture:

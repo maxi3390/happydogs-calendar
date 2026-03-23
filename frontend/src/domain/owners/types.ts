@@ -4,6 +4,7 @@ export interface Owner {
   last_name: string;
   email: string;
   phone: string;
+  id_number: string;
   address: string;
   emergency_contact: string;
   emergency_phone: string;
@@ -32,6 +33,7 @@ export interface OwnerFormData {
   last_name: string;
   email: string;
   phone: string;
+  id_number?: string;
   address?: string;
   emergency_contact?: string;
   emergency_phone?: string;
@@ -45,4 +47,5 @@ export interface OwnerListItem {
   full_name: string;
   phone: string;
   email: string;
+  id_number: string;
 }

@@ -236,6 +236,11 @@ function OwnersPage() {
                         <span className="font-medium">{t('owner.address')}:</span> {ownerDetails[owner.id].address}
                       </p>
                     )}
+                    {ownerDetails[owner.id].id_number && (
+                      <p className="text-sm text-muted-foreground mb-3">
+                        <span className="font-medium">{t('owner.idNumber')}:</span> {ownerDetails[owner.id].id_number}
+                      </p>
+                    )}
                     {ownerDetails[owner.id].emergency_contact && (
                       <p className="text-sm text-muted-foreground mb-3">
                         <span className="font-medium">{t('owner.emergencyContact')}:</span> {ownerDetails[owner.id].emergency_contact} ({ownerDetails[owner.id].emergency_phone})

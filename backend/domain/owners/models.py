@@ -8,6 +8,7 @@ class Owner(models.Model):
     last_name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20)
+    id_number = models.CharField(max_length=20, unique=True, null=True, blank=True, help_text="ID Number / DNI")
     address = models.TextField(blank=True)
     emergency_contact = models.CharField(max_length=100, blank=True)
     emergency_phone = models.CharField(max_length=20, blank=True)

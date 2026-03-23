@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, User, Mail, Phone, MapPin, AlertCircle } from 'lucide-react';
+import { X, User, Mail, Phone, MapPin, AlertCircle, CreditCard } from 'lucide-react';
 import { api, Owner, OwnerFormData } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
@@ -20,6 +20,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
     last_name: '',
     email: '',
     phone: '',
+    id_number: '',
     address: '',
     emergency_contact: '',
     emergency_phone: '',
@@ -36,6 +37,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
         last_name: owner.last_name,
         email: owner.email,
         phone: owner.phone,
+        id_number: owner.id_number || '',
         address: owner.address || '',
         emergency_contact: owner.emergency_contact || '',
         emergency_phone: owner.emergency_phone || '',
@@ -149,6 +151,22 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
                 onChange={e => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                 className="w-full pl-10 pr-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent"
                 placeholder={t('owner.phonePlaceholder')}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t('owner.idNumber')}
+            </label>
+            <div className="relative">
+              <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={formData.id_number}
+                onChange={e => setFormData(prev => ({ ...prev, id_number: e.target.value }))}
+                className="w-full pl-10 pr-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent"
+                placeholder={t('owner.idNumberPlaceholder')}
               />
             </div>
           </div>

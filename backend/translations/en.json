@@ -175,6 +175,8 @@
     "searchPlaceholder": "Search owners by name, email, or phone...",
     "emailPlaceholder": "owner@email.com",
     "phonePlaceholder": "3424666555",
+    "idNumber": "ID Number",
+    "idNumberPlaceholder": "DNI / ID Number",
     "noResults": "No owners found matching your search",
     "noPetsToSchedule": "This owner has no pets to schedule",
     "scheduleThisPet": "Schedule this pet",
