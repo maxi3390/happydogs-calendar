@@ -80,6 +80,15 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
               <Settings className="w-4 h-4 lg:w-5 lg:h-5" />
               <span className="hidden lg:inline">{t('nav.settings')}</span>
             </Link>
+            {isAdmin && (
+              <Link
+                href="/admin/users"
+                className={navLinkClass('/admin', 'purple', 'bg-purple-600 dark:bg-purple-500')}
+              >
+                <Shield className="w-4 h-4 lg:w-5 lg:h-5" />
+                <span className="hidden lg:inline">Admin</span>
+              </Link>
+            )}
             {onNewSchedule && (
               <button
                 onClick={onNewSchedule}
@@ -165,6 +174,16 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
                 <Settings className="w-5 h-5" />
                 {t('nav.settings')}
               </Link>
+              {isAdmin && (
+                <Link
+                  href="/admin/users"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={mobileNavLinkClass('/admin', 'bg-purple-600 dark:bg-purple-500')}
+                >
+                  <Shield className="w-5 h-5" />
+                  Admin
+                </Link>
+              )}
               {onNewSchedule && (
                 <button
                   onClick={() => {

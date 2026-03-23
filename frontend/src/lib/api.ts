@@ -19,6 +19,7 @@ import { vaccinationTypesApi } from '@/domain/vaccinations/api';
 import { schedulesApi } from '@/domain/schedules/api';
 import { documentsApi } from '@/domain/documents/api';
 import { nurserySettingsApi } from '@/domain/settings/api';
+import { usersApi } from '@/domain/users/api';
 
 export const api = {
   owners: ownersApi,
@@ -27,4 +28,5 @@ export const api = {
   schedules: schedulesApi,
   nurserySettings: nurserySettingsApi,
   documents: documentsApi,
+  users: usersApi,
 };
