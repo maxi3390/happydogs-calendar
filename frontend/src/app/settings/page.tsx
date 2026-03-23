@@ -5,6 +5,7 @@ import { Settings, AlertTriangle, Plus, Trash2, Save, Info, Syringe, ToggleLeft,
 import Navigation from '@/components/Navigation';
 import { useTranslation } from '@/lib/translations';
 import { api, Pet, VaccinationType } from '@/lib/api';
+import { withAuth } from '@/lib/withAuth';
 
 interface IncompatibilityRule {
   id: number;
@@ -15,7 +16,7 @@ interface IncompatibilityRule {
   reason: string;
 }
 
-export default function SettingsPage() {
+function SettingsPage() {
   const { t } = useTranslation();
   const [pets, setPets] = useState<Pet[]>([]);
   const [incompatibilities, setIncompatibilities] = useState<IncompatibilityRule[]>([]);
@@ -543,3 +544,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+export default withAuth(SettingsPage);

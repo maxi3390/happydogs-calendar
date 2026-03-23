@@ -46,7 +46,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            🐾 Happy Pet Nursery
+            {t('app.name')}
           </h1>
           <h2 className="mt-4 text-xl text-gray-600 dark:text-gray-300">
             {t('auth.signInTitle') || 'Sign in to your account'}

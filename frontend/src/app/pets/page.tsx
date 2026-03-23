@@ -7,8 +7,9 @@ import PetForm from '@/components/PetForm';
 import Navigation from '@/components/Navigation';
 import { Pet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import { withAuth } from '@/lib/withAuth';
 
-export default function PetsPage() {
+function PetsPage() {
   const { t } = useTranslation();
   const [showPetForm, setShowPetForm] = useState(false);
   const [editingPet, setEditingPet] = useState<Pet | undefined>();
@@ -62,3 +63,5 @@ export default function PetsPage() {
     </div>
   );
 }
+
+export default withAuth(PetsPage);

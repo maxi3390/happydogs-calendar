@@ -7,8 +7,9 @@ import OwnerForm from '@/components/OwnerForm';
 import ScheduleForm from '@/components/ScheduleForm';
 import Navigation from '@/components/Navigation';
 import { useTranslation } from '@/lib/translations';
+import { withAuth } from '@/lib/withAuth';
 
-export default function OwnersPage() {
+function OwnersPage() {
   const { t } = useTranslation();
   const [owners, setOwners] = useState<Owner[]>([]);
   const [loading, setLoading] = useState(true);
@@ -319,3 +320,5 @@ export default function OwnersPage() {
     </div>
   );
 }
+
+export default withAuth(OwnersPage);
