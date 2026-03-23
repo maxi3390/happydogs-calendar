@@ -228,7 +228,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
               onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}
               rows={3}
               className="w-full px-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
-              placeholder="Any additional notes about this owner..."
+              placeholder={t('owner.notesPlaceholder')}
             />
           </div>
 

@@ -53,6 +53,7 @@
     "endTime": "End Time",
     "status": "Status",
     "notes": "Notes",
+    "notesPlaceholder": "Any special instructions for this visit...",
     "selectPet": "Select Pet",
     "selectPets": "Select Pets",
     "selected": "selected",
@@ -89,6 +90,7 @@
   },
   "pet": {
     "title": "Pets",
+    "description": "Manage all registered pets in the nursery.",
     "addPet": "Add Pet",
     "editPet": "Edit Pet",
     "noPets": "No pets yet",
@@ -110,6 +112,7 @@
     "vaxDate": "Vaccination Date",
     "noVaccinations": "No vaccinations recorded",
     "specialNotes": "Special Notes",
+    "specialNotesPlaceholder": "Any special care instructions, medical conditions, etc.",
     "owner": "Owner",
     "noOwner": "No owner assigned",
     "speciesOptions": {
@@ -155,6 +158,7 @@
   },
   "owner": {
     "title": "Owners",
+    "description": "Manage pet owners and their contact details",
     "addOwner": "Add Owner",
     "editOwner": "Edit Owner",
     "noOwners": "No owners yet",
@@ -172,6 +176,7 @@
     "contactName": "Contact Name",
     "contactPhone": "Contact Phone",
     "notes": "Notes",
+    "notesPlaceholder": "Any additional notes about this owner...",
     "searchPlaceholder": "Search owners by name, email, or phone...",
     "emailPlaceholder": "owner@email.com",
     "phonePlaceholder": "3424666555",
@@ -206,6 +211,7 @@
     "done": "Done",
     "selectedPets": "Selected pets",
     "notesLabel": "Notes (applied to all schedules)",
+    "notesPlaceholder": "Any special instructions for all schedules...",
     "creating": "Creating..."
   },
   "common": {

@@ -34,7 +34,7 @@ function PetsPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">{t('pet.title')}</h2>
-            <p className="text-muted-foreground mt-1">Manage all registered pets in the nursery.</p>
+            <p className="text-muted-foreground mt-1">{t('pet.description')}</p>
           </div>
           <button
             onClick={() => {

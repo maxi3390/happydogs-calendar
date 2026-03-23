@@ -666,7 +666,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
               onChange={e => setNotes(e.target.value)}
               rows={3}
               className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
-              placeholder={isMulti ? '' : 'Any special instructions for this visit...'}
+              placeholder={isMulti ? t('multiPet.notesPlaceholder') : t('schedule.notesPlaceholder')}
             />
           </div>
 

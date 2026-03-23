@@ -364,7 +364,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
               onChange={e => setFormData({ ...formData, special_notes: e.target.value })}
               rows={3}
               className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
-              placeholder="Any special care instructions, medical conditions, etc."
+              placeholder={t('pet.specialNotesPlaceholder')}
             />
           </div>
 

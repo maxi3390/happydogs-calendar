@@ -53,6 +53,7 @@
     "endTime": "Hora de Fin",
     "status": "Estado",
     "notes": "Notas",
+    "notesPlaceholder": "Cualquier instrucción especial para esta visita...",
     "selectPet": "Seleccionar Mascota",
     "selectPets": "Seleccionar Mascotas",
     "selected": "seleccionados",
@@ -89,6 +90,7 @@
   },
   "pet": {
     "title": "Mascotas",
+    "description": "Gestiona todas las mascotas registradas en la guardería.",
     "addPet": "Agregar Mascota",
     "editPet": "Editar Mascota",
     "noPets": "Aún no hay mascotas",
@@ -110,6 +112,7 @@
     "vaxDate": "Fecha de Vacunación",
     "noVaccinations": "Sin vacunas registradas",
     "specialNotes": "Notas Especiales",
+    "specialNotesPlaceholder": "Cualquier instrucción especial de cuidado, condiciones médicas, etc.",
     "owner": "Dueño",
     "noOwner": "Sin dueño asignado",
     "speciesOptions": {
@@ -155,6 +158,7 @@
   },
   "owner": {
     "title": "Dueños",
+    "description": "Gestiona los dueños de las mascotas y sus datos de contacto",
     "addOwner": "Agregar Dueño",
     "editOwner": "Editar Dueño",
     "noOwners": "Aún no hay dueños",
@@ -172,6 +176,7 @@
     "contactName": "Nombre del Contacto",
     "contactPhone": "Teléfono del Contacto",
     "notes": "Notas",
+    "notesPlaceholder": "Cualquier nota adicional sobre este dueño...",
     "searchPlaceholder": "Buscar dueños por nombre, correo o teléfono...",
     "emailPlaceholder": "duenio@email.com",
     "phonePlaceholder": "3424666555",
@@ -206,6 +211,7 @@
     "done": "Listo",
     "selectedPets": "Mascotas seleccionadas",
     "notesLabel": "Notas (aplicadas a todos los horarios)",
+    "notesPlaceholder": "Cualquier instrucción especial para todos los horarios...",
     "creating": "Creando..."
   },
   "common": {

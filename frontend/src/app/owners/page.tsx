@@ -109,7 +109,7 @@ function OwnersPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div>
             <h2 className="text-3xl font-extrabold tracking-tight text-foreground">{t('owner.title')}</h2>
-            <p className="text-muted-foreground mt-1">Manage pet owners and their contact details</p>
+            <p className="text-muted-foreground mt-1">{t('owner.description')}</p>
           </div>
           <button
             onClick={() => setShowOwnerForm(true)}
