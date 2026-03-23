@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { PawPrint, Users, CalendarDays, Settings, Menu, X, LogIn, LogOut, Shield } from 'lucide-react';
+import { PawPrint, Users, CalendarDays, Settings, Menu, X, LogIn, LogOut, Shield, User, ChevronDown } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useTranslation } from '@/lib/translations';
@@ -18,6 +18,7 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
   const { t } = useTranslation();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
 
@@ -84,22 +85,6 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
               <PawPrint className="w-4 h-4 lg:w-4 lg:h-4" />
               <span className="hidden lg:inline font-medium">{t('nav.pets')}</span>
             </Link>
-            <Link
-              href="/settings"
-              className={navLinkClass('/settings', 'amber', 'bg-amber-500 dark:bg-amber-600')}
-            >
-              <Settings className="w-4 h-4 lg:w-4 lg:h-4" />
-              <span className="hidden lg:inline font-medium">{t('nav.settings')}</span>
-            </Link>
-            {isAdmin && (
-              <Link
-                href="/admin/users"
-                className={navLinkClass('/admin', 'purple', 'bg-purple-600 dark:bg-purple-500')}
-              >
-                <Shield className="w-4 h-4 lg:w-4 lg:h-4" />
-                <span className="hidden lg:inline font-medium">Admin</span>
-              </Link>
-            )}
             {onNewSchedule && (
               <button
                 onClick={onNewSchedule}
@@ -110,20 +95,68 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
               </button>
             )}
 
-            {/* Auth Section */}
+            {/* Auth/Profile Section */}
             {isAuthenticated ? (
-              <div className="flex items-center gap-2 ml-1">
-                <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-background border border-border/50 rounded-xl shadow-sm">
-                  {isAdmin && <Shield className="w-3 h-3 text-amber-500" />}
-                  <span className="text-sm font-medium text-foreground">{user?.first_name}</span>
-                </div>
+              <div className="relative ml-1">
                 <button
-                  onClick={logout}
-                  className="p-2 bg-destructive/10 text-destructive rounded-xl hover:bg-destructive/20 transition-colors"
-                  title={t('auth.signOut')}
+                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                  className="flex items-center gap-2 px-2 lg:px-3 py-1.5 bg-secondary/50 hover:bg-secondary border border-border/50 rounded-xl shadow-sm transition-all duration-300"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <span className="hidden lg:inline text-sm font-medium text-foreground pr-1">{user?.first_name}</span>
+                  <ChevronDown className={`hidden lg:block w-3 h-3 text-muted-foreground transition-transform duration-300 ${profileMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
+
+                {profileMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setProfileMenuOpen(false)} />
+                    <div className="absolute right-0 mt-2 w-56 bg-background border border-border/50 rounded-2xl shadow-lg shadow-black/5 dark:shadow-black/20 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="p-3 border-b border-border/50 bg-secondary/20">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
+                            {isAdmin ? <Shield className="w-5 h-5" /> : <User className="w-5 h-5" />}
+                          </div>
+                          <div className="flex flex-col overflow-hidden">
+                            <span className="font-medium text-sm text-foreground truncate">{user?.first_name} {user?.last_name}</span>
+                            <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-2 space-y-1">
+                        <Link
+                          href="/settings"
+                          onClick={() => setProfileMenuOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-secondary/80 rounded-xl transition-colors"
+                        >
+                          <Settings className="w-4 h-4 text-amber-500" />
+                          {t('nav.settings')}
+                        </Link>
+                        {isAdmin && (
+                          <Link
+                            href="/admin/users"
+                            onClick={() => setProfileMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-secondary/80 rounded-xl transition-colors"
+                          >
+                            <Shield className="w-4 h-4 text-purple-500" />
+                            Admin
+                          </Link>
+                        )}
+                        <button
+                          onClick={() => {
+                            setProfileMenuOpen(false);
+                            logout();
+                          }}
+                          className="flex items-center gap-3 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 w-full text-left rounded-xl transition-colors mt-1"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          {t('auth.signOut')}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <Link
@@ -177,24 +210,7 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
                 <PawPrint className="w-5 h-5" />
                 {t('nav.pets')}
               </Link>
-              <Link
-                href="/settings"
-                onClick={() => setMobileMenuOpen(false)}
-                className={mobileNavLinkClass('/settings', 'bg-amber-600 dark:bg-amber-500')}
-              >
-                <Settings className="w-5 h-5" />
-                {t('nav.settings')}
-              </Link>
-              {isAdmin && (
-                <Link
-                  href="/admin/users"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={mobileNavLinkClass('/admin', 'bg-purple-600 dark:bg-purple-500')}
-                >
-                  <Shield className="w-5 h-5" />
-                  Admin
-                </Link>
-              )}
+
               {onNewSchedule && (
                 <button
                   onClick={() => {
@@ -223,29 +239,55 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
               {/* Mobile Auth Section */}
               <div className="border-t border-border/50 pt-4 mt-2">
                 {isAuthenticated ? (
-                  <>
-                    <div className="flex items-center gap-3 px-4 py-2 mb-3 bg-secondary/30 rounded-xl">
-                      {isAdmin && <Shield className="w-5 h-5 text-amber-500" />}
-                      <span className="text-foreground font-medium">
-                        {t('auth.welcome')}, {user?.first_name}
-                      </span>
-                      {isAdmin && (
-                        <span className="text-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-400 px-2 py-1 rounded-md uppercase tracking-wider font-bold">
-                          {t('auth.admin')}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 px-4 py-3 bg-secondary/30 rounded-xl border border-border/50">
+                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
+                        {isAdmin ? <Shield className="w-5 h-5 text-amber-500" /> : <User className="w-5 h-5" />}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-foreground font-medium flex items-center gap-2">
+                          {user?.first_name} {user?.last_name}
+                          {isAdmin && (
+                            <span className="text-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-md uppercase tracking-wider font-bold">
+                              {t('auth.admin')}
+                            </span>
+                          )}
                         </span>
-                      )}
+                        <span className="text-xs text-muted-foreground">{user?.email}</span>
+                      </div>
                     </div>
+
+                    <Link
+                      href="/settings"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={mobileNavLinkClass('/settings', 'bg-amber-600 dark:bg-amber-500')}
+                    >
+                      <Settings className="w-5 h-5" />
+                      {t('nav.settings')}
+                    </Link>
+
+                    {isAdmin && (
+                      <Link
+                        href="/admin/users"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={mobileNavLinkClass('/admin', 'bg-purple-600 dark:bg-purple-500')}
+                      >
+                        <Shield className="w-5 h-5" />
+                        Admin
+                      </Link>
+                    )}
+
                     <button
                       onClick={() => {
                         setMobileMenuOpen(false);
                         logout();
                       }}
-                      className="flex items-center justify-center gap-2 px-4 py-3 w-full bg-destructive/10 text-destructive font-medium rounded-xl hover:bg-destructive/20 transition-colors"
+                      className="flex items-center gap-3 px-4 py-3 w-full bg-destructive/10 text-destructive font-medium rounded-xl hover:bg-destructive/20 transition-colors"
                     >
                       <LogOut className="w-5 h-5" />
                       {t('auth.signOut')}
                     </button>
-                  </>
+                  </div>
                 ) : (
                   <Link
                     href="/login"
