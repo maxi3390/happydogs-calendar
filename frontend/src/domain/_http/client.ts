@@ -1,5 +1,13 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
 
+function handleAuthError() {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('auth_tokens');
+    localStorage.removeItem('auth_user');
+    window.location.href = '/login';
+  }
+}
+
 function getAuthToken(): string | null {
   if (typeof window === 'undefined') return null;
   const tokens = localStorage.getItem('auth_tokens');
@@ -33,6 +41,9 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
   });
 
   if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      handleAuthError();
+    }
     const error = await res.json().catch(() => ({}));
     throw new Error(error.detail || `API Error: ${res.status}`);
   }
@@ -54,6 +65,9 @@ export async function uploadFile<T>(endpoint: string, formData: FormData): Promi
   });
 
   if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      handleAuthError();
+    }
     const error = await res.json().catch(() => ({}));
     throw new Error(error.error || error.detail || `Upload Error: ${res.status}`);
   }
