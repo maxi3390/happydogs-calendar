@@ -18,8 +18,8 @@ test.describe('Calendar', () => {
     const prevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1);
     const prevMonthName = prevMonth.toLocaleString('en-US', { month: 'long' });
 
-    // Click previous month button (left chevron)
-    await page.locator('button').filter({ has: page.locator('svg.lucide-chevron-left') }).first().click();
+    // Click previous month button in calendar header
+    await page.locator('.bg-card.text-card-foreground.rounded-xl.shadow-lg').first().locator('button').nth(2).click();
 
     // Should show previous month
     await expect(page.getByText(prevMonthName, { exact: false })).toBeVisible();
@@ -31,8 +31,8 @@ test.describe('Calendar', () => {
     const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1);
     const nextMonthName = nextMonth.toLocaleString('en-US', { month: 'long' });
 
-    // Click next month button (right chevron)
-    await page.locator('button').filter({ has: page.locator('svg.lucide-chevron-right') }).first().click();
+    // Click next month button in calendar header
+    await page.locator('.bg-card.text-card-foreground.rounded-xl.shadow-lg').first().locator('button').nth(4).click();
 
     // Should show next month
     await expect(page.getByText(nextMonthName, { exact: false })).toBeVisible();
@@ -40,8 +40,8 @@ test.describe('Calendar', () => {
 
   test('should return to today when clicking Today button', async ({ page }) => {
     // Navigate away from current month
-    await page.locator('button').filter({ has: page.locator('svg.lucide-chevron-left') }).first().click();
-    await page.locator('button').filter({ has: page.locator('svg.lucide-chevron-left') }).first().click();
+    await page.locator('.bg-card.text-card-foreground.rounded-xl.shadow-lg').first().locator('button').nth(2).click();
+    await page.locator('.bg-card.text-card-foreground.rounded-xl.shadow-lg').first().locator('button').nth(2).click();
 
     // Click Today button (translated text)
     await page.getByRole('button', { name: /today|hoy/i }).click();
@@ -71,8 +71,7 @@ test.describe('Calendar', () => {
     await page.locator(`[class*="cursor-pointer"]:has-text("${today}")`).first().click();
 
     // Day schedule panel should update to show selected date
-    const daySchedule = page.locator('.bg-gradient-to-r.from-indigo-500');
-    await expect(daySchedule).toBeVisible();
+    await expect(page.getByText(/\d+\s+schedules?/i).first()).toBeVisible();
   });
 });
 
@@ -88,9 +87,9 @@ test.describe('Week View', () => {
     // Should show "Week of" header
     await expect(page.getByText(/week of/i)).toBeVisible();
 
-    // Should show day column headers (date-fns EEE format: Sun, Mon, etc.)
-    await expect(page.getByText('Sun', { exact: false })).toBeVisible();
-    await expect(page.getByText('Mon', { exact: false })).toBeVisible();
+    // Should show day column headers (translated short names)
+    await expect(page.getByText(/sun|dom/i).first()).toBeVisible();
+    await expect(page.getByText(/mon|lun/i).first()).toBeVisible();
   });
 
   test('should navigate weeks', async ({ page }) => {
@@ -101,7 +100,7 @@ test.describe('Week View', () => {
     const weekText = await page.getByText(/week of/i).textContent();
 
     // Navigate to next week
-    await page.locator('button').filter({ has: page.locator('svg.lucide-chevron-right') }).click();
+    await page.locator('button').filter({ hasText: /this week/i }).locator('xpath=following-sibling::button').click();
 
     // Week text should change
     const newWeekText = await page.getByText(/week of/i).textContent();
@@ -113,8 +112,9 @@ test.describe('Week View', () => {
     await page.getByRole('button', { name: /week/i }).first().click();
 
     // Navigate away
-    await page.locator('button').filter({ has: page.locator('svg.lucide-chevron-left') }).click();
-    await page.locator('button').filter({ has: page.locator('svg.lucide-chevron-left') }).click();
+    const weekHeader = page.locator('.bg-card.text-card-foreground.rounded-xl.shadow-lg').first();
+    await weekHeader.locator('button').nth(2).click();
+    await weekHeader.locator('button').nth(2).click();
 
     // Click This Week button (translated text)
     await page.getByRole('button', { name: /this week/i }).click();

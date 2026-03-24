@@ -47,6 +47,14 @@ test.describe('Login Page', () => {
   });
 
   test('should show error on invalid login', async ({ page }) => {
+    await page.route('**/auth/login/', async route => {
+      await route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Invalid credentials' }),
+      });
+    });
+
     await page.goto('/login');
 
     // Fill in invalid credentials
@@ -56,8 +64,8 @@ test.describe('Login Page', () => {
     // Submit
     await page.getByRole('button', { name: /sign in/i }).click();
 
-    // Should show error message (either from API or network error)
-    await expect(page.locator('.bg-red-50, .bg-red-900\\/30')).toBeVisible({ timeout: 5000 });
+    // Should show error message
+    await expect(page.getByText(/invalid credentials|login failed/i)).toBeVisible({ timeout: 5000 });
   });
 
   test('should redirect authenticated user away from login', async ({ page }) => {

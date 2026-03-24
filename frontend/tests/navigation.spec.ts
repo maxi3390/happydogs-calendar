@@ -40,8 +40,9 @@ test.describe('Navigation', () => {
   });
 
   test('should navigate to settings page', async ({ page }) => {
-    // Click on Settings link in navigation
-    await page.getByRole('link', { name: /settings/i }).first().click();
+    // Open profile menu and click settings link
+    await page.getByRole('button').filter({ hasText: 'Test' }).first().click();
+    await page.getByRole('link', { name: /settings/i }).click();
 
     // Should be on settings page
     await expect(page).toHaveURL('/settings');
@@ -66,8 +67,9 @@ test.describe('Navigation', () => {
   });
 
   test('should show sign out button when authenticated', async ({ page }) => {
-    // Sign out button should be visible
-    await expect(page.locator('button').filter({ has: page.locator('svg.lucide-log-out') })).toBeVisible();
+    // Sign out lives inside the profile menu
+    await page.getByRole('button').filter({ hasText: 'Test' }).first().click();
+    await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
   });
 });
 
@@ -92,8 +94,8 @@ test.describe('Public Navigation', () => {
     // Should see a welcome/hero section
     await expect(page.getByText(/welcome/i)).toBeVisible();
 
-    // Should see availability calendar
-    await expect(page.getByText(/availability calendar/i)).toBeVisible();
+    // Should see availability calendar card
+    await expect(page.getByRole('heading', { name: /availability calendar/i })).toBeVisible();
   });
 });
 

@@ -7,8 +7,8 @@ test.describe('Schedule Creation', () => {
   });
 
   test('should open schedule form from nav button', async ({ page }) => {
-    // Click New Schedule button in navigation (CalendarDays icon)
-    await page.locator('button').filter({ has: page.locator('svg.lucide-calendar-days') }).first().click();
+    // Click New Schedule button in navigation
+    await page.getByRole('button', { name: /new schedule/i }).first().click();
 
     // Form should be visible
     await expect(page.getByText(/new schedule|create schedule/i)).toBeVisible();
@@ -16,7 +16,7 @@ test.describe('Schedule Creation', () => {
 
   test('should show pet selection in schedule form', async ({ page }) => {
     // Click New Schedule button
-    await page.locator('button').filter({ has: page.locator('svg.lucide-calendar-days') }).first().click();
+    await page.getByRole('button', { name: /new schedule/i }).first().click();
 
     // Pet dropdown should be visible (first select in the form)
     await expect(page.getByText(/pet/i).first()).toBeVisible();
@@ -24,7 +24,7 @@ test.describe('Schedule Creation', () => {
 
   test('should show date and time fields', async ({ page }) => {
     // Click New Schedule button
-    await page.locator('button').filter({ has: page.locator('svg.lucide-calendar-days') }).first().click();
+    await page.getByRole('button', { name: /new schedule/i }).first().click();
 
     // Date fields should be visible
     await expect(page.getByText(/start date/i)).toBeVisible();
@@ -37,7 +37,7 @@ test.describe('Schedule Creation', () => {
 
   test('should close form on cancel', async ({ page }) => {
     // Click New Schedule button
-    await page.locator('button').filter({ has: page.locator('svg.lucide-calendar-days') }).first().click();
+    await page.getByRole('button', { name: /new schedule/i }).first().click();
 
     // Form should be visible
     await expect(page.getByText(/new schedule|create schedule/i)).toBeVisible();
@@ -74,11 +74,10 @@ test.describe('Multi-Pet Schedule', () => {
     await page.reload({ waitUntil: 'networkidle' });
 
     // Open mobile menu
-    const menuButton = page.locator('button').filter({ has: page.locator('svg.lucide-menu') });
-    await menuButton.click();
+    await page.getByRole('button').last().click();
 
     // Click Multi-Pet button (Users icon with translated multiPet.title text)
-    const multiPetButton = page.locator('button').filter({ hasText: /multi-pet|batch/i });
+    const multiPetButton = page.getByRole('button', { name: /multi|batch|multiple/i });
     if (await multiPetButton.isVisible()) {
       await multiPetButton.click();
 
@@ -92,11 +91,10 @@ test.describe('Multi-Pet Schedule', () => {
     await page.reload({ waitUntil: 'networkidle' });
 
     // Open mobile menu
-    const menuButton = page.locator('button').filter({ has: page.locator('svg.lucide-menu') });
-    await menuButton.click();
+    await page.getByRole('button').last().click();
 
     // Click Multi-Pet button
-    const multiPetButton = page.locator('button').filter({ hasText: /multi-pet|batch/i });
+    const multiPetButton = page.getByRole('button', { name: /multi|batch|multiple/i });
     if (await multiPetButton.isVisible()) {
       await multiPetButton.click();
 
@@ -110,11 +108,10 @@ test.describe('Multi-Pet Schedule', () => {
     await page.reload({ waitUntil: 'networkidle' });
 
     // Open mobile menu
-    const menuButton = page.locator('button').filter({ has: page.locator('svg.lucide-menu') });
-    await menuButton.click();
+    await page.getByRole('button').last().click();
 
     // Click Multi-Pet button
-    const multiPetButton = page.locator('button').filter({ hasText: /multi-pet|batch/i });
+    const multiPetButton = page.getByRole('button', { name: /multi|batch|multiple/i });
     if (await multiPetButton.isVisible()) {
       await multiPetButton.click();
 
@@ -136,19 +133,13 @@ test.describe('Day Schedule Panel', () => {
   });
 
   test('should display day schedule panel', async ({ page }) => {
-    // Day schedule panel should be visible (gradient header)
-    const daySchedule = page.locator('.bg-gradient-to-r.from-indigo-500');
-    await expect(daySchedule).toBeVisible();
+    // Day schedule panel should show current selected date and schedule count
+    await expect(page.getByText(/\d+\s+schedules?/i).first()).toBeVisible();
   });
 
   test('should show selected date info in panel', async ({ page }) => {
-    // Panel should show day schedule section with date info
-    // The DaySchedule component shows the formatted date and schedule count
-    const daySchedulePanel = page.locator('.bg-gradient-to-r.from-indigo-500');
-    await expect(daySchedulePanel).toBeVisible();
-
-    // Should show a day name (e.g. "Monday, February 26, 2026")
-    await expect(daySchedulePanel.locator('h3')).toBeVisible();
+    // Panel should show a formatted weekday/date heading
+    await expect(page.getByText(/^[A-Za-z]+,\s+[A-Za-z]+\s+\d{1,2},\s+\d{4}$/).first()).toBeVisible();
   });
 
   test('should update status dropdown for schedules', async ({ page }) => {
