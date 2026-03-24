@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Edit2, Trash2, Dog, Cat, Bird, Rabbit, HelpCircle, ChevronDown } from 'lucide-react';
 import { api, Pet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
 
 interface PetListProps {
   onEdit: (pet: Pet) => void;
@@ -121,19 +123,21 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
                 </div>
               </div>
               <div className="flex items-center gap-1 mt-1">
-                <button
+                <Button
                   onClick={(e) => { e.stopPropagation(); onEdit(pet); }}
-                  className="p-2 text-muted-foreground hover:text-primary dark:hover:text-indigo-400 hover:bg-primary/10 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                  variant="ghost"
+                  size="icon"
                 >
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button
+                  <Edit2 className="w-4 h-4 text-primary" />
+                </Button>
+                <Button
                   onClick={(e) => { e.stopPropagation(); handleDelete(pet.id); }}
                   disabled={deletingId === pet.id}
-                  className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50"
+                  variant="ghost"
+                  size="icon"
                 >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </Button>
                 <div className={`p-2 ml-1 rounded-lg transition-colors ${expandedPetId === pet.id ? 'text-foreground bg-secondary' : 'text-muted-foreground group-hover:bg-secondary'}`}>
                   <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${expandedPetId === pet.id ? 'rotate-180' : ''}`} />
                 </div>
@@ -162,19 +166,15 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
                     <div>
                       <h5 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">{t('pet.traits')}</h5>
                       <div className="flex flex-wrap gap-2">
-                        <span className={`text-xs px-2.5 py-1.5 rounded-full font-medium ${temperamentColors[pet.temperament] || 'bg-secondary text-foreground'}`}>
+                        <Badge variant={temperamentColors[pet.temperament] ? 'secondary' : 'default'} className={temperamentColors[pet.temperament]}>
                           {t(`pet.temperamentOptions.${pet.temperament}`)}
-                        </span>
-                        <span className={`text-xs px-2.5 py-1.5 rounded-full font-medium ${
-                          pet.dominance_level <= 3 ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300' :
-                          pet.dominance_level <= 6 ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300' :
-                          'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
-                        }`}>
+                        </Badge>
+                        <Badge variant={pet.dominance_level <= 3 ? 'success' : pet.dominance_level <= 6 ? 'warning' : 'danger'}>
                           {t('common.dom')}: {pet.dominance_level}/10
-                        </span>
-                        <span className="text-xs px-2.5 py-1.5 rounded-full bg-secondary text-foreground font-medium">
+                        </Badge>
+                        <Badge variant="secondary">
                           {t(`pet.sizeOptions.${pet.size}`)}
-                        </span>
+                        </Badge>
                       </div>
                     </div>
 

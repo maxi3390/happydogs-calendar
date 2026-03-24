@@ -5,6 +5,7 @@ import { Plus } from 'lucide-react';
 import PetList from '@/components/PetList';
 import PetForm from '@/components/PetForm';
 import Navigation from '@/components/Navigation';
+import { Button } from '@/components/ui/Button';
 import { Pet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 import { withAuth } from '@/lib/withAuth';
@@ -36,16 +37,17 @@ function PetsPage() {
             <h2 className="text-3xl font-bold tracking-tight">{t('pet.title')}</h2>
             <p className="text-muted-foreground mt-1">{t('pet.description')}</p>
           </div>
-          <button
+          <Button
             onClick={() => {
               setEditingPet(undefined);
               setShowPetForm(true);
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-medium rounded-xl hover:bg-primary/90 transition-all shadow-sm active:scale-[0.98]"
+            variant="primary"
+            size="md"
           >
             <Plus className="w-5 h-5" />
             {t('pet.addPet')}
-          </button>
+          </Button>
         </div>
 
         <PetList
