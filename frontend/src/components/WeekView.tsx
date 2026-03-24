@@ -136,7 +136,7 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
                   onClick={() => onViewChange('month')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex-1 sm:flex-none justify-center ${
                     calendarView === 'month'
-                      ? 'bg-card text-card-foreground dark:bg-slate-600 text-primary shadow-sm'
+                      ? 'bg-card text-card-foreground dark:bg-slate-600 text-primary dark:text-white shadow-sm'
                       : 'text-muted-foreground hover:text-gray-800 dark:hover:text-gray-200'
                   }`}
                 >
@@ -147,7 +147,7 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
                   onClick={() => onViewChange('week')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex-1 sm:flex-none justify-center ${
                     calendarView === 'week'
-                      ? 'bg-card text-card-foreground dark:bg-slate-600 text-primary shadow-sm'
+                      ? 'bg-card text-card-foreground dark:bg-slate-600 text-primary dark:text-white shadow-sm'
                       : 'text-muted-foreground hover:text-gray-800 dark:hover:text-gray-200'
                   }`}
                 >
