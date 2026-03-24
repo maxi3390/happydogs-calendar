@@ -2,7 +2,7 @@ from datetime import date, time, timedelta
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
-from tests.factories import create_pet, create_schedule
+from tests.factories import create_pet, create_schedule, create_and_auth_user
 from pets.models import Schedule
 
 
@@ -10,6 +10,7 @@ class ScheduleCRUDTests(APITestCase):
     """Basic CRUD tests for schedules."""
 
     def setUp(self):
+        self.user = create_and_auth_user(self.client)
         self.pet = create_pet(name='Buddy')
         self.today = date.today()
         self.schedule = create_schedule(
@@ -74,6 +75,7 @@ class ScheduleValidationTests(APITestCase):
     """Validation edge-cases for schedule creation."""
 
     def setUp(self):
+        self.user = create_and_auth_user(self.client)
         self.pet = create_pet()
         self.today = date.today()
         self.list_url = reverse('schedule-list')
@@ -124,6 +126,7 @@ class ScheduleFilterTests(APITestCase):
     """Tests for queryset filtering."""
 
     def setUp(self):
+        self.user = create_and_auth_user(self.client)
         self.pet = create_pet()
         self.today = date.today()
         self.tomorrow = self.today + timedelta(days=1)
@@ -165,6 +168,7 @@ class ConflictCheckAPITests(APITestCase):
     """Tests for the check_conflicts action."""
 
     def setUp(self):
+        self.user = create_and_auth_user(self.client)
         self.aggressive = create_pet(
             name='Rex', temperament='aggressive', dominance_level=8, size='large')
         self.friendly = create_pet(
@@ -226,6 +230,7 @@ class DailySummaryAPITests(APITestCase):
     """Tests for the daily_summary action."""
 
     def setUp(self):
+        self.user = create_and_auth_user(self.client)
         self.today = date.today()
         p1 = create_pet()
         p2 = create_pet()
@@ -257,6 +262,7 @@ class BatchCreateTests(APITestCase):
     """Tests for the batch_create action."""
 
     def setUp(self):
+        self.user = create_and_auth_user(self.client)
         self.pet1 = create_pet(name='Alpha')
         self.pet2 = create_pet(name='Beta')
         self.today = date.today()
@@ -308,6 +314,7 @@ class MultiDayScheduleTests(APITestCase):
     """Tests for multi-day schedule functionality."""
 
     def setUp(self):
+        self.user = create_and_auth_user(self.client)
         self.pet = create_pet(name='Buddy')
         self.today = date.today()
         self.list_url = reverse('schedule-list')

@@ -1,13 +1,14 @@
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
-from tests.factories import create_vaccination_type
+from tests.factories import create_vaccination_type, create_and_auth_user
 from pets.models import VaccinationType
 
 
 class VaccinationTypeAPITests(APITestCase):
 
     def setUp(self):
+        self.user = create_and_auth_user(self.client)
         self.initial_count = VaccinationType.objects.count()
         self.vt = create_vaccination_type(name='test_custom_vax', label='Custom Vax')
         self.list_url = reverse('vaccinationtype-list')

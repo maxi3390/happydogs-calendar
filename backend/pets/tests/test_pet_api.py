@@ -2,13 +2,14 @@ from datetime import date
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
-from tests.factories import create_owner, create_pet
+from tests.factories import create_owner, create_pet, create_and_auth_user
 from pets.models import Pet
 
 
 class PetAPITests(APITestCase):
 
     def setUp(self):
+        self.user = create_and_auth_user(self.client)
         self.owner = create_owner()
         self.pet = create_pet(
             owner=self.owner, name='Buddy', species='dog',

@@ -121,3 +121,10 @@ def auth_client(client, user=None, password='TestPass123!'):
     token = resp.data['tokens']['access']
     client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
     return user
+
+
+def create_and_auth_user(client, password='TestPass123!', **user_kwargs):
+    """Create a user and authenticate the given API client."""
+    user = create_user(password=password, **user_kwargs)
+    auth_client(client, user, password)
+    return user

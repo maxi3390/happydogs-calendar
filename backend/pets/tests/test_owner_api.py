@@ -2,13 +2,14 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
-from tests.factories import create_owner, create_pet
+from tests.factories import create_owner, create_pet, create_and_auth_user
 from pets.models import Owner
 
 
 class OwnerAPITests(APITestCase):
 
     def setUp(self):
+        self.user = create_and_auth_user(self.client)
         self.owner = create_owner(first_name='John', last_name='Doe',
                                   email='john@example.com', phone='555-1234')
         self.list_url = reverse('owner-list')
