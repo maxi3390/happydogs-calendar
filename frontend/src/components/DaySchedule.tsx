@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { Clock, AlertTriangle, Edit2, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { api, Schedule } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import { Button } from '@/components/ui/Button';
 
 interface DayScheduleProps {
   date: Date;
@@ -168,19 +169,21 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: Da
                 </div>
 
                 <div className="flex items-center gap-1 ml-4">
-                  <button
+                  <Button
                     onClick={() => onEditSchedule(schedule)}
-                    className="p-2 text-muted-foreground hover:text-primary dark:hover:text-indigo-400 hover:bg-primary/10 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                    variant="ghost"
+                    size="icon"
                   >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
+                    <Edit2 className="w-4 h-4 text-primary" />
+                  </Button>
+                  <Button
                     onClick={() => handleDelete(schedule.id)}
                     disabled={deletingId === schedule.id}
-                    className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50"
+                    variant="ghost"
+                    size="icon"
                   >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
                 </div>
               </div>
             </div>

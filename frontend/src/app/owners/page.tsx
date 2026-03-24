@@ -6,6 +6,8 @@ import { api, Owner, OwnerWithPets } from '@/lib/api';
 import OwnerForm from '@/components/OwnerForm';
 import ScheduleForm from '@/components/ScheduleForm';
 import Navigation from '@/components/Navigation';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { useTranslation } from '@/lib/translations';
 import { withAuth } from '@/lib/withAuth';
 
@@ -111,24 +113,23 @@ function OwnersPage() {
             <h2 className="text-3xl font-extrabold tracking-tight text-foreground">{t('owner.title')}</h2>
             <p className="text-muted-foreground mt-1">{t('owner.description')}</p>
           </div>
-          <button
+          <Button
             onClick={() => setShowOwnerForm(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all font-medium"
+            variant="primary"
           >
             <Plus className="w-5 h-5" />
             {t('owner.addOwner')}
-          </button>
+          </Button>
         </div>
 
-        <div className="mb-8 bg-card rounded-2xl p-4 shadow-sm border border-border/50 backdrop-blur-sm">
+        <div className="mb-8 bg-card text-card-foreground rounded-2xl p-4 shadow-sm border border-border/50 backdrop-blur-sm">
           <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <input
+            <Input
               type="text"
               placeholder={t('owner.searchPlaceholder')}
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-border/60 rounded-xl bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-sm"
+              icon={<Search className="w-4 h-4" />}
             />
           </div>
         </div>
@@ -196,27 +197,29 @@ function OwnersPage() {
                         {owner.pet_count || 0} {t('common.pets')}
                       </span>
                       <div className="flex items-center gap-1">
-                        <button
+                        <Button
                           onClick={e => {
                             e.stopPropagation();
                             setEditingOwner(owner);
                             setShowOwnerForm(true);
                           }}
-                          className="p-2 hover:bg-secondary rounded-xl transition-colors text-muted-foreground hover:text-foreground"
+                          variant="ghost"
+                          size="icon"
                           title="Edit"
                         >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
+                          <Edit2 className="w-4 h-4 text-primary" />
+                        </Button>
+                        <Button
                           onClick={e => {
                             e.stopPropagation();
                             handleDelete(owner.id);
                           }}
-                          className="p-2 hover:bg-destructive/10 rounded-xl transition-colors text-muted-foreground hover:text-destructive"
+                          variant="ghost"
+                          size="icon"
                           title="Delete"
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
                         <div className="p-2 text-muted-foreground group-hover:bg-secondary/50 rounded-xl transition-colors">
                           {expandedOwner === owner.id ? (
                             <ChevronUp className="w-5 h-5" />
@@ -257,13 +260,14 @@ function OwnersPage() {
                         {t('common.pets')} ({ownerDetails[owner.id].pets.length})
                       </h4>
                       {ownerDetails[owner.id].pets.length > 0 && (
-                        <button
+                        <Button
                           onClick={() => handleScheduleOwnerPets(ownerDetails[owner.id])}
-                          className="flex items-center gap-2 px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-sm rounded-lg hover:bg-emerald-700 transition-colors"
+                          variant="primary"
+                          size="sm"
                         >
                           <Calendar className="w-4 h-4" />
                           {t('owner.scheduleAllPets')}
-                        </button>
+                        </Button>
                       )}
                     </div>
                     {ownerDetails[owner.id].pets.length === 0 ? (
@@ -285,13 +289,14 @@ function OwnersPage() {
                                   </p>
                                 </div>
                               </div>
-                              <button
+                              <Button
                                 onClick={() => handleScheduleSinglePet(pet.id)}
-                                className="p-1.5 text-primary hover:bg-primary/10 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                                variant="ghost"
+                                size="icon"
                                 title={t('owner.scheduleThisPet')}
                               >
-                                <Calendar className="w-4 h-4" />
-                              </button>
+                                <Calendar className="w-4 h-4 text-primary" />
+                              </Button>
                             </div>
                           </div>
                         ))}

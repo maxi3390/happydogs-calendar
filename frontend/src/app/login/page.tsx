@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/translations';
 import { Eye, EyeOff, LogIn, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -69,49 +71,40 @@ export default function LoginPage() {
               </div>
             )}
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-foreground mb-2">
-                {t('auth.email') || 'Email'}
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground shadow-sm transition-all"
-                placeholder="you@example.com"
-              />
-            </div>
+            <Input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              label={t('auth.email') || 'Email'}
+            />
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-foreground mb-2">
-                {t('auth.password') || 'Password'}
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 pr-12 border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground shadow-sm transition-all"
-                  placeholder="••••••••"
-                />
+            <Input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              label={t('auth.password') || 'Password'}
+              endIcon={
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
+                  className="p-1 pt-2 w-full h-full hover:text-foreground text-muted-foreground transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? <EyeOff className="w-5 h-5 -mt-2" /> : <Eye className="w-5 h-5 -mt-2" />}
                 </button>
-              </div>
-            </div>
+              }
+            />
 
-            <button
+            <Button
               type="submit"
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-primary-foreground font-semibold rounded-xl shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5"
+              variant="primary"
+              className="w-full py-3.5"
             >
               {isLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -119,7 +112,7 @@ export default function LoginPage() {
                 <LogIn className="w-5 h-5" />
               )}
               {t('auth.signIn') || 'Sign In'}
-            </button>
+            </Button>
           </form>
 
           <div className="mt-8 pt-6 border-t border-border/50 text-center">

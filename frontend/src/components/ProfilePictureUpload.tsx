@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Camera, Trash2, Loader2, User } from 'lucide-react';
 import { useTranslation } from '@/lib/translations';
+import { Button } from '@/components/ui/Button';
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -89,7 +90,7 @@ export default function ProfilePictureUpload({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="absolute bottom-0 right-0 w-8 h-8 bg-primary hover:bg-primary/90 dark:bg-primary text-white rounded-full flex items-center justify-center hover:bg-indigo-700 dark:hover:bg-primary transition-colors shadow-md"
+            className="absolute bottom-0 right-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"
             title={currentUrl ? t('documents.changePhoto') : t('documents.uploadPhoto')}
           >
             <Camera className="w-4 h-4" />
@@ -106,14 +107,16 @@ export default function ProfilePictureUpload({
       />
 
       {currentUrl && !uploading && (
-        <button
+        <Button
           type="button"
           onClick={handleDelete}
-          className="flex items-center gap-1 text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
+          variant="ghost"
+          size="sm"
+          className="text-destructive hover:text-destructive text-xs"
         >
           <Trash2 className="w-3 h-3" />
           {t('documents.removePhoto')}
-        </button>
+        </Button>
       )}
 
       {error && (

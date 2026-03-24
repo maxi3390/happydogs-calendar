@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/translations';
 import { Eye, EyeOff, UserPlus, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -90,99 +92,75 @@ export default function RegisterPage() {
             )}
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="first_name" className="block text-sm font-medium mb-1.5">
-                  {t('auth.firstName') || 'First Name'}
-                </label>
-                <input
-                  id="first_name"
-                  name="first_name"
-                  type="text"
-                  required
-                  value={formData.first_name}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-ring focus:border-input transition-colors duration-200 placeholder:text-muted-foreground"
-                  placeholder="John"
-                />
-              </div>
-              <div>
-                <label htmlFor="last_name" className="block text-sm font-medium mb-1.5">
-                  {t('auth.lastName') || 'Last Name'}
-                </label>
-                <input
-                  id="last_name"
-                  name="last_name"
-                  type="text"
-                  required
-                  value={formData.last_name}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-ring focus:border-input transition-colors duration-200 placeholder:text-muted-foreground"
-                  placeholder="Doe"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-1.5">
-                {t('auth.email') || 'Email'}
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
+              <Input
+                id="first_name"
+                name="first_name"
+                type="text"
                 required
-                value={formData.email}
+                value={formData.first_name}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-ring focus:border-input transition-colors duration-200 placeholder:text-muted-foreground"
-                placeholder="you@example.com"
+                placeholder="John"
+                label={t('auth.firstName') || 'First Name'}
+              />
+              <Input
+                id="last_name"
+                name="last_name"
+                type="text"
+                required
+                value={formData.last_name}
+                onChange={handleChange}
+                placeholder="Doe"
+                label={t('auth.lastName') || 'Last Name'}
               />
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-1.5">
-                {t('auth.password') || 'Password'}
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 pr-10 bg-background border border-input rounded-xl focus:ring-2 focus:ring-ring focus:border-input transition-colors duration-200 placeholder:text-muted-foreground"
-                  placeholder="••••••••"
-                />
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              required
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="you@example.com"
+              label={t('auth.email') || 'Email'}
+            />
+
+            <Input
+              id="password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              required
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="••••••••"
+              label={t('auth.password') || 'Password'}
+              endIcon={
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="p-1 pt-2 w-full h-full hover:text-foreground text-muted-foreground transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? <EyeOff className="w-5 h-5 -mt-2" /> : <Eye className="w-5 h-5 -mt-2" />}
                 </button>
-              </div>
-            </div>
+              }
+            />
 
-            <div>
-              <label htmlFor="password_confirm" className="block text-sm font-medium mb-1.5">
-                {t('auth.confirmPassword') || 'Confirm Password'}
-              </label>
-              <input
-                id="password_confirm"
-                name="password_confirm"
-                type={showPassword ? 'text' : 'password'}
-                required
-                value={formData.password_confirm}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-ring focus:border-input transition-colors duration-200 placeholder:text-muted-foreground"
-                placeholder="••••••••"
-              />
-            </div>
+            <Input
+              id="password_confirm"
+              name="password_confirm"
+              type={showPassword ? 'text' : 'password'}
+              required
+              value={formData.password_confirm}
+              onChange={handleChange}
+              placeholder="••••••••"
+              label={t('auth.confirmPassword') || 'Confirm Password'}
+            />
 
-            <button
+            <Button
               type="submit"
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground font-medium rounded-xl transition-all shadow-sm active:scale-[0.98]"
+              variant="primary"
+              className="w-full py-2.5 mt-2"
             >
               {isLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -190,7 +168,7 @@ export default function RegisterPage() {
                 <UserPlus className="w-5 h-5" />
               )}
               {t('auth.signUp') || 'Sign Up'}
-            </button>
+            </Button>
           </form>
 
           <div className="mt-6 text-center">

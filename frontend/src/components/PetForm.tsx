@@ -7,6 +7,7 @@ import { api, Pet, PetFormData, OwnerListItem, Vaccination, VaccinationType } fr
 import { useTranslation } from '@/lib/translations';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import DocumentUpload from '@/components/DocumentUpload';
+import { Button } from '@/components/ui/Button';
 
 interface PetFormProps {
   pet?: Pet;
@@ -90,12 +91,14 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
             {pet ? t('pet.editPet') : t('pet.addPet')}
           </h2>
-          <button
+          <Button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -318,14 +321,16 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 {t('pet.vaccinations')}
               </label>
-              <button
+              <Button
                 type="button"
                 onClick={() => setVaccinations([...vaccinations, { vax_type: enabledVaxTypes[0]?.name || '', date: '' }])}
-                className="flex items-center gap-1 text-sm text-primary hover:text-indigo-700 dark:hover:text-indigo-300"
+                variant="ghost"
+                size="sm"
+                className="text-primary hover:text-primary"
               >
                 <Plus className="w-4 h-4" />
                 {t('pet.addVaccination')}
-              </button>
+              </Button>
             </div>
             {vaccinations.length === 0 ? (
               <p className="text-sm text-gray-400 dark:text-muted-foreground italic">{t('pet.noVaccinations')}</p>
@@ -357,13 +362,15 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                       }}
                       className="flex-1 px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 text-sm"
                     />
-                    <button
+                    <Button
                       type="button"
                       onClick={() => setVaccinations(vaccinations.filter((_, i) => i !== index))}
-                      className="p-2 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
                     >
                       <X className="w-4 h-4" />
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -407,20 +414,20 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
           )}
 
           <div className="flex justify-end gap-3 pt-4 border-t border-border">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
               {t('common.cancel')}
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
               disabled={loading}
-              className="px-6 py-2 bg-primary hover:bg-primary/90 dark:bg-primary text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-primary transition-colors disabled:opacity-50"
             >
               {loading ? t('common.saving') : pet ? t('pet.editPet') : t('pet.addPet')}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

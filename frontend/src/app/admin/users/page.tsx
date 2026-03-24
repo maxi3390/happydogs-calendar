@@ -7,6 +7,8 @@ import { User, UserFormData, UserCreateData } from '@/domain/users/types';
 import { withAdmin } from '@/lib/withAdmin';
 import Navigation from '@/components/Navigation';
 import { Shield, User as UserIcon, Plus, Edit2, Trash2, X, Check, Search, Mail, UserCheck, UserX } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 
 function UsersAdminPage() {
   const { t } = useTranslation();
@@ -156,12 +158,14 @@ function UsersAdminPage() {
         {error && (
           <div className="mb-6 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-xl flex items-center justify-between">
             <span className="font-medium text-sm">{error}</span>
-            <button
+            <Button
               onClick={() => setError(null)}
-              className="p-1 hover:bg-destructive/20 rounded-lg transition-colors"
+              variant="ghost"
+              size="icon"
+              className="p-1"
             >
-              <X className="w-4 h-4" />
-            </button>
+              <X className="w-4 h-4 text-destructive" />
+            </Button>
           </div>
         )}
 
@@ -209,22 +213,22 @@ function UsersAdminPage() {
         {/* Toolbar */}
         <div className="bg-card border border-border/50 rounded-2xl p-4 mb-6 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-center">
           <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <input
+            <Input
               type="text"
               placeholder="Search users..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-border/60 rounded-xl bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-sm"
+              icon={<Search className="w-4 h-4" />}
             />
           </div>
-          <button
+          <Button
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all font-medium sm:ml-auto"
+            variant="primary"
+            className="sm:ml-auto"
           >
             <Plus className="w-5 h-5" />
             Add User
-          </button>
+          </Button>
         </div>
 
         {/* Users Table */}
@@ -294,20 +298,22 @@ function UsersAdminPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button
+                        <Button
                           onClick={() => openEditModal(user)}
-                          className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-xl transition-colors"
+                          variant="ghost"
+                          size="icon"
                           title="Edit user"
                         >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
+                          <Edit2 className="w-4 h-4 text-primary" />
+                        </Button>
+                        <Button
                           onClick={() => openDeleteModal(user)}
-                          className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                          variant="ghost"
+                          size="icon"
                           title="Delete user"
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -329,12 +335,14 @@ function UsersAdminPage() {
             <div className="bg-card text-card-foreground rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b border-border flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-foreground">Create New User</h2>
-                <button
+                <Button
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="p-2 text-gray-400 hover:text-muted-foreground dark:hover:text-gray-300 rounded-lg"
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground"
                 >
                   <X className="w-5 h-5" />
-                </button>
+                </Button>
               </div>
               <form onSubmit={handleCreate} className="p-6 space-y-4">
                 <div>
@@ -413,19 +421,21 @@ function UsersAdminPage() {
                   />
                 </div>
                 <div className="flex gap-3 pt-4">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setIsCreateModalOpen(false)}
-                    className="flex-1 px-4 py-2 border border-border text-gray-700 dark:text-gray-300 rounded-lg hover:bg-muted/50 dark:hover:bg-gray-700 transition-colors"
+                    variant="outline"
+                    className="flex-1"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium transition-colors"
+                    variant="primary"
+                    className="flex-1"
                   >
                     Create User
-                  </button>
+                  </Button>
                 </div>
               </form>
             </div>
@@ -438,12 +448,14 @@ function UsersAdminPage() {
             <div className="bg-card text-card-foreground rounded-xl shadow-xl max-w-md w-full">
               <div className="p-6 border-b border-border flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-foreground">Edit User</h2>
-                <button
+                <Button
                   onClick={() => setIsEditModalOpen(false)}
-                  className="p-2 text-gray-400 hover:text-muted-foreground dark:hover:text-gray-300 rounded-lg"
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground"
                 >
                   <X className="w-5 h-5" />
-                </button>
+                </Button>
               </div>
               <form onSubmit={handleEdit} className="p-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -498,19 +510,21 @@ function UsersAdminPage() {
                   </label>
                 </div>
                 <div className="flex gap-3 pt-4">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setIsEditModalOpen(false)}
-                    className="flex-1 px-4 py-2 border border-border text-gray-700 dark:text-gray-300 rounded-lg hover:bg-muted/50 dark:hover:bg-gray-700 transition-colors"
+                    variant="outline"
+                    className="flex-1"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium transition-colors"
+                    variant="primary"
+                    className="flex-1"
                   >
                     Save Changes
-                  </button>
+                  </Button>
                 </div>
               </form>
             </div>
@@ -533,18 +547,20 @@ function UsersAdminPage() {
                   This action cannot be undone.
                 </p>
                 <div className="flex gap-3">
-                  <button
+                  <Button
                     onClick={() => setIsDeleteModalOpen(false)}
-                    className="flex-1 px-4 py-2 border border-border text-gray-700 dark:text-gray-300 rounded-lg hover:bg-muted/50 dark:hover:bg-gray-700 transition-colors"
+                    variant="outline"
+                    className="flex-1"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={handleDelete}
-                    className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+                    variant="danger"
+                    className="flex-1"
                   >
                     Delete
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

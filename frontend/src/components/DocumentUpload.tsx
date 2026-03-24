@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Upload, FileText, Trash2, Loader2, Image, File } from 'lucide-react';
 import { api, DocumentItem } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import { Button } from '@/components/ui/Button';
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_TYPES = [
@@ -159,14 +160,15 @@ export default function DocumentUpload({ petId, ownerId }: DocumentUploadProps) 
             onChange={e => setDescription(e.target.value)}
             className="flex-1 px-3 py-1.5 text-sm border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent"
           />
-          <button
+          <Button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="px-3 py-1.5 text-sm bg-primary hover:bg-primary/90 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+            variant="primary"
+            size="sm"
           >
             {t('documents.selectFile')}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -211,13 +213,15 @@ export default function DocumentUpload({ petId, ownerId }: DocumentUploadProps) 
                   </p>
                 </div>
               </div>
-              <button
+              <Button
                 type="button"
                 onClick={() => handleDelete(doc.id)}
-                className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors flex-shrink-0"
+                variant="ghost"
+                size="icon"
+                className="flex-shrink-0"
               >
-                <Trash2 className="w-4 h-4" />
-              </button>
+                <Trash2 className="w-4 h-4 text-destructive" />
+              </Button>
             </div>
           ))}
         </div>

@@ -6,6 +6,8 @@ import { api, Owner, OwnerFormData } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import DocumentUpload from '@/components/DocumentUpload';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 
 interface OwnerFormProps {
   owner?: Owner;
@@ -77,12 +79,14 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
             {owner ? t('owner.editOwner') : t('owner.addOwner')}
           </h2>
-          <button
+          <Button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-muted-foreground"
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
@@ -94,98 +98,60 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
           )}
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('owner.firstName')} *
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  required
-                  value={formData.first_name}
-                  onChange={e => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
-                  className="w-full pl-10 pr-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent"
-                  placeholder="John"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('owner.lastName')} *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.last_name}
-                onChange={e => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent"
-                placeholder="Doe"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('owner.email')} *
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="email"
-                required
-                value={formData.email}
-                onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                className="w-full pl-10 pr-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent"
-                placeholder={t('owner.emailPlaceholder')}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('owner.phone')} *
-            </label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="tel"
-                required
-                value={formData.phone}
-                onChange={e => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                className="w-full pl-10 pr-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent"
-                placeholder={t('owner.phonePlaceholder')}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('owner.idNumber')}
-            </label>
-            <div className="relative">
-              <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                value={formData.id_number}
-                onChange={e => setFormData(prev => ({ ...prev, id_number: e.target.value }))}
-                className="w-full pl-10 pr-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent"
-                placeholder={t('owner.idNumberPlaceholder')}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('owner.birthDate')}
-            </label>
-            <input
-              type="date"
-              value={formData.birth_date || ''}
-              onChange={e => setFormData(prev => ({ ...prev, birth_date: e.target.value || null }))}
-              className="w-full px-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent"
+            <Input
+              label={`${t('owner.firstName')} *`}
+              icon={<User className="w-4 h-4" />}
+              type="text"
+              required
+              value={formData.first_name}
+              onChange={e => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+              placeholder="John"
+            />
+            <Input
+              label={`${t('owner.lastName')} *`}
+              type="text"
+              required
+              value={formData.last_name}
+              onChange={e => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+              placeholder="Doe"
             />
           </div>
+
+          <Input
+            label={`${t('owner.email')} *`}
+            icon={<Mail className="w-4 h-4" />}
+            type="email"
+            required
+            value={formData.email}
+            onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
+            placeholder={t('owner.emailPlaceholder')}
+          />
+
+          <Input
+            label={`${t('owner.phone')} *`}
+            icon={<Phone className="w-4 h-4" />}
+            type="tel"
+            required
+            value={formData.phone}
+            onChange={e => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+            placeholder={t('owner.phonePlaceholder')}
+          />
+
+          <Input
+            label={t('owner.idNumber')}
+            icon={<CreditCard className="w-4 h-4" />}
+            type="text"
+            value={formData.id_number}
+            onChange={e => setFormData(prev => ({ ...prev, id_number: e.target.value }))}
+            placeholder={t('owner.idNumberPlaceholder')}
+          />
+
+          <Input
+            label={t('owner.birthDate')}
+            type="date"
+            value={formData.birth_date || ''}
+            onChange={e => setFormData(prev => ({ ...prev, birth_date: e.target.value || null }))}
+          />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -208,30 +174,20 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
               {t('owner.emergencyOptional')}
             </h3>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-muted-foreground mb-1">
-                  {t('owner.contactName')}
-                </label>
-                <input
-                  type="text"
-                  value={formData.emergency_contact}
-                  onChange={e => setFormData(prev => ({ ...prev, emergency_contact: e.target.value }))}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent"
-                  placeholder="Jane Doe"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-muted-foreground mb-1">
-                  {t('owner.contactPhone')}
-                </label>
-                <input
-                  type="tel"
-                  value={formData.emergency_phone}
-                  onChange={e => setFormData(prev => ({ ...prev, emergency_phone: e.target.value }))}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent"
-                  placeholder="+1 (555) 987-6543"
-                />
-              </div>
+              <Input
+                label={t('owner.contactName')}
+                type="text"
+                value={formData.emergency_contact}
+                onChange={e => setFormData(prev => ({ ...prev, emergency_contact: e.target.value }))}
+                placeholder="Jane Doe"
+              />
+              <Input
+                label={t('owner.contactPhone')}
+                type="tel"
+                value={formData.emergency_phone}
+                onChange={e => setFormData(prev => ({ ...prev, emergency_phone: e.target.value }))}
+                placeholder="+1 (555) 987-6543"
+              />
             </div>
             <div className="mt-3">
               <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
@@ -283,20 +239,20 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
           )}
 
           <div className="flex justify-end gap-3 pt-4 border-t border-border">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
               {t('common.cancel')}
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
               disabled={loading}
-              className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? t('common.saving') : owner ? t('owner.editOwner') : t('owner.addOwner')}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

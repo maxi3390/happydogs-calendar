@@ -6,6 +6,7 @@ import Navigation from '@/components/Navigation';
 import { useTranslation } from '@/lib/translations';
 import { api, Pet, VaccinationType } from '@/lib/api';
 import { withAuth } from '@/lib/withAuth';
+import { Button } from '@/components/ui/Button';
 
 interface IncompatibilityRule {
   id: number;
@@ -220,14 +221,14 @@ function SettingsPage() {
                   {dailyLimit === 0 ? t('settings.unlimited') : `${dailyLimit} ${t('settings.dailyBookingLimitLabel').toLowerCase()}`}
                 </p>
               </div>
-              <button
+              <Button
                 onClick={handleSaveDailyLimit}
                 disabled={dailyLimitSaving}
-                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                variant="primary"
               >
                 <Save className="w-4 h-4" />
                 {dailyLimitSaving ? t('common.saving') : t('common.save')}
-              </button>
+              </Button>
             </div>
 
             {dailyLimitSaved && (
@@ -246,13 +247,14 @@ function SettingsPage() {
                 <AlertTriangle className="w-5 h-5" />
                 <h3 className="font-semibold">{t('settings.incompatibilities')}</h3>
               </div>
-              <button
+              <Button
                 onClick={() => setShowAddForm(true)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-card text-card-foreground/20 hover:bg-card text-card-foreground/30 text-white rounded-lg text-sm transition-colors"
+                variant="secondary"
+                size="sm"
               >
                 <Plus className="w-4 h-4" />
                 {t('settings.addRule')}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -318,22 +320,22 @@ function SettingsPage() {
                   />
                 </div>
                 <div className="flex justify-end gap-2">
-                  <button
+                  <Button
                     onClick={() => {
                       setShowAddForm(false);
                       setNewRule({ pet1_id: '', pet2_id: '', reason: '' });
                     }}
-                    className="px-4 py-2 text-muted-foreground hover:bg-gray-100 dark:hover:bg-slate-600 rounded-lg transition-colors"
+                    variant="ghost"
                   >
                     {t('common.cancel')}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={handleAddRule}
-                    className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+                    variant="primary"
                   >
                     <Save className="w-4 h-4" />
                     {t('common.save')}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -347,12 +349,13 @@ function SettingsPage() {
               <div className="text-center py-8">
                 <AlertTriangle className="w-12 h-12 text-gray-300 dark:text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground">{t('settings.noRules')}</p>
-                <button
+                <Button
                   onClick={() => setShowAddForm(true)}
-                  className="mt-3 text-amber-600 dark:text-amber-400 hover:underline"
+                  variant="ghost"
+                  className="mt-3 text-amber-600 dark:text-amber-400"
                 >
                   {t('settings.addFirstRule')}
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="space-y-3">
@@ -372,12 +375,13 @@ function SettingsPage() {
                         <p className="text-sm text-muted-foreground">{rule.reason}</p>
                       </div>
                     </div>
-                    <button
+                    <Button
                       onClick={() => handleDeleteRule(rule.id)}
-                      className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                      variant="ghost"
+                      size="icon"
                     >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -393,13 +397,14 @@ function SettingsPage() {
                 <Syringe className="w-5 h-5" />
                 <h3 className="font-semibold">{t('settings.vaccinationTypes')}</h3>
               </div>
-              <button
+              <Button
                 onClick={() => setShowAddVaxForm(true)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-card text-card-foreground/20 hover:bg-card text-card-foreground/30 text-white rounded-lg text-sm transition-colors"
+                variant="secondary"
+                size="sm"
               >
                 <Plus className="w-4 h-4" />
                 {t('settings.addVaccinationType')}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -441,22 +446,22 @@ function SettingsPage() {
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
-                  <button
+                  <Button
                     onClick={() => {
                       setShowAddVaxForm(false);
                       setNewVaxType({ name: '', label: '' });
                     }}
-                    className="px-4 py-2 text-muted-foreground hover:bg-gray-100 dark:hover:bg-slate-600 rounded-lg transition-colors"
+                    variant="ghost"
                   >
                     {t('common.cancel')}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={handleAddVaxType}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                    variant="primary"
                   >
                     <Save className="w-4 h-4" />
                     {t('common.save')}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -469,12 +474,13 @@ function SettingsPage() {
               <div className="text-center py-8">
                 <Syringe className="w-12 h-12 text-gray-300 dark:text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground">{t('settings.noVaccinationTypes')}</p>
-                <button
+                <Button
                   onClick={() => setShowAddVaxForm(true)}
-                  className="mt-3 text-emerald-600 dark:text-emerald-400 hover:underline"
+                  variant="ghost"
+                  className="mt-3 text-emerald-600 dark:text-emerald-400"
                 >
                   {t('settings.addFirstVaccinationType')}
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="space-y-2">
@@ -495,22 +501,21 @@ function SettingsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button
+                      <Button
                         onClick={() => handleToggleVaxType(vaxType)}
-                        className={`p-2 rounded-lg transition-colors ${vaxType.enabled
-                          ? 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30'
-                          : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-600'
-                        }`}
+                        variant="ghost"
+                        size="icon"
                         title={vaxType.enabled ? t('settings.enabled') : t('settings.disabled')}
                       >
-                        {vaxType.enabled ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
-                      </button>
-                      <button
+                        {vaxType.enabled ? <ToggleRight className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /> : <ToggleLeft className="w-5 h-5 text-muted-foreground" />}
+                      </Button>
+                      <Button
                         onClick={() => handleDeleteVaxType(vaxType.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                        variant="ghost"
+                        size="icon"
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
                     </div>
                   </div>
                 ))}

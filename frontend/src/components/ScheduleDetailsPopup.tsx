@@ -3,6 +3,7 @@
 import { X, Clock, Calendar, User, Phone, AlertTriangle, FileText } from 'lucide-react';
 import { Schedule } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import { Button } from '@/components/ui/Button';
 
 interface ScheduleDetailsPopupProps {
   schedule: Schedule;
@@ -33,12 +34,14 @@ export default function ScheduleDetailsPopup({ schedule, onClose }: ScheduleDeta
               {schedule.pet_details.name}
             </h3>
           </div>
-          <button
+          <Button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-muted-foreground"
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         <div className="p-4 space-y-4">

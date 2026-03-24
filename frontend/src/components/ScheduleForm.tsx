@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { X, AlertTriangle, CheckCircle, Users } from 'lucide-react';
 import { api, Pet, PetListItem, Schedule, ScheduleFormData, BatchScheduleFormData, BatchScheduleResult, ConflictCheckResult, DailyCountResult, OwnerListItem } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import { Button } from '@/components/ui/Button';
 
 interface ScheduleFormBaseProps {
   selectedDate: Date;
@@ -261,12 +262,14 @@ export default function ScheduleForm(props: ScheduleFormProps) {
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
               {t('multiPet.schedulesCreatedTitle')}
             </h2>
-            <button
+            <Button
               onClick={() => { onSave(); onClose(); }}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground"
             >
               <X className="w-5 h-5" />
-            </button>
+            </Button>
           </div>
 
           <div className="p-6 space-y-4">
@@ -317,12 +320,13 @@ export default function ScheduleForm(props: ScheduleFormProps) {
               </div>
             </div>
 
-            <button
+            <Button
               onClick={() => { onSave(); onClose(); }}
-              className="w-full mt-4 px-6 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors"
+              variant="primary"
+              className="w-full mt-4"
             >
               {t('multiPet.done')}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -345,12 +349,14 @@ export default function ScheduleForm(props: ScheduleFormProps) {
               {schedule ? t('schedule.editSchedule') : t('schedule.newSchedule')}
             </h2>
           )}
-          <button
+          <Button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -388,20 +394,24 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                     {t('schedule.selectPets')} * ({multiPetIds.length} {t('schedule.selected')}{selectedOwner ? ` ${t('multiPet.selectedFrom').replace('{count}', String(filteredPets.length))}` : ''})
                   </label>
                   <div className="flex gap-2">
-                    <button
+                    <Button
                       type="button"
                       onClick={selectAllPets}
-                      className="text-xs px-2 py-1 text-primary hover:bg-primary/10 dark:hover:bg-indigo-900/30 rounded"
+                      variant="ghost"
+                      size="sm"
+                      className="text-primary text-xs"
                     >
                       {selectedOwner ? t('multiPet.selectAllShown') : t('multiPet.selectAll')}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
                       onClick={clearAllPets}
-                      className="text-xs px-2 py-1 text-muted-foreground hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
                     >
                       {t('multiPet.clear')}
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 <div className="border border-border rounded-lg max-h-48 overflow-y-auto">
@@ -672,42 +682,34 @@ export default function ScheduleForm(props: ScheduleFormProps) {
 
           {/* Footer buttons (shared structure, mode-specific labels) */}
           <div className="flex justify-end gap-3 pt-4 border-t border-border">
-            <button
+            <Button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              variant="ghost"
             >
               {t('common.cancel')}
-            </button>
+            </Button>
             {isMulti ? (
-              <button
+              <Button
                 type="submit"
                 disabled={loading || multiPetIds.length === 0}
-                className={`px-6 py-2 rounded-lg transition-colors disabled:opacity-50 ${
-                  dailyCount?.limit_reached
-                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : 'bg-primary hover:bg-primary/90 text-white'
-                }`}
+                variant={dailyCount?.limit_reached ? 'danger' : 'primary'}
+                className={dailyCount?.limit_reached ? 'bg-red-600 hover:bg-red-700 text-white' : ''}
               >
                 {loading ? t('multiPet.creating') :
                   dailyCount?.limit_reached ? t('schedule.scheduleAnyway') : t('schedule.createSchedule')}
-              </button>
+              </Button>
             ) : (
-              <button
+              <Button
                 type="submit"
                 disabled={loading || !singlePetId}
-                className={`px-6 py-2 rounded-lg transition-colors disabled:opacity-50 ${
-                  dailyCount?.limit_reached
-                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : conflictResult?.has_conflicts
-                      ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                      : 'bg-primary hover:bg-primary/90 text-white'
-                }`}
+                variant={dailyCount?.limit_reached || conflictResult?.has_conflicts ? 'danger' : 'primary'}
+                className={dailyCount?.limit_reached ? 'bg-red-600 hover:bg-red-700 text-white' : conflictResult?.has_conflicts ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}
               >
                 {loading ? t('common.saving') : schedule ? t('schedule.updateSchedule') :
                   dailyCount?.limit_reached ? t('schedule.scheduleAnyway') :
                   conflictResult?.has_conflicts ? t('schedule.scheduleAnyway') : t('schedule.createSchedule')}
-              </button>
+              </Button>
             )}
           </div>
         </form>
@@ -726,18 +728,19 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                   .replace('{date}', startDate)}
               </p>
               <div className="flex justify-end gap-3">
-                <button
+                <Button
                   onClick={() => setShowLimitConfirm(false)}
-                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                  variant="ghost"
                 >
                   {t('common.cancel')}
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={doSubmit}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                  variant="danger"
+                  className="bg-red-600 hover:bg-red-700 text-white"
                 >
                   {t('schedule.proceedAnyway')}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
