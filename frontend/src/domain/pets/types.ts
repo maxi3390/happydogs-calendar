@@ -23,6 +23,7 @@ export interface Pet {
   neutered: boolean;
   sex: string;
   birth_date: string | null;
+  weight: number | null;
   special_notes: string;
   owner: number | null;
   owner_details?: OwnerListItem;
@@ -43,6 +44,7 @@ export interface PetFormData {
   neutered: boolean;
   sex: string;
   birth_date: string | null;
+  weight: number | null;
   special_notes: string;
   owner?: number | null;
   vaccinations?: Array<{ vax_type: string; date: string }>;

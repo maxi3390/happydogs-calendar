@@ -22,8 +22,10 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
     phone: '',
     id_number: '',
     address: '',
+    birth_date: null,
     emergency_contact: '',
     emergency_phone: '',
+    emergency_contact_can_pickup: false,
     notes: '',
   });
   const [loading, setLoading] = useState(false);
@@ -39,8 +41,10 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
         phone: owner.phone,
         id_number: owner.id_number || '',
         address: owner.address || '',
+        birth_date: owner.birth_date || null,
         emergency_contact: owner.emergency_contact || '',
         emergency_phone: owner.emergency_phone || '',
+        emergency_contact_can_pickup: owner.emergency_contact_can_pickup || false,
         notes: owner.notes || '',
       });
       setProfilePictureUrl(owner.profile_picture_url || null);
@@ -173,6 +177,18 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t('owner.birthDate')}
+            </label>
+            <input
+              type="date"
+              value={formData.birth_date || ''}
+              onChange={e => setFormData(prev => ({ ...prev, birth_date: e.target.value || null }))}
+              className="w-full px-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {t('owner.address')}
             </label>
             <div className="relative">
@@ -216,6 +232,17 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
                   placeholder="+1 (555) 987-6543"
                 />
               </div>
+            </div>
+            <div className="mt-3">
+              <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.emergency_contact_can_pickup}
+                  onChange={e => setFormData(prev => ({ ...prev, emergency_contact_can_pickup: e.target.checked }))}
+                  className="w-4 h-4 text-primary border-border rounded focus:ring-ring"
+                />
+                {t('owner.emergencyContactCanPickup')}
+              </label>
             </div>
           </div>
 

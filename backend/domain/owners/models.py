@@ -10,8 +10,10 @@ class Owner(models.Model):
     phone = models.CharField(max_length=20)
     id_number = models.CharField(max_length=20, unique=True, null=True, blank=True, help_text="ID Number / DNI")
     address = models.TextField(blank=True)
+    birth_date = models.DateField(null=True, blank=True, help_text="Date of birth (dd/mm/yyyy)")
     emergency_contact = models.CharField(max_length=100, blank=True)
     emergency_phone = models.CharField(max_length=20, blank=True)
+    emergency_contact_can_pickup = models.BooleanField(default=False, help_text="Can the emergency contact pick up the pet?")
     notes = models.TextField(blank=True)
     profile_picture = models.ImageField(
         upload_to='profile_pictures/owners/',

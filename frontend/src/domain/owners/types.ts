@@ -6,8 +6,10 @@ export interface Owner {
   phone: string;
   id_number: string;
   address: string;
+  birth_date: string | null;
   emergency_contact: string;
   emergency_phone: string;
+  emergency_contact_can_pickup: boolean;
   notes: string;
   pet_count?: number;
   profile_picture_url?: string | null;
@@ -35,8 +37,10 @@ export interface OwnerFormData {
   phone: string;
   id_number?: string;
   address?: string;
+  birth_date?: string | null;
   emergency_contact?: string;
   emergency_phone?: string;
+  emergency_contact_can_pickup?: boolean;
   notes?: string;
 }
 

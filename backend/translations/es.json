@@ -106,6 +106,7 @@
     "neutered": "Esterilizado",
     "sex": "Sexo",
     "birthDate": "Fecha de Nacimiento",
+    "weight": "Peso",
     "vaccinations": "Vacunas",
     "addVaccination": "Agregar Vacuna",
     "vaxType": "Tipo de Vacuna",
@@ -176,12 +177,14 @@
     "emergencyOptional": "Contacto de Emergencia (Opcional)",
     "contactName": "Nombre del Contacto",
     "contactPhone": "Teléfono del Contacto",
+    "emergencyContactCanPickup": "Puede retirar mascotas",
     "notes": "Notas",
     "notesPlaceholder": "Cualquier nota adicional sobre este dueño...",
     "searchPlaceholder": "Buscar dueños por nombre, correo o teléfono...",
     "emailPlaceholder": "duenio@email.com",
     "phonePlaceholder": "3424666555",
     "idNumber": "DNI",
+    "birthDate": "Fecha de Nacimiento",
     "idNumberPlaceholder": "Número de DNI",
     "noResults": "No se encontraron dueños con esa búsqueda",
     "noPetsToSchedule": "Este dueño no tiene mascotas para programar",
@@ -238,7 +241,8 @@
     "saving": "Guardando...",
     "note": "Nota",
     "dom": "Dom",
-    "pets": "Mascotas"
+    "pets": "Mascotas",
+    "kg": "kg"
   },
   "errors": {
     "fetchFailed": "Error al obtener datos",

@@ -106,6 +106,7 @@
     "neutered": "Neutered",
     "sex": "Sex",
     "birthDate": "Birth Date",
+    "weight": "Weight",
     "vaccinations": "Vaccinations",
     "addVaccination": "Add Vaccination",
     "vaxType": "Vaccine Type",
@@ -176,12 +177,14 @@
     "emergencyOptional": "Emergency Contact (Optional)",
     "contactName": "Contact Name",
     "contactPhone": "Contact Phone",
+    "emergencyContactCanPickup": "Can pick up pets",
     "notes": "Notes",
     "notesPlaceholder": "Any additional notes about this owner...",
     "searchPlaceholder": "Search owners by name, email, or phone...",
     "emailPlaceholder": "owner@email.com",
     "phonePlaceholder": "3424666555",
     "idNumber": "ID Number",
+    "birthDate": "Birth Date",
     "idNumberPlaceholder": "DNI / ID Number",
     "noResults": "No owners found matching your search",
     "noPetsToSchedule": "This owner has no pets to schedule",
@@ -238,7 +241,8 @@
     "saving": "Saving...",
     "note": "Note",
     "dom": "Dom",
-    "pets": "Pets"
+    "pets": "Pets",
+    "kg": "kg"
   },
   "errors": {
     "fetchFailed": "Failed to fetch data",
