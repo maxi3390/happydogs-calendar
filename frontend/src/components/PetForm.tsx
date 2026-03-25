@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { X, Plus } from 'lucide-react';
 import { api, Pet, PetFormData, OwnerListItem, Vaccination, VaccinationType } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
@@ -63,6 +62,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
   }, []);
 
   const enabledVaxTypes = vaxTypes.filter(v => v.enabled);
+  const isOwnerSelected = Boolean(formData.owner);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,6 +108,50 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
               {error}
             </div>
           )}
+
+          {pet && (
+            <div className="flex flex-col items-center">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                {t('pet.profilePicture')}
+              </h3>
+              <ProfilePictureUpload
+                currentUrl={profilePictureUrl}
+                initials={formData.name?.[0]?.toUpperCase() || '?'}
+                onUpload={async (file) => {
+                  const updated = await api.pets.uploadProfilePicture(pet.id, file);
+                  setProfilePictureUrl(updated.profile_picture_url || null);
+                }}
+                onDelete={async () => {
+                  await api.pets.deleteProfilePicture(pet.id);
+                  setProfilePictureUrl(null);
+                }}
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t('pet.owner')} *
+            </label>
+            <select
+              required
+              value={formData.owner || ''}
+              onChange={e => setFormData({ ...formData, owner: e.target.value ? Number(e.target.value) : null })}
+              className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
+            >
+              <option value="">{t('pet.noOwner')}</option>
+              {owners.map(owner => (
+                <option key={owner.id} value={owner.id}>
+                  {owner.full_name} ({owner.id_number})
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t('pet.assignOwnerHint')}
+            </p>
+          </div>
+
+          <fieldset disabled={!isOwnerSelected} className="space-y-6">
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -285,36 +329,6 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                 {t('pet.neutered')}
               </label>
             </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('pet.owner')}
-              </label>
-              <div className="flex gap-2">
-                <select
-                  value={formData.owner || ''}
-                  onChange={e => setFormData({ ...formData, owner: e.target.value ? Number(e.target.value) : null })}
-                  className="flex-1 px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
-                >
-                  <option value="">{t('pet.noOwner')}</option>
-                  {owners.map(owner => (
-                    <option key={owner.id} value={owner.id}>
-                      {owner.full_name} ({owner.phone})
-                    </option>
-                  ))}
-                </select>
-                <Link
-                  href="/owners"
-                  className="flex items-center gap-1 px-3 py-2 bg-gray-100 dark:bg-slate-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-muted/500 transition-colors text-sm"
-                >
-                  <Plus className="w-4 h-4" />
-                  {t('common.new')}
-                </Link>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {t('pet.assignOwnerHint')}
-              </p>
-            </div>
           </div>
 
           <div>
@@ -396,26 +410,10 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
               <div className="mb-4">
                 <MedicalNotesSection petId={pet.id} />
               </div>
-              <div className="flex flex-col items-center mb-4">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  {t('pet.profilePicture')}
-                </h3>
-                <ProfilePictureUpload
-                  currentUrl={profilePictureUrl}
-                  initials={formData.name?.[0]?.toUpperCase() || '?'}
-                  onUpload={async (file) => {
-                    const updated = await api.pets.uploadProfilePicture(pet.id, file);
-                    setProfilePictureUrl(updated.profile_picture_url || null);
-                  }}
-                  onDelete={async () => {
-                    await api.pets.deleteProfilePicture(pet.id);
-                    setProfilePictureUrl(null);
-                  }}
-                />
-              </div>
               <DocumentUpload petId={pet.id} />
             </div>
           )}
+          </fieldset>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-border">
             <Button
@@ -428,7 +426,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
             <Button
               type="submit"
               variant="primary"
-              disabled={loading}
+              disabled={loading || !isOwnerSelected}
             >
               {loading ? t('common.saving') : pet ? t('pet.editPet') : t('pet.addPet')}
             </Button>

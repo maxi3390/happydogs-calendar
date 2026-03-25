@@ -97,6 +97,26 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
             </div>
           )}
 
+          {owner && (
+            <div className="flex flex-col items-center mb-4">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                {t('owner.profilePicture')}
+              </h3>
+              <ProfilePictureUpload
+                currentUrl={profilePictureUrl}
+                initials={`${formData.first_name?.[0] || ''}${formData.last_name?.[0] || ''}`}
+                onUpload={async (file) => {
+                  const updated = await api.owners.uploadProfilePicture(owner.id, file);
+                  setProfilePictureUrl(updated.profile_picture_url || null);
+                }}
+                onDelete={async () => {
+                  await api.owners.deleteProfilePicture(owner.id);
+                  setProfilePictureUrl(null);
+                }}
+              />
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <Input
               label={`${t('owner.firstName')} *`}
@@ -217,23 +237,6 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
 
           {owner && (
             <div className="border-t border-border pt-4">
-              <div className="flex flex-col items-center mb-4">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  {t('owner.profilePicture')}
-                </h3>
-                <ProfilePictureUpload
-                  currentUrl={profilePictureUrl}
-                  initials={`${formData.first_name?.[0] || ''}${formData.last_name?.[0] || ''}`}
-                  onUpload={async (file) => {
-                    const updated = await api.owners.uploadProfilePicture(owner.id, file);
-                    setProfilePictureUrl(updated.profile_picture_url || null);
-                  }}
-                  onDelete={async () => {
-                    await api.owners.deleteProfilePicture(owner.id);
-                    setProfilePictureUrl(null);
-                  }}
-                />
-              </div>
               <DocumentUpload ownerId={owner.id} />
             </div>
           )}
