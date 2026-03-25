@@ -56,13 +56,13 @@ test.describe('Calendar', () => {
     await page.getByRole('button', { name: /week/i }).first().click();
 
     // Week view should show "Week of" text
-    await expect(page.getByText(/week of/i)).toBeVisible();
+    await expect(page.getByText(/week of|semana de/i)).toBeVisible();
 
     // Click Month button to go back
     await page.getByRole('button', { name: /month/i }).first().click();
 
-    // Should show monthly calendar grid with day-of-week headers
-    await expect(page.locator('.grid.grid-cols-7')).toBeVisible();
+    // Month view should expose Today button (week view uses This Week)
+    await expect(page.getByRole('button', { name: /today|hoy/i })).toBeVisible();
   });
 
   test('should select a day and show day schedule', async ({ page }) => {
@@ -119,8 +119,7 @@ test.describe('Week View', () => {
     // Click This Week button (translated text)
     await page.getByRole('button', { name: /this week/i }).click();
 
-    // Should be back to current week (check for today's date)
-    const today = new Date().getDate().toString();
-    await expect(page.getByText(today, { exact: false })).toBeVisible();
+    // Should be back to current week (today marker should be highlighted)
+    await expect(page.locator('.text-lg.font-bold.text-primary').first()).toBeVisible();
   });
 });

@@ -124,7 +124,7 @@ create-admin:
 	@echo "Email: $(ADMIN_EMAIL) | Password: $(ADMIN_PASSWORD)"
 
 # Testing
-PLAYWRIGHT_IMAGE ?= mcr.microsoft.com/playwright:v1.50.0-noble
+PLAYWRIGHT_IMAGE ?= mcr.microsoft.com/playwright:v1.58.2-noble
 
 test: test-backend test-frontend
 
@@ -133,21 +133,21 @@ test-backend:
 
 test-frontend:
 	@echo "Running Playwright tests (Chrome headless)..."
-	docker run --rm --network=host \
-		-v $(CURDIR)/frontend:/app \
+	docker run --rm --network=happy-calendar_proxy \
+		-v $(PWD)/frontend:/app \
 		-w /app \
-		-e CI=1 \
 		-e BASE_URL=http://localhost:3000 \
+		-e NEXT_PUBLIC_API_URL=http://backend:8000/api \
 		$(PLAYWRIGHT_IMAGE) \
 		sh -c "npm install && npx playwright test --project=chromium"
 
 test-frontend-debug:
 	@echo "Running Playwright tests (Chrome headless, trace on)..."
-	docker run --rm --network=host \
-		-v $(CURDIR)/frontend:/app \
+	docker run --rm --network=happy-calendar_proxy \
+		-v $(PWD)/frontend:/app \
 		-w /app \
-		-e CI=1 \
 		-e BASE_URL=http://localhost:3000 \
+		-e NEXT_PUBLIC_API_URL=http://backend:8000/api \
 		$(PLAYWRIGHT_IMAGE) \
 		sh -c "npm install && npx playwright test --project=chromium --trace=on"
 

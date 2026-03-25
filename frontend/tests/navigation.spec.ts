@@ -19,24 +19,24 @@ test.describe('Navigation', () => {
 
   test('should navigate to pets page', async ({ page }) => {
     // Click on Pets link in navigation
-    await page.getByRole('link', { name: /pets/i }).first().click();
+    await page.locator('a[href="/pets"]').first().click();
 
     // Should be on pets page
     await expect(page).toHaveURL('/pets');
 
     // Page should have pets title
-    await expect(page.getByRole('heading', { name: /pets/i })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: /pets|mascotas/i })).toBeVisible();
   });
 
   test('should navigate to owners page', async ({ page }) => {
     // Click on Owners link in navigation
-    await page.getByRole('link', { name: /owners/i }).first().click();
+    await page.locator('a[href="/owners"]').first().click();
 
     // Should be on owners page
     await expect(page).toHaveURL('/owners');
 
     // Page should have owners title
-    await expect(page.getByRole('heading', { name: /owners/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /owners|dueños/i })).toBeVisible();
   });
 
   test('should navigate to settings page', async ({ page }) => {
@@ -48,7 +48,7 @@ test.describe('Navigation', () => {
     await expect(page).toHaveURL('/settings');
 
     // Page should have settings title
-    await expect(page.getByRole('heading', { name: /settings/i })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: /settings|configuraci[oó]n/i })).toBeVisible();
   });
 
   test('should navigate back to home from pets page', async ({ page }) => {
@@ -83,7 +83,7 @@ test.describe('Public Navigation', () => {
     await expect(page.locator('header')).toBeVisible();
 
     // Sign in link should be visible
-    await expect(page.getByRole('link', { name: /sign in/i })).toBeVisible();
+    await expect(page.getByRole('banner').getByRole('link', { name: /sign in|iniciar sesi[oó]n/i })).toBeVisible();
   });
 
   test('should show public calendar when not authenticated', async ({ page }) => {
@@ -138,6 +138,6 @@ test.describe('Mobile Navigation', () => {
     await page.reload({ waitUntil: 'networkidle' });
 
     // On public view the sign in link is directly visible, not in mobile menu
-    await expect(page.getByRole('link', { name: /sign in/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /sign in|iniciar sesi[oó]n/i }).first()).toBeVisible();
   });
 });

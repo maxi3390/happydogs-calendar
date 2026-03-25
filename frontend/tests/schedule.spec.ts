@@ -1,5 +1,13 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 import { setupAuthAndLanguage } from './helpers';
+
+const newScheduleRegex = /new schedule|nuevo horario/i;
+const scheduleFormHeadingRegex = /new schedule|nuevo horario/i;
+const cancelRegex = /cancel|cancelar/i;
+
+function newScheduleNavButton(page: Page) {
+  return page.locator('button').filter({ has: page.locator('svg.lucide-calendar-days') }).first();
+}
 
 test.describe('Schedule Creation', () => {
   test.beforeEach(async ({ page }) => {
@@ -8,42 +16,42 @@ test.describe('Schedule Creation', () => {
 
   test('should open schedule form from nav button', async ({ page }) => {
     // Click New Schedule button in navigation
-    await page.getByRole('button', { name: /new schedule/i }).first().click();
+    await newScheduleNavButton(page).click();
 
     // Form should be visible
-    await expect(page.getByText(/new schedule|create schedule/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: scheduleFormHeadingRegex })).toBeVisible();
   });
 
   test('should show pet selection in schedule form', async ({ page }) => {
     // Click New Schedule button
-    await page.getByRole('button', { name: /new schedule/i }).first().click();
+    await newScheduleNavButton(page).click();
 
     // Pet dropdown should be visible (first select in the form)
-    await expect(page.getByText(/pet/i).first()).toBeVisible();
+    await expect(page.getByText(/pet|mascota/i).first()).toBeVisible();
   });
 
   test('should show date and time fields', async ({ page }) => {
     // Click New Schedule button
-    await page.getByRole('button', { name: /new schedule/i }).first().click();
+    await newScheduleNavButton(page).click();
 
     // Date fields should be visible
-    await expect(page.getByText(/start date/i)).toBeVisible();
-    await expect(page.getByText(/end date/i)).toBeVisible();
+    await expect(page.getByText(/start date|fecha de inicio/i)).toBeVisible();
+    await expect(page.getByText(/end date|fecha de fin/i)).toBeVisible();
 
     // Time fields should be visible (select dropdowns with daily start/end time labels)
-    await expect(page.getByText(/start time/i)).toBeVisible();
-    await expect(page.getByText(/end time/i)).toBeVisible();
+    await expect(page.getByText(/start time|hora de inicio|daily start time|hora de inicio diaria/i)).toBeVisible();
+    await expect(page.getByText(/end time|hora de fin|daily end time|hora de fin diaria/i)).toBeVisible();
   });
 
   test('should close form on cancel', async ({ page }) => {
     // Click New Schedule button
-    await page.getByRole('button', { name: /new schedule/i }).first().click();
+    await newScheduleNavButton(page).click();
 
     // Form should be visible
-    await expect(page.getByText(/new schedule|create schedule/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: scheduleFormHeadingRegex })).toBeVisible();
 
     // Click cancel button
-    await page.getByRole('button', { name: /cancel/i }).click();
+    await page.getByRole('button', { name: cancelRegex }).click();
 
     // Form modal should be closed
     await expect(page.locator('.fixed.inset-0')).not.toBeVisible();
@@ -82,7 +90,7 @@ test.describe('Multi-Pet Schedule', () => {
       await multiPetButton.click();
 
       // Owner filter should be visible
-      await expect(page.getByText(/filter by owner|owner/i).first()).toBeVisible();
+      await expect(page.getByText(/filter by owner|filtrar por due[oñ]o|owner|due[oñ]o/i).first()).toBeVisible();
     }
   });
 
@@ -99,7 +107,7 @@ test.describe('Multi-Pet Schedule', () => {
       await multiPetButton.click();
 
       // Select all button should be visible
-      await expect(page.getByText(/select all/i)).toBeVisible();
+      await expect(page.getByText(/select all|seleccionar todo/i)).toBeVisible();
     }
   });
 
@@ -119,7 +127,7 @@ test.describe('Multi-Pet Schedule', () => {
       await expect(page.locator('.fixed.inset-0')).toBeVisible();
 
       // Click cancel button
-      await page.getByRole('button', { name: /cancel/i }).click();
+      await page.getByRole('button', { name: cancelRegex }).click();
 
       // Form should be closed
       await expect(page.locator('.fixed.inset-0')).not.toBeVisible();
