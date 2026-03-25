@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.db import transaction
-from .models import Owner, Pet, Schedule, Vaccination, VaccinationType, Document
+from .models import Owner, Pet, Schedule, Vaccination, VaccinationType, Document, MedicalNote
 
 
 class VaccinationTypeSerializer(serializers.ModelSerializer):
@@ -50,6 +50,7 @@ class PetSerializer(serializers.ModelSerializer):
     owner_details = OwnerListSerializer(source='owner', read_only=True)
     vaccinations = VaccinationSerializer(many=True, required=False)
     profile_picture_url = serializers.SerializerMethodField()
+    medical_notes_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Pet
@@ -63,6 +64,9 @@ class PetSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.profile_picture.url)
             return obj.profile_picture.url
         return None
+
+    def get_medical_notes_count(self, obj):
+        return obj.medical_notes.count()
 
     @transaction.atomic
     def create(self, validated_data):
@@ -217,3 +221,10 @@ class DocumentSerializer(serializers.ModelSerializer):
         if file_obj:
             validated_data['original_filename'] = file_obj.name
         return super().create(validated_data)
+
+
+class MedicalNoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MedicalNote
+        fields = ['id', 'pet', 'title', 'description', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']

@@ -4,6 +4,7 @@ from domain.pets.models import Pet
 from domain.vaccinations.models import Vaccination
 from domain.schedules.models import Schedule
 from domain.documents.models import Document
+from domain.notes.models import MedicalNote
 
 
 @admin.register(Owner)
@@ -49,3 +50,10 @@ class DocumentAdmin(admin.ModelAdmin):
     list_display = ['original_filename', 'pet', 'owner', 'description', 'uploaded_at']
     list_filter = ['uploaded_at']
     search_fields = ['original_filename', 'description', 'pet__name', 'owner__first_name', 'owner__last_name']
+
+
+@admin.register(MedicalNote)
+class MedicalNoteAdmin(admin.ModelAdmin):
+    list_display = ['title', 'pet', 'created_at', 'updated_at']
+    list_filter = ['created_at', 'updated_at']
+    search_fields = ['title', 'description', 'pet__name']

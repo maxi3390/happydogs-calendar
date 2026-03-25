@@ -340,6 +340,14 @@
     "photoFormatError": "Only JPEG, PNG, GIF, or WEBP images are allowed.",
     "photoSizeError": "Image must be smaller than 5 MB."
   },
+  "medicalNotes": {
+    "title": "Medical Notes",
+    "add": "Add Note",
+    "empty": "No medical notes yet",
+    "titlePlaceholder": "Note title",
+    "descriptionPlaceholder": "Describe the medical detail...",
+    "titleRequired": "Title is required"
+  },
   "auth": {
     "signIn": "Sign In",
     "signUp": "Sign Up",

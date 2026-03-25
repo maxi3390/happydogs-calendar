@@ -7,6 +7,7 @@ import { api, Pet, PetFormData, OwnerListItem, Vaccination, VaccinationType } fr
 import { useTranslation } from '@/lib/translations';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import DocumentUpload from '@/components/DocumentUpload';
+import MedicalNotesSection from '@/components/MedicalNotesSection';
 import { Button } from '@/components/ui/Button';
 
 interface PetFormProps {
@@ -392,6 +393,9 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
 
           {pet && (
             <div className="border-t border-border pt-4">
+              <div className="mb-4">
+                <MedicalNotesSection petId={pet.id} />
+              </div>
               <div className="flex flex-col items-center mb-4">
                 <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   {t('pet.profilePicture')}

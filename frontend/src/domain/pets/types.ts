@@ -28,6 +28,7 @@ export interface Pet {
   owner: number | null;
   owner_details?: OwnerListItem;
   vaccinations: Vaccination[];
+  medical_notes_count?: number;
   profile_picture_url?: string | null;
   created_at: string;
   updated_at: string;

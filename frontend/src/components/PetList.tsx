@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Edit2, Trash2, Dog, Cat, Bird, Rabbit, HelpCircle, ChevronDown } from 'lucide-react';
+import { Edit2, Trash2, Dog, Cat, Bird, Rabbit, HelpCircle, ChevronDown, FileText } from 'lucide-react';
 import { api, Pet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 import { Button } from '@/components/ui/Button';
@@ -120,6 +120,16 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
                   <p className="text-sm text-muted-foreground font-medium">
                     {pet.breed || pet.species} • {pet.age} {t('common.years')}
                   </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {t('pet.owner')}: {pet.owner_details?.full_name || t('pet.noOwner')}
+                  </p>
+                  {(pet.medical_notes_count ?? 0) > 0 && (
+                    <div className="mt-1">
+                      <Badge variant="secondary" className="text-xs inline-flex items-center" title={t('medicalNotes.title')}>
+                        <FileText className="w-3 h-3" />
+                      </Badge>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-1 mt-1">
@@ -178,7 +188,7 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-3 gap-3">
                       <div className="bg-secondary/30 p-3 rounded-xl">
                         <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">{t('pet.sex')}</span>
                         <p className="font-semibold text-sm text-foreground mt-0.5 capitalize">{pet.sex ? t(`pet.sexOptions.${pet.sex}`) : '-'}</p>
@@ -186,6 +196,12 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
                       <div className="bg-secondary/30 p-3 rounded-xl">
                         <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">{t('pet.neutered')}</span>
                         <p className="font-semibold text-sm text-foreground mt-0.5 capitalize">{pet.neutered ? t('common.yes') : t('common.no')}</p>
+                      </div>
+                      <div className="bg-secondary/30 p-3 rounded-xl">
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">{t('pet.owner')}</span>
+                        <p className="font-semibold text-sm text-foreground mt-0.5 truncate" title={pet.owner_details?.full_name || t('pet.noOwner')}>
+                          {pet.owner_details?.full_name || t('pet.noOwner')}
+                        </p>
                       </div>
                     </div>
 

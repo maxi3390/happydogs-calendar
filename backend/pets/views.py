@@ -9,7 +9,7 @@ from django.db.models import Q
 from django.conf import settings
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
-from .models import Owner, Pet, Schedule, VaccinationType, Document
+from .models import Owner, Pet, Schedule, VaccinationType, Document, MedicalNote
 from nursery_settings.models import NurserySetting
 from .serializers import (
     OwnerSerializer,
@@ -23,6 +23,7 @@ from .serializers import (
     BatchScheduleCreateSerializer,
     VaccinationTypeSerializer,
     DocumentSerializer,
+    MedicalNoteSerializer,
 )
 
 
@@ -618,6 +619,49 @@ class DocumentViewSet(viewsets.ModelViewSet):
             serializer.save(original_filename=file_obj.name)
         else:
             serializer.save()
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List medical notes",
+        description="List medical notes, optionally filtered by pet_id.",
+        parameters=[
+            OpenApiParameter(name='pet_id', type=OpenApiTypes.INT, description='Filter by pet ID'),
+        ],
+        tags=['medical-notes']
+    ),
+    create=extend_schema(
+        summary="Create medical note",
+        description="Create a medical note linked to a pet.",
+        tags=['medical-notes']
+    ),
+    update=extend_schema(
+        summary="Update medical note",
+        description="Update a medical note.",
+        tags=['medical-notes']
+    ),
+    partial_update=extend_schema(
+        summary="Partially update medical note",
+        description="Partially update a medical note.",
+        tags=['medical-notes']
+    ),
+    destroy=extend_schema(
+        summary="Delete medical note",
+        description="Delete a medical note.",
+        tags=['medical-notes']
+    ),
+)
+class MedicalNoteViewSet(viewsets.ModelViewSet):
+    queryset = MedicalNote.objects.select_related('pet').all()
+    serializer_class = MedicalNoteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = self.queryset
+        pet_id = self.request.query_params.get('pet_id')
+        if pet_id:
+            queryset = queryset.filter(pet_id=pet_id)
+        return queryset
 
 
 @extend_schema(

@@ -1,6 +1,7 @@
 export type { Owner, OwnerWithPets, OwnerFormData, OwnerListItem } from '@/domain/owners/types';
 export type { Pet, PetListItem, PetFormData, PetCompatibilityResult } from '@/domain/pets/types';
 export type { Vaccination, VaccinationType } from '@/domain/vaccinations/types';
+export type { MedicalNote, MedicalNoteFormData } from '@/domain/medical-notes/types';
 export type {
   Schedule,
   ScheduleFormData,
@@ -16,6 +17,7 @@ export type { NurserySetting } from '@/domain/settings/types';
 import { ownersApi } from '@/domain/owners/api';
 import { petsApi } from '@/domain/pets/api';
 import { vaccinationTypesApi } from '@/domain/vaccinations/api';
+import { medicalNotesApi } from '@/domain/medical-notes/api';
 import { schedulesApi } from '@/domain/schedules/api';
 import { documentsApi } from '@/domain/documents/api';
 import { nurserySettingsApi } from '@/domain/settings/api';
@@ -25,6 +27,7 @@ export const api = {
   owners: ownersApi,
   pets: petsApi,
   vaccinationTypes: vaccinationTypesApi,
+  medicalNotes: medicalNotesApi,
   schedules: schedulesApi,
   nurserySettings: nurserySettingsApi,
   documents: documentsApi,
