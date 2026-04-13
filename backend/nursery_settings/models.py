@@ -1,4 +1,5 @@
 from django.db import models
+from domain.files.validators import validate_file_size, validate_image_type
 
 
 class NurserySetting(models.Model):
@@ -6,6 +7,13 @@ class NurserySetting(models.Model):
     daily_booking_limit = models.PositiveIntegerField(
         default=0,
         help_text="Maximum number of bookings allowed per day. 0 means unlimited."
+    )
+    logo = models.ImageField(
+        upload_to='logos/',
+        blank=True,
+        null=True,
+        validators=[validate_file_size, validate_image_type],
+        help_text="System logo (JPEG, PNG, GIF, WEBP — max 5 MB)",
     )
     updated_at = models.DateTimeField(auto_now=True)
 

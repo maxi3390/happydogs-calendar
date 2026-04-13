@@ -56,8 +56,12 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 sm:gap-3 group hover:opacity-90 transition-opacity">
-            <div className={`p-2 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center ${isActive('/') ? 'bg-primary scale-105' : 'bg-primary/90 group-hover:scale-105 group-hover:bg-primary'}`}>
-              <PawPrint className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            <div className={`p-2 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center overflow-hidden ${isActive('/') ? 'bg-primary scale-105' : 'bg-primary/90 group-hover:scale-105 group-hover:bg-primary'}`}>
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo" className="w-5 h-5 sm:w-6 sm:h-6 object-contain" />
+              ) : (
+                <PawPrint className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              )}
             </div>
             <div>
               <h1 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">{t('app.name')}</h1>

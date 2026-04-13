@@ -187,6 +187,40 @@ function SettingsPage() {
           </div>
         </div>
 
+        {/* System Logo Section */}
+        <div className="bg-card rounded-3xl shadow-sm border border-border/50 overflow-hidden mb-8 hover:shadow-md transition-all">
+          <div className="p-4 border-b border-border bg-background">
+            <div className="flex items-center gap-2 text-white">
+              <Image className="w-5 h-5" />
+              <h3 className="font-semibold">{t('settings.systemLogo') || 'System Logo'}</h3>
+            </div>
+          </div>
+
+          <div className="p-4">
+            <div className="mb-4 p-3 bg-primary/10 rounded-lg flex items-start gap-3">
+              <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                {t('settings.systemLogoInfo') || 'Upload a custom logo to display on the login page and navigation bar. Accepted formats: JPEG, PNG, GIF, WEBP. Max size: 5 MB.'}
+              </p>
+            </div>
+
+            <div className="flex justify-center">
+              <ProfilePictureUpload
+                currentUrl={logoUrl}
+                onUpload={async (file) => {
+                  const updated = await api.nurserySettings.uploadLogo(file);
+                  setLogoUrl(updated.logo_url);
+                }}
+                onDelete={async () => {
+                  await api.nurserySettings.deleteLogo();
+                  setLogoUrl(null);
+                }}
+                initials="?"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Daily Booking Limit Section */}
         <div className="bg-card rounded-3xl shadow-sm border border-border/50 overflow-hidden mb-8 hover:shadow-md transition-all">
           <div className="p-4 border-b border-border bg-background">

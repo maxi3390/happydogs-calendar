@@ -51,8 +51,12 @@ export default function LoginPage() {
 
       <div className="max-w-md w-full relative z-10">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center p-3 sm:p-4 rounded-2xl bg-primary mb-4 shadow-lg shadow-primary/20">
-            <LogIn className="w-8 h-8 sm:w-10 sm:h-10 text-primary-foreground" />
+          <div className="inline-flex items-center justify-center p-3 sm:p-4 rounded-2xl bg-primary mb-4 shadow-lg shadow-primary/20 overflow-hidden">
+            {logoUrl ? (
+              <img src={logoUrl} alt="Logo" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
+            ) : (
+              <LogIn className="w-8 h-8 sm:w-10 sm:h-10 text-primary-foreground" />
+            )}
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
             {t('app.name')}
@@ -134,3 +138,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
