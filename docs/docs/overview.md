@@ -33,7 +33,13 @@ Comprehensive pet profiles with rich behavioral and medical data:
 - **Contact Information**: First name, last name, email (unique), phone, ID number (unique), address, birth date
 - **Emergency Contact**: Name, phone, and can-pickup flag
 - **Notes**: Free-text field for additional information
-- **Profile Pictures**: Same format/size constraints as pets
+- **Profile Pictures**: Same format/size constraints as pets; can be uploaded during creation or added later
+
+### System Branding
+- **Custom Logo**: Upload a custom logo image via settings (JPEG/PNG/GIF/WEBP, max 5 MB)
+- **Login Page Branding**: Custom logo displayed on the login page, replacing the default icon
+- **Navigation Branding**: Custom logo displayed in the navigation bar, replacing the default PawPrint icon
+- **Fallback**: Default icons shown when no custom logo is configured
 - **Document Attachments**: Upload files linked to owner records
 - **Pet Relationships**: View and manage all pets associated with an owner
 

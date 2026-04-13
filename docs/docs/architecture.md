@@ -142,7 +142,7 @@ graph TB
     subgraph "Django Apps"
         Accounts["accounts/<br/>User model, JWT auth,<br/>registration, user management"]
         Pets["pets/<br/>Views, serializers, admin<br/>Re-exports domain models"]
-        NurserySettings["nursery_settings/<br/>Singleton config model,<br/>daily booking limit"]
+        NurserySettings["nursery_settings/<br/>Singleton config model,<br/>daily booking limit, logo"]
     end
 
     subgraph "Domain Models (backend/domain/)"
@@ -353,6 +353,7 @@ erDiagram
     NurserySetting {
         int id PK "always 1 (singleton)"
         int daily_booking_limit "default 0 (unlimited)"
+        image logo "optional, upload_to logos/"
         datetime updated_at "auto"
     }
 ```
@@ -370,7 +371,7 @@ erDiagram
 | `Document` | `pets` | `domain/documents/models.py` | Polymorphic: links to either Pet or Owner (not both) |
 | `Note` | — | `domain/notes/models.py` | Abstract base model (title + description + timestamps) |
 | `MedicalNote` | `pets` | `domain/notes/models.py` | Concrete model extending `Note`, linked to Pet |
-| `NurserySetting` | `nursery_settings` | `nursery_settings/models.py` | Singleton (`pk=1` enforced in `save()`) |
+| `NurserySetting` | `nursery_settings` | `nursery_settings/models.py` | Singleton (`pk=1` enforced in `save()`). Stores `daily_booking_limit` and `logo` (ImageField). |
 
 ---
 
@@ -527,7 +528,7 @@ graph LR
         V2["CRUD /api/vaccinations/"]
         D1["CRUD /api/documents/"]
         M1["CRUD /api/medical-notes/"]
-        NS["GET/PUT /api/settings/"]
+        NS["GET/PUT /api/settings/<br/>POST upload_logo/ DELETE delete_logo/"]
         T1["GET /api/translations/:lang/"]
     end
 ```

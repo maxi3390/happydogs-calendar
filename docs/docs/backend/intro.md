@@ -51,10 +51,11 @@ backend/
 │   ├── urls.py                   # Auth routes + user management router
 │   └── tests/
 ├── nursery_settings/             # Django app: singleton NurserySetting
-│   ├── models.py                 # NurserySetting (daily_booking_limit, always pk=1)
-│   ├── views.py                  # get_nursery_settings, update_nursery_settings (function-based views)
-│   ├── serializers.py            # NurserySettingSerializer
-│   └── urls.py                   # /api/settings/ and /api/settings/update/
+│   ├── models.py                 # NurserySetting (daily_booking_limit, logo, always pk=1)
+│   ├── views.py                  # get/update settings + upload_logo/delete_logo (function-based views)
+│   ├── serializers.py            # NurserySettingSerializer (includes logo_url)
+│   ├── urls.py                   # /api/settings/, /api/settings/update/, /api/settings/upload_logo/, /api/settings/delete_logo/
+│   └── tests.py                  # NurserySettingModelTest, NurserySettingAPITest, SystemLogoAPITest, DailyCountAPITest
 ├── translations/                 # JSON i18n files
 │   ├── en.json                   # English translations
 │   └── es.json                   # Spanish translations
@@ -234,8 +235,10 @@ A **singleton** configuration record (pk is always forced to `1` in `save()`).
 | Field | Type | Details |
 |---|---|---|
 | `daily_booking_limit` | `PositiveIntegerField` | Default: `0` (0 = unlimited) |
+| `logo` | `ImageField` | Upload to `logos/`, max 5 MB, JPEG/PNG/GIF/WEBP. Optional. Used for login page and navbar branding. |
 
 - **Class method**: `load()` — Returns the singleton instance, creating it if it doesn't exist.
+- **Serializer**: `NurserySettingSerializer` exposes `daily_booking_limit`, `logo_url` (computed), `updated_at`.
 
 ---
 
@@ -247,7 +250,13 @@ Validators are defined in `domain/files/validators.py`:
 - **`validate_image_type`**: Accepts JPEG, PNG, GIF, WEBP.
 - **`validate_document_type`**: Accepts images (JPEG, PNG, GIF, WEBP) plus PDF, DOC, DOCX.
 
-Profile pictures (Owner and Pet) use `validate_image_type`. Documents use `validate_document_type`.
+Profile pictures (Owner and Pet) use `validate_image_type`. Documents use `validate_document_type`. The system logo also uses `validate_image_type`.
+
+### Multipart Create/Update
+
+Both `PetViewSet` and `OwnerViewSet` accept `multipart/form-data` on create and update endpoints, allowing a profile picture to be uploaded alongside other fields in a single request. JSON requests (without files) are still supported for backward compatibility.
+
+For pets, nested vaccinations data is sent as a JSON string field within the multipart form data and parsed back to a list on the server side.
 
 ---
 
@@ -376,8 +385,10 @@ Compatibility logic lives in `Pet.is_compatible_with(other_pet)` on the domain m
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/settings/` | Get nursery settings (daily booking limit) |
+| `GET` | `/api/settings/` | Get nursery settings (daily booking limit, logo URL) |
 | `PUT` / `PATCH` | `/api/settings/update/` | Update nursery settings |
+| `POST` | `/api/settings/upload_logo/` | Upload or replace system logo (multipart, JPEG/PNG/GIF/WEBP, max 5 MB) |
+| `DELETE` | `/api/settings/delete_logo/` | Remove the current system logo |
 
 ### Translations
 
@@ -405,6 +416,15 @@ Compatibility logic lives in `Pet.is_compatible_with(other_pet)` on the domain m
 - Read fields: `owner_details` (nested owner info), `profile_picture_url`, `medical_notes_count`.
 - Validates `dominance_level` range (1–10).
 
+### OwnerSerializer
+
+- Includes computed `pet_count` and `profile_picture_url`.
+
+### NurserySettingSerializer
+
+- Exposes `daily_booking_limit`, `logo_url` (computed via `SerializerMethodField`), `updated_at`.
+- `logo_url` builds an absolute URL from the request context, or returns `null` if no logo is set.
+
 ### ScheduleSerializer
 
 - Read fields: `pet_details` (nested pet info), computed `conflicts` field.
@@ -428,10 +448,6 @@ Compatibility logic lives in `Pet.is_compatible_with(other_pet)` on the domain m
 
 - Validates that exactly one of `pet` or `owner` is provided (not both, not neither).
 - Captures `original_filename` from the uploaded file on creation.
-
-### OwnerSerializer
-
-- Includes computed `pet_count` and `profile_picture_url`.
 
 ### OwnerWithPetsSerializer
 
@@ -504,6 +520,9 @@ Tests are organized per-app:
 
 - **`pets/tests/`**: `test_pet_api.py`, `test_owner_api.py`, `test_schedule_api.py`, `test_models.py`, and others.
 - **`accounts/tests/`**: Auth and user management tests.
+- **`nursery_settings/tests.py`**: `NurserySettingModelTest` (singleton behavior), `NurserySettingAPITest` (get/update settings), `SystemLogoAPITest` (11 tests: upload, replace, reject invalid files, delete, retrieval, singleton integrity), `DailyCountAPITest` (daily count + limit checks).
+
+Tests for multipart avatar upload are included in `test_pet_api.py` and `test_owner_api.py` (create with profile_picture, create with picture + vaccinations, JSON backward compatibility).
 
 The test runner uses `nursery/test_settings.py`, which configures **SQLite in-memory** for fast, isolated test execution without requiring a PostgreSQL instance.
 

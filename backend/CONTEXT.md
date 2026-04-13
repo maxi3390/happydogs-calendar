@@ -34,10 +34,11 @@ backend/
 │   ├── urls.py
 │   └── migrations/
 ├── nursery_settings/         # Django app: singleton NurserySetting
-│   ├── models.py             # NurserySetting (daily_booking_limit, always pk=1)
-│   ├── views.py              # GET /api/settings/ and PUT/PATCH /api/settings/update/
-│   ├── serializers.py
-│   ├── urls.py
+│   ├── models.py             # NurserySetting (daily_booking_limit, logo, always pk=1)
+│   ├── views.py              # GET/PUT settings + POST upload_logo + DELETE delete_logo
+│   ├── serializers.py        # NurserySettingSerializer (includes logo_url)
+│   ├── urls.py               # /api/settings/, /settings/update/, /settings/upload_logo/, /settings/delete_logo/
+│   ├── tests.py              # NurserySettingModelTest, NurserySettingAPITest, SystemLogoAPITest, DailyCountAPITest
 │   └── migrations/
 ├── translations/             # JSON i18n files served via API
 │   ├── en.json
@@ -116,7 +117,7 @@ Links a `Pet` to a vaccination record: `vax_type` (CharField, not FK — free-te
 Attached to **either** a `Pet` or an `Owner` (not both, enforced in `clean()`). File stored under `documents/%Y/%m/`. Supported formats: JPEG, PNG, GIF, WEBP, PDF, DOC, DOCX. Max 5 MB.
 
 ### NurserySetting (`nursery_settings/models.py`)
-Singleton (always `pk=1`). Single configurable field: `daily_booking_limit` (PositiveInt, 0 = unlimited). Use `NurserySetting.load()` to get the instance.
+Singleton (always `pk=1`). Configurable fields: `daily_booking_limit` (PositiveInt, 0 = unlimited), `logo` (ImageField, upload to `logos/`, max 5 MB, JPEG/PNG/GIF/WEBP, optional). Use `NurserySetting.load()` to get the instance. Serializer exposes `logo_url` (computed absolute URL or null).
 
 ### User (`accounts/models.py`)
 Custom `AbstractUser` with email as `USERNAME_FIELD` (no `username` field).
@@ -210,10 +211,12 @@ Standard CRUD ViewSet.
 | GET    | `/api/users/me/`   | Current user info                        |
 
 ### Settings — `/api/settings/`
-| Method      | Path                    | Description                  |
-|-------------|-------------------------|------------------------------|
-| GET         | `/api/settings/`        | Get nursery settings          |
-| PUT / PATCH | `/api/settings/update/` | Update nursery settings       |
+| Method      | Path                        | Description                   |
+|-------------|-----------------------------|-------------------------------|
+| GET         | `/api/settings/`            | Get nursery settings (includes logo_url) |
+| PUT / PATCH | `/api/settings/update/`     | Update nursery settings       |
+| POST        | `/api/settings/upload_logo/`| Upload or replace system logo (multipart) |
+| DELETE      | `/api/settings/delete_logo/`| Remove the system logo        |
 
 ### Translations — `/api/translations/`
 | Method | Path                           | Description                       |
@@ -261,6 +264,13 @@ Standard CRUD ViewSet.
 - `BatchScheduleCreateSerializer` — accepts `pet_ids` list + shared schedule fields.
 - `ConflictCheckSerializer` — used for pre-flight `/check_conflicts/` endpoint.
 - `DocumentSerializer` — validates that a document is linked to a pet OR an owner, not both.
+- `NurserySettingSerializer` — exposes `daily_booking_limit`, `logo_url` (computed), `updated_at`.
+
+---
+
+## ViewSet Parser Configuration
+
+Both `PetViewSet` and `OwnerViewSet` use `parser_classes = [MultiPartParser, FormParser]`, allowing create and update endpoints to accept multipart/form-data (for profile picture upload alongside other fields) as well as JSON. For pets, nested vaccinations are sent as a JSON string within multipart form data and parsed on the server.
 
 ---
 

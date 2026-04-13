@@ -102,7 +102,7 @@ The application defines **8 pages**:
 | `/register` | `register/page.tsx` | None | Name, email, password + confirmation (min 8 chars). Redirects to `/` if already authenticated |
 | `/pets` | `pets/page.tsx` | `withAuth` | Pet management — `PetList` + `PetForm` modal |
 | `/owners` | `owners/page.tsx` | `withAuth` | Owner management — search, expandable cards, batch and individual scheduling |
-| `/settings` | `settings/page.tsx` | `withAuth` | Daily capacity limit, incompatibility rules (localStorage), vaccination types |
+| `/settings` | `settings/page.tsx` | `withAuth` | System logo upload, daily capacity limit, incompatibility rules (localStorage), vaccination types |
 | `/admin/users` | `admin/users/page.tsx` | `withAdmin` | Admin user management — stats cards, user table, CRUD modals, role/status badges |
 | `/ui-system` | `ui-system/page.tsx` | None | UI component showcase page |
 
@@ -220,11 +220,12 @@ A single component handling both scheduling modes via a `mode` prop:
 - **Dominance slider**: Visual slider from 1–10 with color coding: green (1–3), yellow (4–6), red (7–10).
 - **Birth date → age**: Selecting a birth date automatically calculates and displays the pet's age.
 - **Vaccinations**: Dynamic list — add/remove vaccination entries with type and date.
-- **Edit-mode-only features**: Profile picture upload (`ProfilePictureUpload`), medical notes (`MedicalNotesSection`), and documents (`DocumentUpload`) are only available when editing an existing pet, not when creating.
+- **Edit-mode-only features**: Medical notes (`MedicalNotesSection`) and documents (`DocumentUpload`) are only available when editing an existing pet, not when creating. **Profile picture upload** (`ProfilePictureUpload`) is available in both create and edit modes — in create mode, the selected file is stored locally and sent with the creation request as multipart form data.
 
 #### Navigation.tsx — Top Navigation Bar
 
 - **Sticky positioning** with scroll detection (changes background opacity on scroll).
+- **Custom logo**: Fetches logo URL from `/api/settings/` on mount. Displays the custom logo in the brand area if configured, otherwise falls back to the default PawPrint icon.
 - **Desktop**: Horizontal links + profile dropdown menu with logout.
 - **Mobile**: Hamburger menu that slides open with all navigation links.
 - **Admin indicator**: Visual badge/indicator when the logged-in user has admin role.
@@ -404,3 +405,4 @@ The frontend Dockerfile uses a **multi-stage build**:
 3. **`runner`** stage: Minimal `node:22-alpine` image, copies only the built output and runs `next start`.
 
 In the Docker Compose setup, Traefik routes all requests matching `/*` (except `/api/*` and `/media/*`) to the frontend container on port 3000.
+er on port 3000.

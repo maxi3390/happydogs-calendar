@@ -140,7 +140,7 @@ Auth flow:
 | `/register`  | `app/register/page.tsx`     | Registration form                                            |
 | `/pets`      | `app/pets/page.tsx`         | Pet list and CRUD operations                                 |
 | `/owners`    | `app/owners/page.tsx`       | Owner list and CRUD operations                               |
-| `/settings`  | `app/settings/page.tsx`     | Nursery settings and incompatibility rule management         |
+| `/settings`  | `app/settings/page.tsx`     | System logo upload, nursery settings, and incompatibility rule management |
 | `/admin/users` | `app/admin/users/page.tsx`| Admin user management (withAdmin protected)                  |
 
 ---
@@ -154,14 +154,14 @@ Auth flow:
 | `DaySchedule.tsx`          | Panel showing schedules for a selected day; supports status updates                |
 | `ScheduleForm.tsx`         | Single schedule creation/editing with conflict detection UI                        |
 | `MultiPetScheduleForm.tsx` | Batch scheduling: select multiple pets, same time slot                             |
-| `PetForm.tsx`              | Pet creation/editing (includes vaccination records)                                |
+| `PetForm.tsx`              | Pet creation/editing (vaccination records, profile picture in create and edit modes) |
 | `PetList.tsx`              | Paginated/filtered pet listing                                                     |
-| `OwnerForm.tsx`            | Owner creation/editing                                                             |
+| `OwnerForm.tsx`            | Owner creation/editing (profile picture in create and edit modes)                   |
 | `ScheduleDetailsPopup.tsx` | Popup with full schedule details and status management                             |
 | `DocumentUpload.tsx`       | File upload UI for attaching documents to pets or owners                           |
 | `ProfilePictureUpload.tsx` | Image upload for owner/pet profile pictures                                        |
 | `PublicCalendar.tsx`       | Calendar view accessible without authentication                                    |
-| `Navigation.tsx`           | Top nav bar: links to Calendar, Owners, Pets, Settings; language switcher; theme toggle; mobile hamburger menu |
+| `Navigation.tsx`           | Top nav bar: links to Calendar, Owners, Pets, Settings; custom logo display; language switcher; theme toggle; mobile hamburger menu |
 | `LanguageSwitcher.tsx`     | Dropdown/button to switch between `en` and `es`                                    |
 | `ThemeToggle.tsx`          | Toggle between light and dark mode (system preference detected on first load)      |
 | `MedicalNotesSection.tsx`  | Inline medical notes CRUD for a pet                                                |
