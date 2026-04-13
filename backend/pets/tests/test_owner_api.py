@@ -110,3 +110,32 @@ class OwnerAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertIn('full_name', response.data[0])
+
+    # ── Create with profile picture (multipart) ────────────────────────
+
+    def test_create_owner_with_profile_picture_multipart(self):
+        image = _make_test_image()
+        data = {
+            'first_name': 'Photo',
+            'last_name': 'Owner',
+            'email': 'photo@example.com',
+            'phone': '555-9999',
+            'profile_picture': image,
+        }
+        response = self.client.post(self.list_url, data, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIsNotNone(response.data['profile_picture_url'])
+        owner = Owner.objects.get(pk=response.data['id'])
+        self.assertTrue(owner.profile_picture)
+
+    def test_create_owner_json_still_works(self):
+        """Backward compatibility: JSON create without picture still works."""
+        data = {
+            'first_name': 'Json',
+            'last_name': 'Owner',
+            'email': 'json@example.com',
+            'phone': '555-8888',
+        }
+        response = self.client.post(self.list_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIsNone(response.data['profile_picture_url'])

@@ -1,9 +1,20 @@
 from datetime import date
+from io import BytesIO
+from PIL import Image as PILImage
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
 from tests.factories import create_owner, create_pet, create_and_auth_user
 from pets.models import Pet
+
+
+def _make_test_image(name='test.png', size=(100, 100), fmt='PNG'):
+    """Create a small in-memory image for testing."""
+    buf = BytesIO()
+    PILImage.new('RGB', size, color='red').save(buf, format=fmt)
+    buf.seek(0)
+    return SimpleUploadedFile(name, buf.read(), content_type=f'image/{fmt.lower()}')
 
 
 class PetAPITests(APITestCase):
@@ -154,3 +165,59 @@ class PetAPITests(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data[0]['is_compatible'])
+
+    # ── Create with profile picture (multipart) ────────────────────────
+
+    def test_create_pet_with_profile_picture_multipart(self):
+        image = _make_test_image()
+        data = {
+            'name': 'PhotoPet',
+            'species': 'dog',
+            'breed': 'Poodle',
+            'age': 2,
+            'temperament': 'calm',
+            'dominance_level': 3,
+            'size': 'small',
+            'owner': self.owner.id,
+            'profile_picture': image,
+        }
+        response = self.client.post(self.list_url, data, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIsNotNone(response.data['profile_picture_url'])
+        pet = Pet.objects.get(pk=response.data['id'])
+        self.assertTrue(pet.profile_picture)
+
+    def test_create_pet_with_picture_and_vaccinations_multipart(self):
+        import json as _json
+        image = _make_test_image('vax_pet.png')
+        data = {
+            'name': 'VaxPhotoPet',
+            'species': 'cat',
+            'age': 1,
+            'temperament': 'friendly',
+            'dominance_level': 4,
+            'size': 'medium',
+            'owner': self.owner.id,
+            'profile_picture': image,
+            'vaccinations': _json.dumps([
+                {'vax_type': 'rabies', 'date': str(date.today())},
+            ]),
+        }
+        response = self.client.post(self.list_url, data, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIsNotNone(response.data['profile_picture_url'])
+        self.assertEqual(len(response.data['vaccinations']), 1)
+
+    def test_create_pet_json_still_works(self):
+        """Backward compatibility: JSON create without picture still works."""
+        data = {
+            'name': 'JsonPet',
+            'species': 'bird',
+            'age': 1,
+            'temperament': 'calm',
+            'dominance_level': 2,
+            'size': 'small',
+        }
+        response = self.client.post(self.list_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIsNone(response.data['profile_picture_url'])

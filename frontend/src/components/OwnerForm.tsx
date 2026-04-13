@@ -97,7 +97,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
             </div>
           )}
 
-          {owner && (
+          {owner ? (
             <div className="flex flex-col items-center mb-4">
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                 {t('owner.profilePicture')}
@@ -112,6 +112,22 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
                 onDelete={async () => {
                   await api.owners.deleteProfilePicture(owner.id);
                   setProfilePictureUrl(null);
+                }}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center mb-4">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                {t('owner.profilePicture')}
+              </h3>
+              <ProfilePictureUpload
+                currentUrl={pendingProfilePicture ? URL.createObjectURL(pendingProfilePicture) : null}
+                initials={`${formData.first_name?.[0] || ''}${formData.last_name?.[0] || ''}`}
+                onUpload={async (file) => {
+                  setPendingProfilePicture(file);
+                }}
+                onDelete={async () => {
+                  setPendingProfilePicture(null);
                 }}
               />
             </div>

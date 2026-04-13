@@ -74,6 +74,8 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
       const submitData = { ...formData, vaccinations: validVaccinations };
       if (pet) {
         await api.pets.update(pet.id, submitData);
+      } else if (pendingProfilePicture) {
+        await api.pets.createWithAvatar(submitData, pendingProfilePicture);
       } else {
         await api.pets.create(submitData);
       }
@@ -109,7 +111,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
             </div>
           )}
 
-          {pet && (
+          {pet ? (
             <div className="flex flex-col items-center">
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                 {t('pet.profilePicture')}
@@ -124,6 +126,22 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
                 onDelete={async () => {
                   await api.pets.deleteProfilePicture(pet.id);
                   setProfilePictureUrl(null);
+                }}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                {t('pet.profilePicture')}
+              </h3>
+              <ProfilePictureUpload
+                currentUrl={pendingProfilePicture ? URL.createObjectURL(pendingProfilePicture) : null}
+                initials={formData.name?.[0]?.toUpperCase() || '?'}
+                onUpload={async (file) => {
+                  setPendingProfilePicture(file);
+                }}
+                onDelete={async () => {
+                  setPendingProfilePicture(null);
                 }}
               />
             </div>

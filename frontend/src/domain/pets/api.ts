@@ -8,6 +8,21 @@ export const petsApi = {
     method: 'POST',
     body: JSON.stringify(data),
   }),
+  createWithAvatar: (data: PetFormData, profilePicture: File) => {
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value === null || value === undefined) return;
+      if (key === 'vaccinations') {
+        formData.append(key, JSON.stringify(value));
+      } else if (typeof value === 'boolean') {
+        formData.append(key, value ? 'true' : 'false');
+      } else {
+        formData.append(key, String(value));
+      }
+    });
+    formData.append('profile_picture', profilePicture);
+    return uploadFile<Pet>('/pets/', formData);
+  },
   update: (id: number, data: Partial<PetFormData>) => fetchApi<Pet>(`/pets/${id}/`, {
     method: 'PATCH',
     body: JSON.stringify(data),

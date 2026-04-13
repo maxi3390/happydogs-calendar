@@ -63,6 +63,7 @@ class OwnerViewSet(viewsets.ModelViewSet):
     queryset = Owner.objects.all()
     serializer_class = OwnerSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -70,6 +71,9 @@ class OwnerViewSet(viewsets.ModelViewSet):
         if self.action == 'retrieve':
             return OwnerWithPetsSerializer
         return OwnerSerializer
+
+    def get_serializer_context(self):
+        return {**super().get_serializer_context(), 'request': self.request}
 
     @extend_schema(
         summary="Get owners for dropdown",
@@ -158,9 +162,52 @@ class PetViewSet(viewsets.ModelViewSet):
     queryset = Pet.objects.select_related('owner').all()
     serializer_class = PetSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def get_serializer_class(self):
         return PetSerializer
+
+    def get_serializer_context(self):
+        return {**super().get_serializer_context(), 'request': self.request}
+
+    def _parse_vaccinations(self, request):
+        """Parse vaccinations from multipart form data (sent as JSON string)."""
+        vaccinations_raw = request.data.get('vaccinations')
+        if vaccinations_raw and isinstance(vaccinations_raw, str):
+            try:
+                return json.loads(vaccinations_raw)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return vaccinations_raw
+
+    def create(self, request, *args, **kwargs):
+        data = request.data.copy()
+        vaccinations = self._parse_vaccinations(request)
+        if vaccinations is not None:
+            data['vaccinations'] = vaccinations
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            PetSerializer(serializer.instance, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+            headers=headers,
+        )
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        data = request.data.copy()
+        vaccinations = self._parse_vaccinations(request)
+        if vaccinations is not None:
+            data['vaccinations'] = vaccinations
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(
+            PetSerializer(serializer.instance, context={'request': request}).data,
+        )
 
     @extend_schema(
         summary="Upload pet profile picture",
