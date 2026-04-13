@@ -63,3 +63,14 @@ The system SHALL allow removing the current logo.
 - GIVEN no logo is set
 - WHEN the delete logo endpoint is called
 - THEN the system SHALL return a success response without error
+
+### Requirement: Logo Singleton Integrity
+
+The logo SHALL be preserved when other nursery settings are updated.
+
+#### Scenario: Updating booking limit does not affect logo
+
+- GIVEN a logo has been uploaded
+- WHEN the daily booking limit is updated via PATCH
+- THEN the logo SHALL remain unchanged
+- AND the settings response SHALL still include the logo URL

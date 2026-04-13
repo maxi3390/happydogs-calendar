@@ -51,8 +51,22 @@ Settings Page                    Navigation / Login
 | `backend/nursery_settings/serializers.py` | Add `logo_url` SerializerMethodField |
 | `backend/nursery_settings/views.py` | Add `upload_logo` and `delete_logo` views |
 | `backend/nursery_settings/urls.py` | Add URL patterns for upload/delete |
+| `backend/nursery_settings/tests.py` | Add `SystemLogoAPITest` class with 11 tests |
 | `frontend/src/domain/settings/types.ts` | Add `logo_url` to NurserySetting type |
 | `frontend/src/domain/settings/api.ts` | Add `uploadLogo` and `deleteLogo` methods |
 | `frontend/src/components/Navigation.tsx` | Fetch and display logo |
 | `frontend/src/app/login/page.tsx` | Fetch and display logo |
 | `frontend/src/app/settings/page.tsx` | Add logo upload/delete section |
+
+## Test Strategy
+
+Backend tests are in `nursery_settings/tests.py` under the `SystemLogoAPITest` class. They cover:
+
+| Category | Tests | Coverage |
+|----------|-------|----------|
+| Retrieval | 3 tests | `logo_url` field present, null when no logo, populated after upload |
+| Upload | 5 tests | Success with file storage, replace existing, no-file 400, reject PDF, reject >5MB |
+| Delete | 3 tests | Success removes file, clears URL, no-op when no logo |
+| Integrity | 1 test | Logo survives unrelated settings updates (singleton integrity) |
+
+All tests use the existing `auth_client` helper and `APIClient` pattern from the codebase. Test images are generated in-memory via Pillow (no fixtures needed).

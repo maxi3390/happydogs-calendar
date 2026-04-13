@@ -175,3 +175,82 @@ Any non-administrator authenticated user SHOULD be denied access to modify setti
 - Given an authenticated administrator user exists
 - When the administrator submits a request to update the nursery settings
 - Then the system SHOULD accept the request and persist the changes
+
+### Requirement: System Logo Storage
+
+The system SHALL support storing a single logo image as part of the nursery-wide settings. The logo is used for branding on the login page and navigation bar.
+
+#### Scenario: Upload a logo image
+
+- GIVEN an authenticated user sends a multipart request with a valid image file to the upload logo endpoint
+- WHEN the upload is processed
+- THEN the system SHALL store the image and return the updated settings including a logo_url field
+
+#### Scenario: Upload replaces existing logo
+
+- GIVEN a logo image already exists in settings
+- WHEN a new logo image is uploaded
+- THEN the system SHALL delete the previous file and store the new one
+
+#### Scenario: Reject oversized logo
+
+- GIVEN a user uploads an image larger than 5 MB
+- WHEN the upload is processed
+- THEN the system SHALL reject the request with a validation error
+
+#### Scenario: Reject unsupported format
+
+- GIVEN a user uploads a non-image file
+- WHEN the upload is processed
+- THEN the system SHALL reject the request with a validation error
+- AND only JPEG, PNG, GIF, and WEBP SHALL be accepted
+
+#### Scenario: Upload with no file
+
+- GIVEN an authenticated user sends a request to the upload endpoint without a file
+- WHEN the request is processed
+- THEN the system SHALL return a 400 error
+
+### Requirement: System Logo Retrieval
+
+The settings GET endpoint SHALL include the logo URL when a logo is set.
+
+#### Scenario: Settings response with logo
+
+- GIVEN a logo has been uploaded
+- WHEN the settings endpoint is queried
+- THEN the response SHALL include a logo_url field with an accessible URL
+
+#### Scenario: Settings response without logo
+
+- GIVEN no logo has been uploaded
+- WHEN the settings endpoint is queried
+- THEN the logo_url field SHALL be null
+
+### Requirement: System Logo Deletion
+
+The system SHALL allow removing the current logo via a dedicated DELETE endpoint.
+
+#### Scenario: Delete existing logo
+
+- GIVEN a logo image exists
+- WHEN the delete logo endpoint is called
+- THEN the system SHALL remove the file and return a 204 response
+- AND subsequent settings queries SHALL return null for logo_url
+
+#### Scenario: Delete when no logo exists
+
+- GIVEN no logo is set
+- WHEN the delete logo endpoint is called
+- THEN the system SHALL return a 204 response without error
+
+### Requirement: Logo Singleton Integrity
+
+The logo SHALL be preserved when other nursery settings fields are updated.
+
+#### Scenario: Updating booking limit does not affect logo
+
+- GIVEN a logo has been uploaded
+- WHEN the daily booking limit is updated via PATCH
+- THEN the logo SHALL remain unchanged
+- AND the settings response SHALL still include the logo URL

@@ -133,9 +133,53 @@ GET /api/schema/redoc/    → ReDoc (readable documentation)
 
 | File | Purpose |
 |------|---------|
-| `nursery_settings/models.py` | NurserySetting model with singleton pattern, load() class method |
-| `nursery_settings/views.py` | NurserySettingViewSet (CRUD for singleton settings) |
-| `nursery_settings/serializers.py` | NurserySettingSerializer |
+| `nursery_settings/models.py` | NurserySetting model with singleton pattern, load() class method, logo ImageField |
+| `nursery_settings/views.py` | Settings CRUD (get/update) + logo upload/delete views |
+| `nursery_settings/serializers.py` | NurserySettingSerializer with logo_url SerializerMethodField |
+| `nursery_settings/urls.py` | URL patterns: /settings/, /settings/update/, /settings/upload_logo/, /settings/delete_logo/ |
+| `nursery_settings/tests.py` | Model tests, settings API tests, SystemLogoAPITest (11 tests) |
 | `pets/views.py` | TranslationView (serves static JSON translations) |
-| `translations/*.json` | Static translation files (en.json, es.json, etc.) |
-| `config/urls.py` | drf-spectacular schema/swagger/redoc URL configuration |
+| `translations/*.json` | Static translation files (en.json, es.json) |
+| `nursery/urls.py` | drf-spectacular schema/swagger/redoc URL configuration |
+
+## System Logo Architecture
+
+### Decision: Logo on NurserySetting Singleton
+
+The logo is stored as an `ImageField` on the existing `NurserySetting` singleton model rather than a separate model. Reuses the shared `validate_file_size` and `validate_image_type` validators from `domain/files/validators.py` (5 MB max, JPEG/PNG/GIF/WEBP).
+
+**Why:** A single nursery-wide image doesn't justify a separate model. The singleton already holds nursery configuration.
+
+### Decision: Separate Upload/Delete Endpoints
+
+Logo management uses dedicated endpoints (`POST /api/settings/upload_logo/`, `DELETE /api/settings/delete_logo/`) rather than including the file in the PATCH/PUT settings endpoint.
+
+**Why:** File uploads require `multipart/form-data` which doesn't mix well with the JSON PATCH used for `daily_booking_limit`. Separate endpoints follow the same pattern as owner/pet profile picture endpoints.
+
+### Decision: Public Settings Endpoint Serves Logo URL
+
+The `GET /api/settings/` endpoint returns `logo_url` without authentication, allowing the login page to display the logo before the user has a token.
+
+### Logo Data Flow
+
+```
+Upload:
+  POST /api/settings/upload_logo/ (multipart, logo file)
+    → upload_logo view
+    → delete old logo if exists
+    → assign new file to settings_obj.logo
+    → full_clean() validates size + type
+    → save()
+    → return serialized settings with logo_url
+
+Retrieve:
+  GET /api/settings/
+    → NurserySettingSerializer
+    → get_logo_url() builds absolute URL from request context
+    → returns logo_url or null
+
+Delete:
+  DELETE /api/settings/delete_logo/
+    → logo.delete(save=True) removes file + clears field
+    → return 204
+```

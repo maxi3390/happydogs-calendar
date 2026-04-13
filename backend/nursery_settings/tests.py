@@ -1,8 +1,19 @@
 from datetime import date, time
+from io import BytesIO
+from PIL import Image as PILImage
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from rest_framework.test import APIClient
 from nursery_settings.models import NurserySetting
 from tests.factories import create_schedule, create_pet, auth_client
+
+
+def _make_test_image(name='logo.png', size=(200, 200), fmt='PNG'):
+    """Create a small in-memory image for testing."""
+    buf = BytesIO()
+    PILImage.new('RGB', size, color='green').save(buf, format=fmt)
+    buf.seek(0)
+    return SimpleUploadedFile(name, buf.read(), content_type=f'image/{fmt.lower()}')
 
 
 class NurserySettingModelTest(TestCase):
@@ -50,6 +61,110 @@ class NurserySettingAPITest(TestCase):
         resp = self.client.put('/api/settings/update/', {'daily_booking_limit': 20}, format='json')
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.data['daily_booking_limit'], 20)
+
+
+class SystemLogoAPITest(TestCase):
+    """Tests for the system logo upload, retrieval, and deletion endpoints."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = auth_client(self.client)
+        NurserySetting.load()
+
+    # ── Retrieval ───────────────────────────────────────────────────────
+
+    def test_settings_response_includes_logo_url_field(self):
+        resp = self.client.get('/api/settings/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('logo_url', resp.data)
+
+    def test_logo_url_is_null_when_no_logo(self):
+        resp = self.client.get('/api/settings/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIsNone(resp.data['logo_url'])
+
+    def test_logo_url_is_present_after_upload(self):
+        image = _make_test_image()
+        self.client.post('/api/settings/upload_logo/', {'logo': image}, format='multipart')
+        resp = self.client.get('/api/settings/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIsNotNone(resp.data['logo_url'])
+        self.assertIn('logos/', resp.data['logo_url'])
+
+    # ── Upload ──────────────────────────────────────────────────────────
+
+    def test_upload_logo_success(self):
+        image = _make_test_image()
+        resp = self.client.post('/api/settings/upload_logo/', {'logo': image}, format='multipart')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIsNotNone(resp.data['logo_url'])
+        settings = NurserySetting.load()
+        self.assertTrue(settings.logo)
+
+    def test_upload_logo_replaces_existing(self):
+        image1 = _make_test_image('logo1.png')
+        self.client.post('/api/settings/upload_logo/', {'logo': image1}, format='multipart')
+        resp1 = self.client.get('/api/settings/')
+        url1 = resp1.data['logo_url']
+
+        image2 = _make_test_image('logo2.png')
+        resp2 = self.client.post('/api/settings/upload_logo/', {'logo': image2}, format='multipart')
+        self.assertEqual(resp2.status_code, 200)
+        url2 = resp2.data['logo_url']
+        self.assertNotEqual(url1, url2)
+
+    def test_upload_logo_no_file_returns_400(self):
+        resp = self.client.post('/api/settings/upload_logo/', {}, format='multipart')
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('error', resp.data)
+
+    def test_upload_logo_rejects_non_image(self):
+        pdf = SimpleUploadedFile('doc.pdf', b'%PDF-1.4 fake', content_type='application/pdf')
+        resp = self.client.post('/api/settings/upload_logo/', {'logo': pdf}, format='multipart')
+        self.assertEqual(resp.status_code, 400)
+
+    def test_upload_logo_rejects_oversized_file(self):
+        buf = BytesIO()
+        PILImage.new('RGB', (100, 100), color='red').save(buf, format='PNG')
+        buf.seek(0)
+        oversized = SimpleUploadedFile(
+            'big.png',
+            buf.read() + b'\x00' * (6 * 1024 * 1024),  # pad to >5MB
+            content_type='image/png',
+        )
+        resp = self.client.post('/api/settings/upload_logo/', {'logo': oversized}, format='multipart')
+        self.assertEqual(resp.status_code, 400)
+
+    # ── Delete ──────────────────────────────────────────────────────────
+
+    def test_delete_logo_success(self):
+        image = _make_test_image()
+        self.client.post('/api/settings/upload_logo/', {'logo': image}, format='multipart')
+        resp = self.client.delete('/api/settings/delete_logo/')
+        self.assertEqual(resp.status_code, 204)
+        settings = NurserySetting.load()
+        self.assertFalse(settings.logo)
+
+    def test_delete_logo_clears_url(self):
+        image = _make_test_image()
+        self.client.post('/api/settings/upload_logo/', {'logo': image}, format='multipart')
+        self.client.delete('/api/settings/delete_logo/')
+        resp = self.client.get('/api/settings/')
+        self.assertIsNone(resp.data['logo_url'])
+
+    def test_delete_logo_when_none_exists(self):
+        resp = self.client.delete('/api/settings/delete_logo/')
+        self.assertEqual(resp.status_code, 204)
+
+    # ── Singleton integrity ─────────────────────────────────────────────
+
+    def test_logo_persists_across_settings_updates(self):
+        image = _make_test_image()
+        self.client.post('/api/settings/upload_logo/', {'logo': image}, format='multipart')
+        self.client.patch('/api/settings/update/', {'daily_booking_limit': 42}, format='json')
+        resp = self.client.get('/api/settings/')
+        self.assertEqual(resp.data['daily_booking_limit'], 42)
+        self.assertIsNotNone(resp.data['logo_url'])
 
 
 class DailyCountAPITest(TestCase):
