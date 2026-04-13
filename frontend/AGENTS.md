@@ -4,6 +4,54 @@
 
 Next.js 16 / React 19 / TypeScript application for the Happy Pet Nursery system. Uses Tailwind CSS for styling, Lucide React for icons, date-fns for date utilities. No external state management library — React hooks and Context API only.
 
+## Git Workflow
+
+**Always create a feature branch before starting work.** Never commit directly to `master`.
+
+```bash
+# 1. Start from an up-to-date master
+git checkout master && git pull
+
+# 2. Create a feature branch using conventional naming
+git checkout -b feat/<feature-slug>      # new features
+git checkout -b fix/<bug-slug>           # bug fixes
+git checkout -b refactor/<scope>         # refactoring
+git checkout -b test/<scope>             # adding tests
+git checkout -b docs/<scope>             # documentation only
+
+# 3. Work — commit often with conventional commit messages
+git add -A && git commit -m "feat(calendar): add week view component"
+
+# 4. When done, verify before considering the branch ready
+cd frontend && npm run build             # TypeScript + Next.js must compile
+cd frontend && npm run lint              # no lint errors
+make test-frontend                       # all Playwright E2E tests must pass
+
+# 5. Do NOT push or merge — leave that to the user
+```
+
+### Branch naming examples
+
+| Type | Branch name | Commit prefix |
+|------|-------------|---------------|
+| New feature | `feat/add-system-logo` | `feat(settings):` |
+| Bug fix | `fix/calendar-bar-overlap` | `fix(calendar):` |
+| Refactor | `refactor/unify-schedule-form` | `refactor(schedules):` |
+| Tests | `test/pet-form-avatar-upload` | `test(pets):` |
+| Docs/specs | `docs/update-frontend-specs` | `docs:` |
+
+### Full workflow for a feature request
+
+```
+1. git checkout -b feat/<slug>           # create branch
+2. Create openspec/changes/<slug>/       # proposal, design, specs, tasks
+3. Implement frontend changes            # pages, components, domain APIs, types
+4. Write/update Playwright tests         # tests must pass
+5. Update docs                           # CONTEXT.md, docs/, AGENTS.md if needed
+6. Commit with conventional messages     # one or more commits
+7. npm run build && make test-frontend   # final verification
+```
+
 ## Verification Commands
 
 ```bash

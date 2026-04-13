@@ -4,6 +4,53 @@
 
 Django 5.1 REST API for the Happy Pet Nursery system. Domain-driven design with models in `domain/` and three Django apps: `pets`, `accounts`, `nursery_settings`.
 
+## Git Workflow
+
+**Always create a feature branch before starting work.** Never commit directly to `master`.
+
+```bash
+# 1. Start from an up-to-date master
+git checkout master && git pull
+
+# 2. Create a feature branch using conventional naming
+git checkout -b feat/<feature-slug>      # new features
+git checkout -b fix/<bug-slug>           # bug fixes
+git checkout -b refactor/<scope>         # refactoring
+git checkout -b test/<scope>             # adding tests
+git checkout -b docs/<scope>             # documentation only
+
+# 3. Work — commit often with conventional commit messages
+git add -A && git commit -m "feat(pets): add weight field to pet model"
+
+# 4. When done, verify before considering the branch ready
+make test-backend                        # all tests must pass
+make lint                                # no lint errors
+
+# 5. Do NOT push or merge — leave that to the user
+```
+
+### Branch naming examples
+
+| Type | Branch name | Commit prefix |
+|------|-------------|---------------|
+| New feature | `feat/add-system-logo` | `feat(settings):` |
+| Bug fix | `fix/schedule-overlap-query` | `fix(schedules):` |
+| Refactor | `refactor/extract-compatibility-service` | `refactor(pets):` |
+| Tests | `test/logo-upload-validation` | `test(settings):` |
+| Docs/specs | `docs/update-openspec-settings` | `docs:` |
+
+### Full workflow for a feature request
+
+```
+1. git checkout -b feat/<slug>           # create branch
+2. Create openspec/changes/<slug>/       # proposal, design, specs, tasks
+3. Implement backend changes             # models, views, serializers, urls
+4. Write tests                           # tests must pass
+5. Update docs                           # CONTEXT.md, docs/, AGENTS.md if needed
+6. Commit with conventional messages     # one or more commits
+7. make test-backend && make lint        # final verification
+```
+
 ## Verification Commands
 
 ```bash
