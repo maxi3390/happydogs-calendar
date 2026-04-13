@@ -1,0 +1,332 @@
+# Frontend Pet Management Specification
+
+## Purpose
+
+Define the behavior of the pet management interface, including the pet list display, pet detail cards, and the pet creation/editing form. This specification covers listing, viewing details, creating, editing, and deleting pets, as well as managing vaccinations, profile pictures, medical notes, documents, and special notes.
+
+## Requirements
+
+### Requirement: Pet List
+
+The system SHALL display a list of pets as cards, each summarizing key pet information with the ability to expand for additional details.
+
+#### Scenario: Rendering pet cards
+
+- Given pets exist in the system
+- When the pet list loads
+- Then the system SHALL display one card per pet
+- And each card SHALL show the pet's profile picture, or a species-specific icon if no profile picture exists
+- And each card SHALL show the pet's name, breed, species, age, and owner name
+
+#### Scenario: Displaying medical notes count badge
+
+- Given a pet has one or more medical notes
+- When the pet card is rendered
+- Then the card SHALL display a badge indicating the count of medical notes
+
+#### Scenario: Pet with no medical notes
+
+- Given a pet has no medical notes
+- When the pet card is rendered
+- Then no medical notes badge SHALL be displayed (or the badge SHALL show zero)
+
+#### Scenario: Expanding a pet card
+
+- Given a pet card is displayed in the list
+- When the user activates the card's expand control (accordion toggle)
+- Then the card SHALL expand to reveal additional details
+- And the expanded section SHALL display a larger profile picture (or species icon)
+- And the expanded section SHALL display trait badges for temperament, dominance level, and size
+- And the expanded section SHALL display an information grid showing sex, neutered status, and owner
+- And the expanded section SHALL display any special notes
+- And the expanded section SHALL provide edit and delete action controls
+
+#### Scenario: Collapsing an expanded pet card
+
+- Given a pet card is expanded
+- When the user activates the collapse control
+- Then the expanded section SHALL be hidden
+- And the card SHALL return to its collapsed summary state
+
+#### Scenario: Deleting a pet from the expanded card
+
+- Given a pet card is expanded and the delete action is visible
+- When the user activates the delete action
+- Then the system SHALL display a confirmation dialog
+- And if the user confirms, the system SHALL delete the pet
+- And the pet card SHALL be removed from the list
+- And if the user cancels, the pet SHALL remain unchanged
+
+#### Scenario: Editing a pet from the expanded card
+
+- Given a pet card is expanded and the edit action is visible
+- When the user activates the edit action
+- Then the system SHALL open the pet form modal pre-filled with the pet's current data
+
+#### Scenario: Empty state when no pets exist
+
+- Given no pets exist in the system
+- When the pet list loads
+- Then the system SHALL display a message indicating that no pets have been added yet
+- And the system SHOULD provide a call-to-action to create the first pet
+
+#### Scenario: Loading state
+
+- Given the pet list is fetching data
+- When the list is in a loading state
+- Then the system SHALL display skeleton placeholders in the shape of pet cards
+- And the skeletons SHALL indicate that content is loading
+
+---
+
+### Requirement: Pet Form - General Fields
+
+The system SHALL present a modal form for creating and editing pets, with the owner selection gating all other fields.
+
+#### Scenario: Opening the create pet form
+
+- Given the user activates the "add pet" action
+- When the form modal opens
+- Then all fields SHALL be empty
+- And the owner selection field SHALL be enabled
+- And all other fields SHALL be disabled until an owner is selected
+
+#### Scenario: Owner selection gates other fields
+
+- Given the pet form modal is open and no owner is selected
+- When the user views the form
+- Then all fields except the owner selection SHALL be disabled or visually indicated as unavailable
+- When the user selects an owner
+- Then all other form fields SHALL become enabled
+
+#### Scenario: Required fields validation
+
+- Given the user has selected an owner and is filling in the pet form
+- When the user attempts to submit with any required field empty (name, species, age, temperament, size, sex)
+- Then the system SHALL prevent submission
+- And the system SHALL indicate which required fields are missing
+
+#### Scenario: Species selection
+
+- Given the pet form is active (owner selected)
+- When the user interacts with the species field
+- Then the system SHALL present a dropdown of available species options
+
+#### Scenario: Temperament selection
+
+- Given the pet form is active
+- When the user interacts with the temperament field
+- Then the system SHALL present a dropdown of available temperament options
+
+#### Scenario: Size selection
+
+- Given the pet form is active
+- When the user interacts with the size field
+- Then the system SHALL present a dropdown of available size options
+
+#### Scenario: Sex selection
+
+- Given the pet form is active
+- When the user interacts with the sex field
+- Then the system SHALL present a dropdown of available sex options
+
+#### Scenario: Dominance slider
+
+- Given the pet form is active
+- When the user interacts with the dominance field
+- Then the system SHALL present a slider allowing selection of a value from 1 to 10
+- And the slider SHALL display a color indicator: green for values 1-3, yellow for values 4-6, and red for values 7-10
+
+#### Scenario: Birth date auto-calculates age
+
+- Given the pet form is active
+- When the user enters or changes the birth date
+- Then the system SHALL automatically calculate and update the age field based on the difference between the birth date and today
+
+#### Scenario: Weight field
+
+- Given the pet form is active
+- When the user enters a weight value
+- Then the system SHALL accept a numeric value in kilograms
+
+#### Scenario: Neutered checkbox
+
+- Given the pet form is active
+- When the user interacts with the neutered field
+- Then the system SHALL present a checkbox that can be toggled on or off
+
+#### Scenario: Breed field (optional)
+
+- Given the pet form is active
+- When the user views the breed field
+- Then the field SHALL be available but not required
+
+#### Scenario: Special notes textarea
+
+- Given the pet form is active
+- When the user enters text in the special notes field
+- Then the system SHALL accept multi-line free-text input
+
+---
+
+### Requirement: Pet Form - Vaccination Management
+
+The system SHALL provide a dynamic vaccination list within the pet form, allowing users to add and remove vaccination records.
+
+#### Scenario: Adding a vaccination entry
+
+- Given the pet form is active
+- When the user activates the "add vaccination" control
+- Then the system SHALL add a new vaccination row to the list
+- And the new row SHALL include a vaccination type dropdown and a date input
+
+#### Scenario: Vaccination type dropdown filtering
+
+- Given a vaccination row is displayed
+- When the user interacts with the vaccination type dropdown
+- Then the system SHALL display only vaccination types that are enabled in the system
+
+#### Scenario: Setting a vaccination date
+
+- Given a vaccination row is displayed
+- When the user interacts with the date input for that vaccination
+- Then the system SHALL allow the user to select or enter a date
+
+#### Scenario: Removing a vaccination entry
+
+- Given one or more vaccination rows are displayed
+- When the user activates the remove control on a specific vaccination row
+- Then that vaccination row SHALL be removed from the list
+
+#### Scenario: Submitting with vaccinations
+
+- Given the user has added one or more vaccination entries with valid type and date
+- When the user submits the pet form
+- Then the vaccination records SHALL be included in the submission
+
+#### Scenario: Empty vaccination list
+
+- Given no vaccination entries have been added
+- When the user views the vaccination section
+- Then the system SHOULD display a message or empty state indicating no vaccinations have been recorded
+
+---
+
+### Requirement: Pet Form - Profile Picture Upload
+
+The system SHALL allow users to upload a profile picture for a pet, but only when editing an existing pet.
+
+#### Scenario: Profile picture upload is available in edit mode
+
+- Given the user is editing an existing pet
+- When the form renders
+- Then the system SHALL display a profile picture upload control
+- And the current profile picture (if any) SHALL be displayed as a preview
+
+#### Scenario: Profile picture upload is not available in create mode
+
+- Given the user is creating a new pet
+- When the form renders
+- Then the profile picture upload control SHALL NOT be displayed
+
+#### Scenario: Uploading a valid profile picture
+
+- Given the user is editing a pet and the upload control is visible
+- When the user selects a file that is a JPEG, PNG, GIF, or WebP image and is 5 MB or smaller
+- Then the system SHALL accept the file
+- And the system SHALL display a preview of the selected image
+
+#### Scenario: Uploading a file exceeding the size limit
+
+- Given the user is editing a pet
+- When the user selects a file larger than 5 MB
+- Then the system SHALL reject the file
+- And the system SHALL display an error message indicating the maximum file size
+
+#### Scenario: Uploading an invalid file type
+
+- Given the user is editing a pet
+- When the user selects a file that is not a JPEG, PNG, GIF, or WebP image
+- Then the system SHALL reject the file
+- And the system SHALL display an error message indicating the accepted file formats
+
+---
+
+### Requirement: Pet Form - Medical Notes
+
+The system SHALL provide a medical notes section within the pet form, available only when editing an existing pet.
+
+#### Scenario: Medical notes section in edit mode
+
+- Given the user is editing an existing pet
+- When the form renders
+- Then the system SHALL display a medical notes section
+- And any existing medical notes SHALL be listed
+
+#### Scenario: Medical notes section hidden in create mode
+
+- Given the user is creating a new pet
+- When the form renders
+- Then the medical notes section SHALL NOT be displayed
+
+---
+
+### Requirement: Pet Form - Document Upload
+
+The system SHALL provide a document upload section within the pet form, available only when editing an existing pet.
+
+#### Scenario: Document upload in edit mode
+
+- Given the user is editing an existing pet
+- When the form renders
+- Then the system SHALL display a document upload control
+
+#### Scenario: Document upload hidden in create mode
+
+- Given the user is creating a new pet
+- When the form renders
+- Then the document upload control SHALL NOT be displayed
+
+---
+
+### Requirement: Pet Form - Submission
+
+The system SHALL handle form submission for both creating and editing pets.
+
+#### Scenario: Successful pet creation
+
+- Given the user has filled in all required fields in create mode
+- When the user submits the form
+- Then the system SHALL send the pet data to the backend
+- And upon success, the form modal SHALL close
+- And the new pet SHALL appear in the pet list
+
+#### Scenario: Successful pet edit
+
+- Given the user has modified fields in edit mode
+- When the user submits the form
+- Then the system SHALL send the updated pet data to the backend
+- And upon success, the form modal SHALL close
+- And the pet's card in the list SHALL reflect the updated information
+
+#### Scenario: Submission error
+
+- Given the user submits the pet form
+- When the backend returns an error
+- Then the system SHALL display an error message within the form
+- And the form SHALL remain open so the user can correct the issue
+
+#### Scenario: Loading state during submission
+
+- Given the user submits the pet form
+- When the request is in progress
+- Then the submit button SHALL display a loading indicator
+- And the submit button SHALL be disabled to prevent duplicate submissions
+
+#### Scenario: Opening the edit form pre-fills existing data
+
+- Given the user activates the edit action for a pet
+- When the form modal opens
+- Then all fields SHALL be pre-filled with the pet's current data
+- And the owner field SHALL reflect the pet's current owner
+- And all fields SHALL be enabled (since an owner is already assigned)

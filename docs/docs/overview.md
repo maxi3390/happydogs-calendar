@@ -2,152 +2,316 @@
 
 ## What is Happy Calendar?
 
-Happy Calendar is a comprehensive schedule management system designed specifically for pet nurseries. It provides a robust platform for managing pets, owners, and their schedules while automatically detecting and preventing potential conflicts between incompatible pets based on their behavioral characteristics.
+Happy Calendar is a calendar-based schedule management system built specifically for pet nurseries. It provides a full-featured platform for managing pets, owners, and daily schedules — with an intelligent conflict detection engine that automatically evaluates pet compatibility based on behavioral characteristics such as temperament, dominance level, species, and size.
+
+The system is designed as a modern full-stack web application with a **Next.js 16** frontend, a **Django 5.1.4** REST API backend, and a **PostgreSQL 16** database, all orchestrated via **Docker Compose** with a **Traefik v3.6** reverse proxy.
+
+- 📘 [Backend Documentation](backend/intro)
+- 📗 [Frontend Documentation](frontend/intro)
+
+---
 
 ## Key Features
 
-### Pet Management
-- **Comprehensive Pet Profiles**: Track detailed information including species, temperament, dominance level, size, breed, age, and special care notes
-- **Behavioral Assessment**: Use a 1-10 dominance scale and temperament categories (calm, playful, aggressive, anxious, friendly)
-- **Owner Association**: Link pets to their registered owners for streamlined management
+### 1. Pet Management
 
-### Owner Management
-- **Complete Owner Records**: Store contact information, emergency contacts, and address details
-- **Pet Relationships**: View all pets associated with an owner
-- **Bulk Operations**: Create schedules for all of an owner's pets simultaneously
+Comprehensive pet profiles with rich behavioral and medical data:
 
-### Intelligent Scheduling
-- **Conflict Detection**: Automatic detection of potential conflicts based on:
-  - Aggressive pets cannot be scheduled with others
-  - High dominance pets (level > 7) cannot be together
-  - Size and dominance combinations that may cause issues
-  - Cross-species temperament incompatibilities
-  - Anxious pets with highly playful pets under certain conditions
-- **Multi-Pet Scheduling**: Batch create schedules for multiple pets with individual conflict checking
-- **Status Management**: Track schedules through their lifecycle (Scheduled → Checked In → Completed/Cancelled)
+- **Species**: Dog, Cat, Bird, Rabbit, Other
+- **Temperament**: Calm, Playful, Aggressive, Anxious, Friendly
+- **Dominance Level**: 1–10 scale (submissive to very dominant)
+- **Size**: Small, Medium, Large
+- **Details**: Breed, age, sex, neutered status, birth date, weight (kg)
+- **Special Notes**: Free-text field for additional care instructions
+- **Profile Pictures**: JPEG, PNG, GIF, WEBP — max 5 MB per image
+- **Vaccination Records**: Date-stamped records linked to configurable vaccination types
+- **Medical Notes**: Title + description entries with inline CRUD
+- **Document Attachments**: Upload files (JPEG, PNG, GIF, WEBP, PDF, DOC, DOCX — max 5 MB) with drag-and-drop support
 
-### User Interface
-- **Responsive Design**: Optimized for desktop, tablet, and mobile devices
-- **Multiple Calendar Views**: Monthly overview, weekly detail, and daily schedule panels
-- **Visual Conflict Indicators**: Clear warnings for scheduling conflicts
-- **Dark Mode Support**: Full dark mode with system preference detection
+### 2. Owner Management
 
-### Internationalization
-- **Multi-Language Support**: English and Spanish translations
-- **Dynamic Language Switching**: Real-time UI updates without page refresh
-- **Persistent Preferences**: Language choices saved in localStorage
+- **Contact Information**: First name, last name, email (unique), phone, ID number (unique), address, birth date
+- **Emergency Contact**: Name, phone, and can-pickup flag
+- **Notes**: Free-text field for additional information
+- **Profile Pictures**: Same format/size constraints as pets
+- **Document Attachments**: Upload files linked to owner records
+- **Pet Relationships**: View and manage all pets associated with an owner
 
-### User Management
-- **Role-Based Access Control**: Admin and User roles with different permissions
-- **JWT Authentication**: Secure token-based authentication system
-- **Profile Management**: User registration, login, password changes, and profile updates
-- **Admin Panel**: User management for administrators
+### 3. Smart Scheduling with Conflict Detection
+
+The scheduling engine implements 5 conflict detection rules (see [Business Logic](#business-logic) below) that evaluate pet compatibility in real time. Key characteristics:
+
+- **Multi-day Schedules**: Separate start/end dates and start/end times
+- **Status Tracking**: Scheduled → Checked In → Completed / Cancelled
+- **Conflicts are Warnings, Not Blockers**: Schedules are always created; conflicts are returned as warnings alongside the created schedule
+- **Pre-flight Conflict Check**: A dedicated endpoint to check conflicts before committing a schedule
+
+### 4. Multi-Pet Scheduling
+
+- Batch create schedules for multiple pets in a single request
+- Owner-based pet filtering for quick selection
+- Per-pet conflict warnings returned individually
+
+### 5. Calendar Interface
+
+- **Monthly View**: 7-column grid with schedule bars rendered in stable per-pet colors, a stacking algorithm for overlapping entries, and conflict indicators
+- **Weekly View**: Pet rows with horizontal schedule bars
+- **Day Schedule Panel**: Inline status updates, edit, and delete actions
+- **Public Calendar**: Availability indicators visible without authentication
+
+### 6. Medical Notes
+
+- Title and description per pet
+- Inline CRUD (create, read, update, delete) directly from the pet detail view
+
+### 7. Document Management
+
+- Upload files to pets or owners (JPEG, PNG, GIF, WEBP, PDF, DOC, DOCX — max 5 MB)
+- Drag-and-drop upload support
+- Original filename preservation
+
+### 8. Vaccination Types
+
+- Configurable vaccination types managed in nursery settings
+- Enable/disable individual types
+- Display ordering support
+
+### 9. Daily Booking Limits
+
+- Configurable daily booking limit (0 = unlimited)
+- Count checking is informational only — the limit is **not enforced** by the API
+
+### 10. User Authentication & Role-Based Access Control
+
+- **JWT Authentication**: 60-minute access tokens, 7-day refresh tokens
+- **Token Rotation & Blacklisting**: Refresh tokens are rotated on each use; old tokens are blacklisted
+- **Email-Based Login**: No username field — email is the sole login identifier
+- **Roles**: Admin and User roles with different permission levels
+- **Admin User Management Panel**: Admins can create, edit, and deactivate user accounts
+
+### 11. Internationalization (i18n)
+
+- **Languages**: English and Spanish
+- **API-Served Translations**: Translation strings fetched from the backend
+- **Browser Auto-Detection**: Initial language set from browser preferences
+- **localStorage Persistence**: Language choice remembered across sessions
+- **Real-Time Switching**: UI updates instantly without page reload
+
+### 12. Dark Mode
+
+- Tailwind CSS `class` strategy for theme switching
+- System preference detection on first visit
+- Manual toggle in the UI
+- Preference persisted in localStorage
+
+### 13. Responsive Design
+
+- Mobile: Hamburger menu navigation
+- Tablet & Desktop: Full sidebar/header layouts
+- Adaptive calendar views across breakpoints
+
+### 14. Reusable UI Components
+
+- **Button**: 5 variants, 4 sizes
+- **Input**: Icon support, labels, error messages
+- **Card**: Composable card components
+- **Select**: Dropdown select component
+- **Badge**: Status and category badges
+
+### 15. API Documentation
+
+- **Swagger UI**: Live interactive docs at `/api/docs/`
+- **ReDoc**: Alternative documentation at `/api/redoc/`
+- **OpenAPI Schema**: Machine-readable schema at `/api/schema/`
+
+---
 
 ## Technology Stack
 
 ### Frontend
-- **Framework**: Next.js 15 with App Router
-- **Language**: TypeScript
-- **Styling**: TailwindCSS with custom components
-- **Icons**: Lucide React
-- **State Management**: React hooks and context
-- **Internationalization**: Custom translation system
+
+| Technology | Version | Purpose |
+|---|---|---|
+| Next.js | 16 | React framework with App Router |
+| React | 19 | UI library |
+| TypeScript | 5.7 | Type-safe JavaScript |
+| TailwindCSS | 3.4 | Utility-first CSS framework |
+| Lucide React | 0.475+ | Icon library |
+| date-fns | 4.1+ | Date manipulation utilities |
+| Playwright | 1.50+ | End-to-end testing |
 
 ### Backend
-- **Framework**: Django 5.1 with Django REST Framework
-- **Database**: PostgreSQL 16
-- **Authentication**: JWT tokens with blacklisting
-- **API Documentation**: drf-spectacular for OpenAPI 3.0
-- **Serialization**: DRF serializers with validation
+
+| Technology | Version | Purpose |
+|---|---|---|
+| Django | 5.1.4 | Web framework |
+| Django REST Framework | 3.15.2 | REST API toolkit |
+| djangorestframework-simplejwt | 5.3.1 | JWT authentication |
+| drf-spectacular | 0.28.0 | OpenAPI 3.0 schema generation |
+| Pillow | 11.1.0 | Image processing for uploads |
+| psycopg2-binary | 2.9.10 | PostgreSQL adapter |
+| django-cors-headers | 4.6.0 | CORS handling |
+| gunicorn | 23.0.0 | Production WSGI server |
 
 ### Infrastructure
-- **Containerization**: Docker and Docker Compose
-- **Development**: Hot-reload for both frontend and backend
-- **Testing**: Playwright for end-to-end frontend testing
-- **Backend Documentation**: [Backend](backend/intro)
-- **Frontend Documentation**: [Frontend](frontend/intro)
+
+| Technology | Version | Purpose |
+|---|---|---|
+| PostgreSQL | 16 (Alpine) | Relational database |
+| Docker & Docker Compose | — | Containerization and orchestration |
+| Traefik | v3.6 | Reverse proxy, TLS termination, routing |
+
+---
 
 ## System Architecture
 
-The application follows a modern microservices-inspired architecture within a containerized environment:
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                         Traefik v3.6                                 │
+│                    (Reverse Proxy / TLS)                             │
+│                                                                      │
+│   :80 ──► :443 (HTTP→HTTPS redirect)                                │
+│                                                                      │
+│   /api/*   ──────►  backend:8000                                     │
+│   /media/* ──────►  backend:8000                                     │
+│   /*       ──────►  frontend:3000                                    │
+└──────────┬───────────────────────────────────────┬───────────────────┘
+           │                                       │
+           ▼                                       ▼
+┌─────────────────────┐              ┌─────────────────────────┐
+│   Frontend          │              │   Backend               │
+│   Next.js 16        │   REST API   │   Django 5.1.4 + DRF   │
+│   React 19          │◄────────────►│   Port 8000             │
+│   Port 3000         │   (JSON)     │                         │
+└─────────────────────┘              └────────────┬────────────┘
+                                                  │
+                                                  ▼
+                                     ┌─────────────────────────┐
+                                     │   PostgreSQL 16         │
+                                     │   Port 5432             │
+                                     └─────────────────────────┘
 
-┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend       │
-│   (Next.js)     │◄──►│   (Django)      │
-│   Port 3000     │    │   Port 8000     │
-└─────────────────┘    └─────────────────┘
-         │                       │
-         └───────────────────────┘
-                   │
-          ┌─────────────────┐
-          │   Database      │
-          │ (PostgreSQL)    │
-          │   Port 5432     │
-          └─────────────────┘
+Optional services (via Docker Compose profiles):
+  - docs:    Docusaurus (profile: docs)    → :3001
+  - pgadmin: pgAdmin 4  (profile: dev)     → :5050
 
-### Data Flow
+Security:
+  - docker-socket-proxy: Read-only Docker API access for Traefik
+  - Networks: socket-proxy (internal), proxy (app communication)
+```
 
-1. **User Interaction**: Users interact with the React frontend through various pages and components
-2. **API Requests**: Frontend makes HTTP requests to the Django REST API
-3. **Business Logic**: Backend processes requests, validates data, and handles conflict detection
-4. **Database Operations**: Data is stored and retrieved from PostgreSQL
-5. **Response**: Results are returned to the frontend for display
-
-### Key Components
-
-- **Calendar System**: Handles date/time operations and schedule management
-- **Conflict Detection Engine**: Analyzes pet characteristics to prevent incompatible pairings
-- **Authentication System**: Manages user sessions and permissions
-- **Translation System**: Provides multi-language support
-- **Responsive UI**: Adapts to different screen sizes and devices
+---
 
 ## Business Logic
 
 ### Conflict Detection Rules
 
-The system implements sophisticated rules to ensure pet safety and well-being:
+The conflict detection engine is implemented in `Pet.is_compatible_with()` and evaluates pairwise compatibility between pets sharing the same time slot. All 5 rules are checked in sequence:
 
-1. **Aggressive Temperament Rule**: Pets marked as aggressive cannot be scheduled with any other pets
-2. **Dominance Threshold Rule**: Pets with dominance levels above 7 cannot be scheduled together
-3. **Size-Dominance Compatibility Rule**: Large differences in size combined with high dominance differences trigger warnings
-4. **Cross-Species Rules**: Certain temperament combinations between different species are incompatible
-5. **Behavioral Compatibility Rules**: Anxious pets are protected from highly playful pets under specific dominance conditions
+| # | Rule | Condition | Result |
+|---|---|---|---|
+| 1 | **Aggressive Pet** | Either pet has temperament `aggressive` | Incompatible |
+| 2 | **High Dominance** | Both pets have dominance level > 7 | Incompatible |
+| 3 | **Size + Dominance Combo** | Size difference ≥ 2 levels AND dominance difference ≥ 5 | Incompatible |
+| 4 | **Cross-Species Temperament** | Different species with temperament pairs (`aggressive`, `anxious`) or (`aggressive`, `calm`) | Incompatible |
+| 5 | **Anxious + Playful** | One pet anxious, the other playful, and dominance difference > 4 | Incompatible |
 
-### Scheduling Workflow
+### Non-Blocking Conflict Philosophy
 
-1. **Pet Selection**: Choose pets to schedule (single or multiple)
-2. **Time Slot Selection**: Pick date and time for the schedule
-3. **Conflict Check**: System automatically validates against all rules
-4. **Schedule Creation**: If no conflicts, schedule is created with appropriate status
-5. **Status Updates**: Track progress through check-in and completion
+**Conflicts are warnings, not blockers.** When a schedule is created that triggers one or more compatibility rules:
+
+1. The schedule is **always saved** to the database
+2. Conflict details are returned in the API response as `warnings`
+3. The UI displays conflict indicators on the calendar and in schedule details
+4. Staff can make informed decisions about whether to proceed or reschedule
+
+A **pre-flight conflict check** endpoint is also available to evaluate conflicts before committing.
+
+### Daily Booking Limits
+
+The daily booking limit (configured in nursery settings) is **informational only**. The API reports the current day's booking count against the configured limit, but does not reject bookings that exceed it.
+
+---
 
 ## Development and Deployment
 
 ### Local Development
-- **Docker Compose**: Single command to start all services
-- **Hot Reload**: Automatic code reloading for both frontend and backend
-- **Database Migrations**: Automatic Django migrations on startup
-- **API Documentation**: Live Swagger UI and ReDoc interfaces
 
-### Production Considerations
-- **Scalability**: Containerized architecture supports horizontal scaling
-- **Security**: JWT authentication with token blacklisting
-- **Performance**: Optimized database queries and efficient conflict detection algorithms
-- **Monitoring**: Comprehensive logging and error handling
+1. **Docker Compose**: Start all services with a single command
+2. **Hot Reload**: Both frontend (Next.js Turbopack) and backend (Django runserver) support automatic code reloading
+3. **Database Migrations**: Automatically applied on backend container startup
+4. **API Documentation**: Live Swagger UI at `/api/docs/` and ReDoc at `/api/redoc/`
+5. **TLS**: Self-signed certificates by default; Let's Encrypt via Cloudflare DNS challenge available
+
+### Production
+
+- **Traefik**: Handles HTTPS termination with self-signed certificates or Let's Encrypt (Cloudflare DNS challenge)
+- **Gunicorn**: Production WSGI server for Django
+- **Docker Socket Proxy**: Scoped read-only Docker API access for Traefik (no direct socket exposure)
+- **Network Isolation**: Internal `socket-proxy` network for Traefik↔Docker communication; `proxy` network for app services
+
+---
 
 ## Getting Started
 
-See the [Quick Start Guide](deployment.md) for detailed setup instructions.
+1. **Clone the repository** and copy the `.env.example` to `.env`
+2. **Start the stack**:
+   ```bash
+   docker compose up --build
+   ```
+3. **Access the application**:
+   - Frontend: `https://localhost`
+   - API: `https://localhost/api/`
+   - Swagger UI: `https://localhost/api/docs/`
+   - ReDoc: `https://localhost/api/redoc/`
+   - Traefik Dashboard: `http://localhost:8080`
+4. **Optional services**:
+   ```bash
+   docker compose --profile docs up docs       # Docusaurus at :3001
+   docker compose --profile dev up pgadmin     # pgAdmin at :5050
+   ```
 
-## API Reference
+See the [Deployment Guide](deployment.md) for detailed configuration and production setup instructions.
 
-Complete API documentation is available at `/api/docs/` when the backend is running.
+---
 
 ## Testing
 
-The application includes comprehensive end-to-end tests using Playwright, covering:
-- Navigation flows
-- Calendar interactions
-- Pet management operations
-- Scheduling workflows
-- Language switching functionality
+### Frontend — Playwright E2E Tests
+
+End-to-end tests cover the full user experience:
+
+- Navigation flows and page transitions
+- Calendar interactions (monthly, weekly, daily views)
+- Pet and owner management workflows
+- Schedule creation, editing, and conflict detection
+- Language switching (English ↔ Spanish)
+- Authentication flows
+
+```bash
+# Run all tests
+npm test
+
+# Run with UI
+npm run test:ui
+
+# Run headed (visible browser)
+npm run test:headed
+```
+
+### Backend — Django Test Runner + Coverage
+
+Unit and integration tests for models, views, serializers, and business logic:
+
+- Model validation and constraint testing
+- API endpoint testing (CRUD, auth, permissions)
+- Conflict detection rule verification
+- Schedule overlap and compatibility checks
+
+```bash
+# Run backend tests
+python manage.py test
+
+# Run with coverage
+coverage run manage.py test && coverage report
+```

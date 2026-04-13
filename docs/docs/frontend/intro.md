@@ -2,935 +2,405 @@
 
 ## Overview
 
-The frontend is a modern React application built with Next.js 16, TypeScript, and TailwindCSS. It provides a responsive, user-friendly interface for managing pet nursery schedules with real-time conflict detection and multi-language support.
+The Happy Calendar frontend is a server-rendered React application built with Next.js 16 and the App Router. It provides a responsive, multi-language interface for managing pet nursery schedules — including monthly/weekly calendar views, real-time conflict detection, pet and owner management, and admin user administration.
 
-## Core Technologies
+## Tech Stack
 
-- **Next.js 16**: React framework with App Router for modern web applications
-- **React 19**: Latest React with concurrent features and improved performance
-- **TypeScript**: Type-safe JavaScript for better development experience
-- **TailwindCSS**: Utility-first CSS framework for responsive design
-- **Lucide React**: Modern icon library
-- **Date-fns**: Date manipulation library
-- **Playwright**: End-to-end testing framework
+| Technology | Version | Purpose |
+|---|---|---|
+| **Next.js** | 16 | Framework (App Router) |
+| **React** | 19 | UI library |
+| **TypeScript** | 5.7 | Type safety |
+| **TailwindCSS** | 3.4 | Utility-first styling |
+| **Lucide React** | — | Icon library |
+| **date-fns** | — | Date manipulation |
+| **Playwright** | — | End-to-end testing |
 
-## Application Structure
+> **No external state management libraries are used** — no Redux, Zustand, Jotai, or similar. All global state is managed through React Context + hooks. Local component state uses `useState` and `useEffect`.
 
-The frontend follows Next.js App Router architecture with organized component structure:
+## Directory Structure
 
 ```
 frontend/
 ├── src/
-│   ├── app/                      # Next.js App Router pages
-│   │   ├── page.tsx             # Main calendar page (authenticated)
-│   │   ├── login/               # Login page
-│   │   ├── register/            # Registration page
-│   │   ├── pets/                # Pet management page
-│   │   ├── owners/              # Owner management page
-│   │   ├── settings/            # Settings & incompatibilities
-│   │   ├── layout.tsx           # Root layout with providers
-│   │   └── globals.css          # Global styles
-│   ├── components/              # Reusable React components
-│   │   ├── Calendar.tsx         # Monthly calendar view
-│   │   ├── WeekView.tsx         # Weekly schedule view
-│   │   ├── DaySchedule.tsx      # Daily schedule panel
-│   │   ├── ScheduleForm.tsx     # Single pet scheduling
-│   │   ├── MultiPetScheduleForm.tsx # Batch scheduling
-│   │   ├── PetForm.tsx          # Pet CRUD form
-│   │   ├── PetList.tsx          # Pet listing component
-│   │   ├── OwnerForm.tsx        # Owner CRUD form
-│   │   ├── OwnerList.tsx        # Owner listing component
-│   │   ├── Navigation.tsx       # Main navigation component
-│   │   ├── LanguageSwitcher.tsx # i18n language selector
-│   │   └── ThemeToggle.tsx      # Dark mode toggle
-│   └── lib/                     # Utilities and services
-│       ├── api.ts               # API client and types
-│       ├── translations.tsx     # i18n context and hooks
-│       └── auth.tsx             # Authentication context
-├── public/                      # Static assets
-├── package.json                 # Dependencies and scripts
-├── tailwind.config.ts           # TailwindCSS configuration
-├── next.config.ts               # Next.js configuration
-└── Dockerfile                   # Container configuration
+│   ├── app/                        # Next.js App Router pages
+│   │   ├── layout.tsx              # Root layout: AuthProvider + TranslationProvider
+│   │   ├── page.tsx                # Main calendar page (public + authenticated views)
+│   │   ├── login/page.tsx          # Login page
+│   │   ├── register/page.tsx       # Registration page
+│   │   ├── pets/page.tsx           # Pet management (withAuth protected)
+│   │   ├── owners/page.tsx         # Owner management (withAuth protected)
+│   │   ├── settings/page.tsx       # Settings & incompatibility rules (withAuth protected)
+│   │   ├── admin/users/page.tsx    # Admin user management (withAdmin protected)
+│   │   ├── ui-system/page.tsx      # UI component showcase
+│   │   └── globals.css
+│   ├── components/                 # Shared React components
+│   │   ├── Calendar.tsx            # Monthly calendar view with schedule bars
+│   │   ├── WeekView.tsx            # Weekly schedule view with pet rows
+│   │   ├── DaySchedule.tsx         # Daily schedule panel with status management
+│   │   ├── ScheduleForm.tsx        # Unified schedule form (single + multi mode)
+│   │   ├── MultiPetScheduleForm.tsx# Re-export wrapper for ScheduleForm mode='multi'
+│   │   ├── PetForm.tsx             # Pet CRUD with vaccinations, medical notes, documents
+│   │   ├── PetList.tsx             # Expandable pet cards
+│   │   ├── OwnerForm.tsx           # Owner CRUD form
+│   │   ├── Navigation.tsx          # Top nav bar (desktop + mobile hamburger)
+│   │   ├── LanguageSwitcher.tsx    # Language selector
+│   │   ├── ThemeToggle.tsx         # Dark mode toggle (Sun/Moon icons)
+│   │   ├── ProfilePictureUpload.tsx# Circular picture upload with initials fallback
+│   │   ├── MedicalNotesSection.tsx # Inline medical notes CRUD
+│   │   ├── DocumentUpload.tsx      # Drag-and-drop document upload
+│   │   ├── ScheduleDetailsPopup.tsx# Modal popup for schedule details
+│   │   ├── PublicCalendar.tsx      # Public availability calendar (no auth required)
+│   │   └── ui/                     # Reusable UI component library
+│   │       ├── Button.tsx          # 5 variants, 4 sizes
+│   │       ├── Input.tsx           # Label, icons, error support
+│   │       ├── Card.tsx            # Composable Card/CardHeader/CardTitle/CardContent/CardFooter
+│   │       ├── Select.tsx
+│   │       └── Badge.tsx
+│   ├── domain/                     # Domain-sliced API clients and types
+│   │   ├── _http/client.ts         # fetchApi<T> and uploadFile<T> helpers
+│   │   ├── auth/types.ts
+│   │   ├── owners/{api,types,index}.ts
+│   │   ├── pets/{api,types,index}.ts
+│   │   ├── schedules/{api,types,index}.ts
+│   │   ├── vaccinations/{api,types,index}.ts
+│   │   ├── documents/{api,types,index}.ts
+│   │   ├── medical-notes/{api,types}.ts
+│   │   ├── settings/{api,types,index}.ts
+│   │   ├── users/{api,types}.ts
+│   │   └── translations/types.ts
+│   └── lib/
+│       ├── api.ts                  # Barrel: re-exports all domain types + single api object
+│       ├── auth.tsx                # AuthProvider, useAuth hook, authFetch helper
+│       ├── withAuth.tsx            # HOC for auth-protected pages
+│       ├── withAdmin.tsx           # HOC for admin-only pages
+│       └── translations.tsx        # TranslationProvider, useTranslation hook
+├── tests/                          # Playwright E2E tests
+│   ├── auth.spec.ts
+│   ├── calendar.spec.ts
+│   ├── pets.spec.ts
+│   ├── schedule.spec.ts
+│   ├── language.spec.ts
+│   ├── navigation.spec.ts
+│   ├── settings.spec.ts
+│   └── helpers.ts
+├── Dockerfile                      # Multi-stage: deps -> builder -> runner (node:22-alpine)
+├── package.json
+├── tailwind.config.ts
+├── playwright.config.ts
+└── next.config.ts
 ```
+
+## Pages
+
+The application defines **8 pages**:
+
+| Route | File | Protection | Description |
+|---|---|---|---|
+| `/` | `page.tsx` | None | Main calendar. Shows `PublicCalendar` when unauthenticated; full dashboard (`Calendar`/`WeekView` + `DaySchedule`) when authenticated |
+| `/login` | `login/page.tsx` | None | Email + password login. Password visibility toggle, error display. Redirects to `/` if already authenticated |
+| `/register` | `register/page.tsx` | None | Name, email, password + confirmation (min 8 chars). Redirects to `/` if already authenticated |
+| `/pets` | `pets/page.tsx` | `withAuth` | Pet management — `PetList` + `PetForm` modal |
+| `/owners` | `owners/page.tsx` | `withAuth` | Owner management — search, expandable cards, batch and individual scheduling |
+| `/settings` | `settings/page.tsx` | `withAuth` | Daily capacity limit, incompatibility rules (localStorage), vaccination types |
+| `/admin/users` | `admin/users/page.tsx` | `withAdmin` | Admin user management — stats cards, user table, CRUD modals, role/status badges |
+| `/ui-system` | `ui-system/page.tsx` | None | UI component showcase page |
 
 ## Component Architecture
 
-### State Management
-
-The application uses React Context for global state management:
-
 ```mermaid
 graph TB
-    subgraph "Context Providers"
-        AuthProvider[AuthProvider<br/>JWT tokens, user state]
-        TranslationProvider[TranslationProvider<br/>Language state, translations]
+    subgraph "Root Layout (layout.tsx)"
+        AuthProvider["AuthProvider"]
+        TranslationProvider["TranslationProvider"]
     end
 
-    subgraph "Component State"
-        LocalState[Local Component State<br/>useState hooks]
-        ServerState[Server State<br/>API responses]
+    subgraph "Pages"
+        MainPage["/ — Calendar Dashboard"]
+        LoginPage["/login"]
+        RegisterPage["/register"]
+        PetsPage["/pets (withAuth)"]
+        OwnersPage["/owners (withAuth)"]
+        SettingsPage["/settings (withAuth)"]
+        AdminPage["/admin/users (withAdmin)"]
     end
 
-    subgraph "Data Flow"
-        APIClient[API Client<br/>HTTP requests]
-        LocalStorage[LocalStorage<br/>Persistence]
+    subgraph "Calendar Components"
+        Calendar["Calendar.tsx — Monthly grid"]
+        WeekView["WeekView.tsx — Weekly rows"]
+        DaySchedule["DaySchedule.tsx — Daily panel"]
+        PublicCalendar["PublicCalendar.tsx — Public view"]
     end
 
-    AuthProvider --> LocalState
-    TranslationProvider --> LocalState
-    LocalState --> APIClient
-    APIClient --> ServerState
-    AuthProvider --> LocalStorage
-    TranslationProvider --> LocalStorage
+    subgraph "Form Components"
+        ScheduleForm["ScheduleForm.tsx — Single + Multi mode"]
+        PetForm["PetForm.tsx"]
+        OwnerForm["OwnerForm.tsx"]
+    end
+
+    subgraph "UI Library (ui/)"
+        Button["Button.tsx"]
+        Input["Input.tsx"]
+        Card["Card.tsx"]
+        Select["Select.tsx"]
+        Badge["Badge.tsx"]
+    end
+
+    AuthProvider --> TranslationProvider
+    TranslationProvider --> MainPage
+    TranslationProvider --> LoginPage
+    TranslationProvider --> PetsPage
+    TranslationProvider --> OwnersPage
+    TranslationProvider --> SettingsPage
+    TranslationProvider --> AdminPage
+
+    MainPage --> Calendar
+    MainPage --> WeekView
+    MainPage --> DaySchedule
+    MainPage --> PublicCalendar
+    MainPage --> ScheduleForm
+
+    PetsPage --> PetForm
+    OwnersPage --> OwnerForm
+
+    Calendar --> Button
+    ScheduleForm --> Input
+    ScheduleForm --> Select
+    PetForm --> Input
+    PetForm --> Card
+    DaySchedule --> Badge
 
     style AuthProvider fill:#e3f2fd
     style TranslationProvider fill:#f3e5f5
-    style LocalState fill:#e8f5e8
-    style ServerState fill:#fff3e0
-    style APIClient fill:#fce4ec
-    style LocalStorage fill:#e0f2f1
+    style Calendar fill:#e8f5e9
+    style WeekView fill:#e8f5e9
+    style DaySchedule fill:#e8f5e9
+    style ScheduleForm fill:#fff3e0
+    style PetForm fill:#fff3e0
+    style OwnerForm fill:#fff3e0
 ```
 
-### Authentication Context
+### Key Components
 
-```typescript
-interface AuthContextType {
-  isAuthenticated: boolean;
-  isAdmin: boolean;
-  user: User | null;
-  isLoading: boolean;
-  login: (username: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  register: (userData: RegisterData) => Promise<void>;
-  refreshToken: () => Promise<void>;
-}
+#### Calendar.tsx — Monthly Calendar View
 
-const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+The main calendar renders a CSS grid (7 columns) representing a month. Key behaviors:
 
-  // JWT token management
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [refreshTokenValue, setRefreshToken] = useState<string | null>(null);
+- **8-color stable palette**: Each pet is assigned a deterministic color based on its ID, ensuring the same pet always has the same color across views.
+- **Multi-day bar spanning**: Schedules spanning multiple days render as continuous horizontal bars across grid cells.
+- **Stacking algorithm**: Up to 3 schedule bars are visible per cell. When there are more, a **"+N more"** overflow indicator appears.
+- **Clickable bars**: Clicking a schedule bar opens the `ScheduleDetailsPopup` modal with full details.
+- **Navigation**: Month-to-month navigation with previous/next controls and a today button.
 
-  // Initialize auth state from localStorage
-  useEffect(() => {
-    const initAuth = async () => {
-      const storedAccess = localStorage.getItem('access_token');
-      const storedRefresh = localStorage.getItem('refresh_token');
+#### WeekView.tsx — Weekly Schedule View
 
-      if (storedAccess && storedRefresh) {
-        setAccessToken(storedAccess);
-        setRefreshToken(storedRefresh);
+Renders a week as a grid where each **row is a pet** and each **column is a day**. Schedule bars span horizontally across the pet's row, giving a clear per-pet overview of the week.
 
-        try {
-          // Validate token and get user info
-          const userData = await getCurrentUser();
-          setUser(userData);
-          setIsAuthenticated(true);
-          setIsAdmin(userData.role === 'admin');
-        } catch (error) {
-          // Token invalid, clear storage
-          logout();
-        }
-      }
+#### DaySchedule.tsx — Daily Schedule Panel
 
-      setIsLoading(false);
-    };
+A scrollable list of all schedules for the selected date. Features:
 
-    initAuth();
-  }, []);
+- **Inline status dropdown**: Change schedule status (scheduled, confirmed, in progress, completed, cancelled) directly in the list.
+- **Conflict details**: If a schedule has incompatibility conflicts, they are highlighted inline.
+- **Edit/Delete actions**: Each schedule entry has edit and delete buttons that open the appropriate form or confirmation dialog.
 
-  // Auto-refresh token before expiration
-  useEffect(() => {
-    if (accessToken) {
-      const tokenPayload = JSON.parse(atob(accessToken.split('.')[1]));
-      const expiresAt = tokenPayload.exp * 1000;
-      const refreshAt = expiresAt - 5 * 60 * 1000; // 5 minutes before expiry
+#### ScheduleForm.tsx — Unified Schedule Form
 
-      const timeout = setTimeout(async () => {
-        try {
-          await refreshToken();
-        } catch (error) {
-          logout();
-        }
-      }, refreshAt - Date.now());
+A single component handling both scheduling modes via a `mode` prop:
 
-      return () => clearTimeout(timeout);
-    }
-  }, [accessToken]);
+- **`mode='single'`**: Pet dropdown selection. Includes a **500ms debounced conflict check** — as the user adjusts dates/times, the system checks for incompatibility and capacity conflicts in near real-time.
+- **`mode='multi'`**: Owner filter dropdown + pet checkboxes. Supports **select all / clear all** for batch scheduling.
+- **Both modes**: 15-minute time intervals for start/end times. Daily capacity limit check before submission. After scheduling, a **result screen** shows successes and failures.
 
-  const login = async (username: string, password: string) => {
-    const response = await api.post('/auth/login/', { username, password });
+`MultiPetScheduleForm.tsx` is a thin re-export wrapper that renders `ScheduleForm` with `mode='multi'`.
 
-    const { access, refresh, user: userData } = response.data;
+#### PetForm.tsx — Pet CRUD Form
 
-    setAccessToken(access);
-    setRefreshToken(refresh);
-    setUser(userData);
-    setIsAuthenticated(true);
-    setIsAdmin(userData.role === 'admin');
+- **Owner required first**: The owner field must be selected before other fields are enabled (gates the form).
+- **Dominance slider**: Visual slider from 1–10 with color coding: green (1–3), yellow (4–6), red (7–10).
+- **Birth date → age**: Selecting a birth date automatically calculates and displays the pet's age.
+- **Vaccinations**: Dynamic list — add/remove vaccination entries with type and date.
+- **Edit-mode-only features**: Profile picture upload (`ProfilePictureUpload`), medical notes (`MedicalNotesSection`), and documents (`DocumentUpload`) are only available when editing an existing pet, not when creating.
 
-    localStorage.setItem('access_token', access);
-    localStorage.setItem('refresh_token', refresh);
-  };
+#### Navigation.tsx — Top Navigation Bar
 
-  const logout = async () => {
-    if (refreshTokenValue) {
-      try {
-        await api.post('/auth/logout/', { refresh: refreshTokenValue });
-      } catch (error) {
-        // Ignore logout errors
-      }
-    }
+- **Sticky positioning** with scroll detection (changes background opacity on scroll).
+- **Desktop**: Horizontal links + profile dropdown menu with logout.
+- **Mobile**: Hamburger menu that slides open with all navigation links.
+- **Admin indicator**: Visual badge/indicator when the logged-in user has admin role.
 
-    setAccessToken(null);
-    setRefreshToken(null);
-    setUser(null);
-    setIsAuthenticated(false);
-    setIsAdmin(false);
+#### PublicCalendar.tsx — Public Availability Calendar
 
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-  };
+Displayed on the main page (`/`) when no user is authenticated. Shows a read-only calendar indicating nursery availability without exposing pet or owner details.
 
-  const register = async (userData: RegisterData) => {
-    await api.post('/auth/register/', userData);
-    await login(userData.username, userData.password);
-  };
+### UI Component Library (`ui/`)
 
-  const refreshToken = async () => {
-    const response = await api.post('/auth/refresh/', {
-      refresh: refreshTokenValue
-    });
+| Component | Description |
+|---|---|
+| `Button.tsx` | 5 variants (primary, secondary, outline, ghost, destructive) × 4 sizes (sm, md, lg, icon) |
+| `Input.tsx` | Text input with label, left/right icon slots, and error message support |
+| `Card.tsx` | Composable card with `Card`, `CardHeader`, `CardTitle`, `CardContent`, `CardFooter` sub-components |
+| `Select.tsx` | Styled select dropdown |
+| `Badge.tsx` | Status/label badges with color variants |
 
-    const { access } = response.data;
-    setAccessToken(access);
-    localStorage.setItem('access_token', access);
-  };
+## State Management
 
-  const value: AuthContextType = {
-    isAuthenticated,
-    isAdmin,
-    user,
-    isLoading,
-    login,
-    logout,
-    register,
-    refreshToken,
-  };
+### Architecture
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+The application uses **no external state management libraries**. All global state is handled through two React Context providers, and local UI state uses standard React hooks.
+
+```mermaid
+graph LR
+    subgraph "Global State (Context)"
+        Auth["AuthProvider<br/>user, tokens, isAdmin"]
+        i18n["TranslationProvider<br/>language, translations"]
+    end
+
+    subgraph "Persistence"
+        LS["localStorage"]
+    end
+
+    subgraph "Server State"
+        API["Backend API"]
+    end
+
+    subgraph "Component State"
+        Hooks["useState / useEffect<br/>+ counter-based refresh triggers"]
+    end
+
+    Auth -- "auth_tokens<br/>auth_user" --> LS
+    i18n -- "preferred_language" --> LS
+    Hooks -- "fetchApi / uploadFile" --> API
+    API -- "JSON responses" --> Hooks
+    Auth -- "login/register/logout/refreshToken" --> API
+
+    style Auth fill:#e3f2fd
+    style i18n fill:#f3e5f5
+    style LS fill:#e0f2f1
+    style API fill:#fce4ec
+    style Hooks fill:#e8f5e9
 ```
 
-### Translation System
+### AuthProvider (`lib/auth.tsx`)
 
-```typescript
-interface TranslationContextType {
-  t: (key: string, params?: Record<string, any>) => string;
-  language: string;
-  setLanguage: (lang: string) => void;
-  translations: Record<string, any>;
-}
+Wraps the entire application in the root `layout.tsx`. Manages:
 
-const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState('en');
-  const [translations, setTranslations] = useState<Record<string, any>>({});
+- **User object** and **authentication state** (`isAuthenticated`, `isAdmin`).
+- **JWT tokens** stored in `localStorage` under the keys `auth_tokens` and `auth_user`.
+- **Provided methods**: `login(email, password)`, `register(userData)`, `logout()`, `refreshToken()`.
+- On mount, reads tokens from `localStorage` and validates them. If invalid, clears state and redirects.
 
-  // Load translations for current language
-  useEffect(() => {
-    const loadTranslations = async () => {
-      try {
-        const response = await fetch(`/api/translations/${language}/`);
-        const data = await response.json();
-        setTranslations(data);
-      } catch (error) {
-        console.error('Failed to load translations:', error);
-        // Fallback to English
-        if (language !== 'en') {
-          const fallbackResponse = await fetch('/api/translations/en/');
-          const fallbackData = await fallbackResponse.json();
-          setTranslations(fallbackData);
-        }
-      }
-    };
+### TranslationProvider (`lib/translations.tsx`)
 
-    loadTranslations();
-  }, [language]);
+Also wraps the entire application in the root `layout.tsx` (inside `AuthProvider`). Manages:
 
-  // Load language from localStorage on mount
-  useEffect(() => {
-    const storedLanguage = localStorage.getItem('language') || 'en';
-    setLanguageState(storedLanguage);
-  }, []);
+- **Translations** fetched from the backend API.
+- **Language preference** stored in `localStorage` under the key `preferred_language`.
+- **Default language**: Spanish.
+- **Browser auto-detection**: On first visit (no stored preference), detects the browser's language.
+- **`useTranslation` hook** provides `t(key, params?)` for interpolated translation lookups.
 
-  // Persist language changes
-  const setLanguage = (lang: string) => {
-    setLanguageState(lang);
-    localStorage.setItem('language', lang);
-  };
+### Data Invalidation Pattern
 
-  // Translation function with interpolation
-  const t = (key: string, params?: Record<string, any>): string => {
-    const keys = key.split('.');
-    let value = translations;
+Instead of a global store or cache, the application uses **counter-based refresh triggers**. When a mutation occurs (e.g., creating a schedule), a counter state variable is incremented. Components that depend on that data include the counter in their `useEffect` dependency arrays, causing a re-fetch.
 
-    for (const k of keys) {
-      value = value?.[k];
-    }
+## HTTP Layer
 
-    if (typeof value !== 'string') {
-      return key; // Return key if translation not found
-    }
+### Domain-Sliced API Architecture
 
-    // Simple interpolation
-    if (params) {
-      return Object.entries(params).reduce(
-        (str, [paramKey, paramValue]) =>
-          str.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), String(paramValue)),
-        value
-      );
-    }
+API logic is organized by domain under `src/domain/`. Each domain folder contains:
 
-    return value;
-  };
+- `types.ts` — TypeScript interfaces for the domain's data models.
+- `api.ts` — Functions that call the backend endpoints for that domain.
+- `index.ts` — Barrel file re-exporting types and API functions.
 
-  const value: TranslationContextType = {
-    t,
-    language,
-    setLanguage,
-    translations,
-  };
+The barrel file `src/lib/api.ts` re-exports everything from all domain modules, providing a single `api` import for the rest of the application.
 
-  return (
-    <TranslationContext.Provider value={value}>
-      {children}
-    </TranslationContext.Provider>
-  );
-};
+### HTTP Client (`domain/_http/client.ts`)
+
+Two core functions:
+
+- **`fetchApi<T>(endpoint, options)`** — Makes JSON HTTP requests. Automatically attaches the `Authorization` header if the user is authenticated. Resolves the base URL from the `NEXT_PUBLIC_API_URL` environment variable (default: `http://localhost:8000/api`).
+- **`uploadFile<T>(endpoint, formData)`** — Makes multipart/form-data requests for file uploads (profile pictures, documents). Same base URL resolution and auth behavior.
+
+Both functions handle error responses and return typed results.
+
+## Route Protection
+
+### `withAuth` HOC (`lib/withAuth.tsx`)
+
+A higher-order component that wraps page components requiring authentication:
+
+- Checks `isAuthenticated` from `AuthProvider`.
+- If not authenticated, **redirects to `/login`**.
+- Shows a loading state while authentication status is being determined.
+- Used by: `/pets`, `/owners`, `/settings`.
+
+### `withAdmin` HOC (`lib/withAdmin.tsx`)
+
+A higher-order component for admin-only pages:
+
+- Checks `isAuthenticated` from `AuthProvider` — if not authenticated, **redirects to `/login`**.
+- Checks `isAdmin` from `AuthProvider` — if authenticated but not admin, **redirects to `/`**.
+- Used by: `/admin/users`.
+
+```mermaid
+flowchart TD
+    A[User visits protected page] --> B{isLoading?}
+    B -- Yes --> C[Show loading spinner]
+    B -- No --> D{isAuthenticated?}
+    D -- No --> E[Redirect to /login]
+    D -- Yes --> F{Page requires admin?}
+    F -- No --> G[Render page]
+    F -- Yes --> H{isAdmin?}
+    H -- Yes --> G
+    H -- No --> I[Redirect to /]
 ```
 
-## API Client
+## Theming
 
-The API client handles all HTTP communication with the backend:
+### Dark Mode
 
-```typescript
-class ApiClient {
-  private baseURL: string;
-  private accessToken: string | null = null;
+The `ThemeToggle` component switches between light and dark mode using Tailwind's `dark:` variant classes. The toggle renders a Sun icon (for switching to light) or Moon icon (for switching to dark) from Lucide React. Theme preference is persisted in `localStorage`.
 
-  constructor(baseURL: string = '/api') {
-    this.baseURL = baseURL;
-  }
+### Responsive Design
 
-  setAccessToken(token: string | null) {
-    this.accessToken = token;
-  }
+All pages and components are responsive using Tailwind breakpoints:
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`;
+- **Mobile-first**: Base styles target mobile screens.
+- **Desktop enhancements**: `md:` and `lg:` breakpoints add larger layouts, sidebar panels, and multi-column grids.
+- **Navigation**: Switches from hamburger menu (mobile) to horizontal link bar (desktop).
 
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
+## Testing
 
-    if (this.accessToken) {
-      headers.Authorization = `Bearer ${this.accessToken}`;
-    }
+### Playwright E2E Tests
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+End-to-end tests live in the `tests/` directory and cover:
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.detail || `HTTP ${response.status}`);
-    }
+| Test File | Coverage |
+|---|---|
+| `auth.spec.ts` | Login, registration, logout, auth redirects |
+| `calendar.spec.ts` | Calendar navigation, view switching, date selection |
+| `pets.spec.ts` | Pet CRUD, form validation, owner gating |
+| `schedule.spec.ts` | Schedule creation, conflict detection, status changes |
+| `language.spec.ts` | Language switching, translation loading, persistence |
+| `navigation.spec.ts` | Desktop/mobile nav, route protection, admin visibility |
+| `settings.spec.ts` | Settings CRUD, incompatibility rules |
+| `helpers.ts` | Shared test utilities (login helpers, selectors, fixtures) |
 
-    return response.json();
-  }
+Tests are configured via `playwright.config.ts` and can be run with:
 
-  async get<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint);
-  }
-
-  async post<T>(endpoint: string, data: any): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async patch<T>(endpoint: string, data: any): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async delete<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'DELETE',
-    });
-  }
-}
-
-export const api = new ApiClient();
-
-// Update token when auth context changes
-export const useApiClient = () => {
-  const { accessToken } = useAuth();
-
-  useEffect(() => {
-    api.setAccessToken(accessToken);
-  }, [accessToken]);
-
-  return api;
-};
+```bash
+make test-frontend          # Run all E2E tests (headless)
+make test-frontend-debug    # Run with Playwright UI for debugging
 ```
 
-## Component Patterns
+## Build & Deployment
 
-### Calendar Component
+The frontend Dockerfile uses a **multi-stage build**:
 
-The main calendar component handles date selection and schedule visualization:
+1. **`deps`** stage: `node:22-alpine`, installs `node_modules` from `package.json` / lock file.
+2. **`builder`** stage: Copies source code, runs `next build` to produce the production bundle.
+3. **`runner`** stage: Minimal `node:22-alpine` image, copies only the built output and runs `next start`.
 
-```typescript
-interface CalendarProps {
-  selectedDate: Date;
-  onDateSelect: (date: Date) => void;
-  calendarView: 'month' | 'week';
-  onViewChange: (view: 'month' | 'week') => void;
-}
-
-const Calendar: React.FC<CalendarProps> = ({
-  selectedDate,
-  onDateSelect,
-  calendarView,
-  onViewChange,
-}) => {
-  const { t } = useTranslation();
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // Load schedules for current month
-  useEffect(() => {
-    const loadSchedules = async () => {
-      try {
-        const startDate = startOfMonth(selectedDate);
-        const endDate = endOfMonth(selectedDate);
-
-        const response = await api.get<Schedule[]>('/schedules/', {
-          params: {
-            start_date: format(startDate, 'yyyy-MM-dd'),
-            end_date: format(endDate, 'yyyy-MM-dd'),
-          },
-        });
-
-        setSchedules(response.data);
-      } catch (error) {
-        console.error('Failed to load schedules:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadSchedules();
-  }, [selectedDate]);
-
-  // Group schedules by date
-  const schedulesByDate = useMemo(() => {
-    const grouped: Record<string, Schedule[]> = {};
-    schedules.forEach(schedule => {
-      const dateKey = format(new Date(schedule.start_time), 'yyyy-MM-dd');
-      if (!grouped[dateKey]) {
-        grouped[dateKey] = [];
-      }
-      grouped[dateKey].push(schedule);
-    });
-    return grouped;
-  }, [schedules]);
-
-  // Render calendar grid
-  const renderCalendarDays = () => {
-    const monthStart = startOfMonth(selectedDate);
-    const monthEnd = endOfMonth(selectedDate);
-    const startDate = startOfWeek(monthStart);
-    const endDate = endOfWeek(monthEnd);
-
-    const days = [];
-    let day = startDate;
-
-    while (day <= endDate) {
-      const dateKey = format(day, 'yyyy-MM-dd');
-      const daySchedules = schedulesByDate[dateKey] || [];
-      const isCurrentMonth = isSameMonth(day, selectedDate);
-      const isSelected = isSameDay(day, selectedDate);
-
-      days.push(
-        <div
-          key={day.toISOString()}
-          className={cn(
-            'min-h-[100px] p-2 border border-gray-200 dark:border-slate-600 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors',
-            {
-              'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-600': isSelected,
-              'text-gray-400 dark:text-gray-500': !isCurrentMonth,
-            }
-          )}
-          onClick={() => onDateSelect(day)}
-        >
-          <div className="text-sm font-medium mb-1">
-            {format(day, 'd')}
-          </div>
-          <div className="space-y-1">
-            {daySchedules.slice(0, 3).map(schedule => (
-              <div
-                key={schedule.id}
-                className="text-xs p-1 rounded bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-200 truncate"
-              >
-                {schedule.pet_name}
-              </div>
-            ))}
-            {daySchedules.length > 3 && (
-              <div className="text-xs text-gray-500">
-                +{daySchedules.length - 3} more
-              </div>
-            )}
-          </div>
-        </div>
-      );
-
-      day = addDays(day, 1);
-    }
-
-    return days;
-  };
-
-  return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-          {format(selectedDate, 'MMMM yyyy')}
-        </h2>
-        <div className="flex gap-2">
-          <button
-            onClick={() => onViewChange('month')}
-            className={cn(
-              'px-3 py-1 rounded-lg text-sm font-medium transition-colors',
-              calendarView === 'month'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300'
-            )}
-          >
-            {t('calendar.monthView')}
-          </button>
-          <button
-            onClick={() => onViewChange('week')}
-            className={cn(
-              'px-3 py-1 rounded-lg text-sm font-medium transition-colors',
-              calendarView === 'week'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300'
-            )}
-          >
-            {t('calendar.weekView')}
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-7 gap-0 border border-gray-200 dark:border-slate-600 rounded-lg overflow-hidden">
-        {/* Day headers */}
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-          <div
-            key={day}
-            className="bg-gray-50 dark:bg-slate-700 p-3 text-center text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-slate-600"
-          >
-            {t(`calendar.days.${day.toLowerCase()}`)}
-          </div>
-        ))}
-
-        {/* Calendar days */}
-        {renderCalendarDays()}
-      </div>
-    </div>
-  );
-};
-```
-
-### Form Components
-
-Forms use controlled components with validation:
-
-```typescript
-interface ScheduleFormProps {
-  schedule?: Schedule;
-  selectedDate: Date;
-  onClose: () => void;
-  onSave: () => void;
-}
-
-const ScheduleForm: React.FC<ScheduleFormProps> = ({
-  schedule,
-  selectedDate,
-  onClose,
-  onSave,
-}) => {
-  const { t } = useTranslation();
-  const [formData, setFormData] = useState({
-    pet: schedule?.pet || '',
-    start_time: schedule?.start_time || format(selectedDate, "yyyy-MM-dd'T'HH:mm"),
-    end_time: schedule?.end_time || format(addHours(selectedDate, 1), "yyyy-MM-dd'T'HH:mm"),
-    status: schedule?.status || 'scheduled',
-  });
-  const [pets, setPets] = useState<Pet[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string[]>>({});
-
-  // Load pets
-  useEffect(() => {
-    const loadPets = async () => {
-      try {
-        const response = await api.get<Pet[]>('/pets/');
-        setPets(response.data);
-      } catch (error) {
-        console.error('Failed to load pets:', error);
-      }
-    };
-
-    loadPets();
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrors({});
-
-    try {
-      const data = {
-        ...formData,
-        pet: parseInt(formData.pet),
-      };
-
-      if (schedule) {
-        await api.patch(`/schedules/${schedule.id}/`, data);
-      } else {
-        await api.post('/schedules/', data);
-      }
-
-      onSave();
-    } catch (error: any) {
-      if (error.response?.data) {
-        setErrors(error.response.data);
-      } else {
-        setErrors({ non_field_errors: [error.message] });
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">
-            {schedule ? t('schedule.editSchedule') : t('schedule.newSchedule')}
-          </h3>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('pet.selectPet')}
-              </label>
-              <select
-                value={formData.pet}
-                onChange={(e) => setFormData(prev => ({ ...prev, pet: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-                required
-              >
-                <option value="">{t('pet.selectPet')}</option>
-                {pets.map(pet => (
-                  <option key={pet.id} value={pet.id}>
-                    {pet.name} ({pet.species})
-                  </option>
-                ))}
-              </select>
-              {errors.pet && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {errors.pet[0]}
-                </p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('schedule.startTime')}
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.start_time}
-                  onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-                  required
-                />
-                {errors.start_time && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                    {errors.start_time[0]}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('schedule.endTime')}
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.end_time}
-                  onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-                  required
-                />
-                {errors.end_time && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                    {errors.end_time[0]}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('schedule.status')}
-              </label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-              >
-                <option value="scheduled">{t('schedule.statuses.scheduled')}</option>
-                <option value="checked_in">{t('schedule.statuses.checkedIn')}</option>
-                <option value="completed">{t('schedule.statuses.completed')}</option>
-                <option value="cancelled">{t('schedule.statuses.cancelled')}</option>
-              </select>
-            </div>
-
-            {errors.non_field_errors && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                <ul className="text-sm text-red-600 dark:text-red-400">
-                  {errors.non_field_errors.map((error, index) => (
-                    <li key={index}>{error}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div className="flex gap-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-4 py-2 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? t('common.saving') : t('common.save')}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-};
-```
-
-## Testing with Playwright
-
-The application includes comprehensive end-to-end tests:
-
-```typescript
-// tests/calendar.spec.ts
-import { test, expect } from '@playwright/test';
-
-test.describe('Calendar Functionality', () => {
-  test.beforeEach(async ({ page }) => {
-    // Login before each test
-    await page.goto('/login');
-    await page.fill('[name="username"]', 'testuser');
-    await page.fill('[name="password"]', 'testpass');
-    await page.click('button[type="submit"]');
-    await page.waitForURL('/');
-  });
-
-  test('should display monthly calendar view', async ({ page }) => {
-    await expect(page.locator('h2')).toContainText(/^\w+ \d{4}$/);
-    await expect(page.locator('.grid.grid-cols-7')).toBeVisible();
-  });
-
-  test('should allow date selection', async ({ page }) => {
-    const today = new Date();
-    const todayString = today.getDate().toString();
-
-    await page.click(`text=${todayString}`);
-    await expect(page.locator('.bg-blue-50')).toBeVisible();
-  });
-
-  test('should switch to week view', async ({ page }) => {
-    await page.click('button:has-text("Week")');
-    await expect(page.locator('text="Week View"')).toBeVisible();
-  });
-
-  test('should create new schedule', async ({ page }) => {
-    await page.click('button:has-text("New Schedule")');
-    await expect(page.locator('text="New Schedule"')).toBeVisible();
-
-    await page.selectOption('select[name="pet"]', '1');
-    await page.fill('[name="start_time"]', '2024-01-15T10:00');
-    await page.fill('[name="end_time"]', '2024-01-15T11:00');
-    await page.click('button[type="submit"]');
-
-    await expect(page.locator('text="Schedule created successfully"')).toBeVisible();
-  });
-});
-```
-
-## Responsive Design
-
-The application uses TailwindCSS for responsive design:
-
-```css
-/* Mobile-first approach */
-.grid {
-  display: grid;
-}
-
-/* Small screens */
-@media (min-width: 640px) {
-  .sm\:grid-cols-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-/* Medium screens */
-@media (min-width: 768px) {
-  .md\:grid-cols-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-/* Large screens */
-@media (min-width: 1024px) {
-  .lg\:grid-cols-4 {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-```
-
-## Performance Optimizations
-
-### Code Splitting
-
-Next.js automatically code-splits pages, but additional optimization:
-
-```typescript
-// Dynamic imports for large components
-const ScheduleForm = dynamic(() => import('@/components/ScheduleForm'), {
-  loading: () => <div>Loading...</div>,
-});
-
-const MultiPetScheduleForm = dynamic(() => import('@/components/MultiPetScheduleForm'), {
-  loading: () => <div>Loading...</div>,
-});
-```
-
-### Image Optimization
-
-Using Next.js Image component for optimized images:
-
-```typescript
-import Image from 'next/image';
-
-<Image
-  src="/logo.svg"
-  alt="Happy Calendar Logo"
-  width={40}
-  height={40}
-  priority
-/>
-```
-
-### Memoization
-
-Prevent unnecessary re-renders:
-
-```typescript
-const DaySchedule = memo(({ date, onEditSchedule, refreshTrigger }: DayScheduleProps) => {
-  // Component logic
-});
-```
-
-## Build and Deployment
-
-### Docker Configuration
-
-```dockerfile
-FROM node:20-alpine
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm ci --only=production
-
-COPY . .
-
-RUN npm run build
-
-EXPOSE 3000
-
-CMD ["npm", "start"]
-```
-
-### Environment Variables
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000/api
-NEXT_PUBLIC_APP_NAME=Happy Calendar
-```
-
-## Accessibility
-
-The application follows WCAG guidelines:
-
-- Semantic HTML elements
-- ARIA labels for screen readers
-- Keyboard navigation support
-- High contrast color schemes
-- Focus management for modals
-
-## Browser Support
-
-- Chrome 90+
-- Firefox 88+
-- Safari 14+
-- Edge 90+
-
-This frontend architecture provides a robust, scalable, and user-friendly interface for the pet nursery scheduling system.
+In the Docker Compose setup, Traefik routes all requests matching `/*` (except `/api/*` and `/media/*`) to the frontend container on port 3000.

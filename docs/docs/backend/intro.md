@@ -2,714 +2,525 @@
 
 ## Overview
 
-The backend is built using Django 5.1 with Django REST Framework (DRF), providing a robust REST API for the Happy Calendar application. It handles all business logic, data validation, authentication, and conflict detection algorithms.
+The backend is built with **Django 5.1.4** and **Django REST Framework 3.15.2**, serving a REST API for the Happy Calendar pet nursery application. It manages pets, owners, scheduling with multi-day support, conflict detection, vaccinations, documents, medical notes, nursery-wide settings, authentication with role-based access, and i18n translations.
 
 ## Core Technologies
 
-- **Django 5.1**: Web framework with ORM and admin interface
-- **Django REST Framework**: API toolkit for building RESTful APIs
-- **PostgreSQL**: Primary database for data persistence
-- **JWT Authentication**: Token-based authentication with blacklisting
-- **OpenAPI Documentation**: drf-spectacular for automatic API docs
-- **CORS Support**: Cross-origin resource sharing for frontend integration
+| Dependency | Version | Purpose |
+|---|---|---|
+| Django | 5.1.4 | Web framework, ORM, admin |
+| djangorestframework | 3.15.2 | REST API toolkit |
+| djangorestframework-simplejwt | 5.3.1 | JWT authentication with blacklisting |
+| django-cors-headers | 4.6.0 | Cross-origin resource sharing |
+| psycopg2-binary | 2.9.10 | PostgreSQL adapter |
+| gunicorn | 23.0.0 | Production WSGI server |
+| drf-spectacular | 0.28.0 | OpenAPI 3 schema generation (Swagger UI + ReDoc) |
+| Pillow | 11.1.0 | Image processing and validation |
 
-## Application Structure
-
-The backend is organized into Django apps, each handling specific domains:
+## Directory Structure
 
 ```
 backend/
-├── nursery/                 # Main Django project
-│   ├── settings.py         # Configuration and settings
-│   ├── urls.py             # URL routing configuration
-│   ├── wsgi.py             # WSGI application entry point
-│   └── asgi.py             # ASGI application entry point
-├── accounts/                # User authentication and management
-│   ├── models.py           # Custom User model
-│   ├── views.py            # Authentication views
-│   ├── serializers.py      # User serialization
-│   └── urls.py             # Auth URL patterns
-├── pets/                    # Pet and owner management
-│   ├── models.py           # Pet, Owner, Schedule models
-│   ├── views.py            # API viewsets
-│   ├── serializers.py      # Model serializers
-│   ├── urls.py             # API URL patterns
-│   └── utils.py            # Conflict detection logic
-├── translations/            # Internationalization
-│   ├── en.json             # English translations
-│   ├── es.json             # Spanish translations
-│   └── views.py            # Translation API
-├── Dockerfile              # Container configuration
-├── manage.py               # Django management commands
-└── requirements.txt        # Python dependencies
+├── nursery/                      # Django project package
+│   ├── settings.py               # Main settings (reads env vars, PostgreSQL, JWT config)
+│   ├── test_settings.py          # SQLite in-memory for tests
+│   ├── urls.py                   # Root URL config (includes pets, accounts, nursery_settings URLs + drf-spectacular)
+│   └── wsgi.py                   # WSGI entry point
+├── domain/                       # Pure domain models (no Django app logic)
+│   ├── owners/models.py          # Owner model
+│   ├── pets/models.py            # Pet model + is_compatible_with()
+│   ├── schedules/models.py       # Schedule model + check_conflicts() + get_overlapping_schedules()
+│   ├── vaccinations/models.py    # VaccinationType + Vaccination models
+│   ├── documents/models.py       # Document model
+│   ├── notes/models.py           # Abstract Note + MedicalNote models
+│   └── files/validators.py       # validate_file_size, validate_image_type, validate_document_type
+├── pets/                         # Django app: re-exports domain models, hosts views/serializers/URLs
+│   ├── models.py                 # Re-exports: Owner, Pet, VaccinationType, Vaccination, Schedule, Document, MedicalNote
+│   ├── views.py                  # OwnerViewSet, PetViewSet, ScheduleViewSet, VaccinationTypeViewSet,
+│   │                             #   DocumentViewSet, MedicalNoteViewSet, get_translations, get_available_languages
+│   ├── serializers.py            # All serializers for pets, owners, schedules, vaccinations, documents, notes
+│   ├── urls.py                   # DRF router + translation endpoints
+│   ├── validators.py             # Additional field validators
+│   ├── admin.py                  # Django admin registrations
+│   └── tests/                    # test_pet_api.py, test_owner_api.py, test_schedule_api.py, test_models.py, etc.
+├── accounts/                     # Django app: custom User model + auth views
+│   ├── models.py                 # User (email as USERNAME_FIELD, no username, roles: admin/user)
+│   ├── views.py                  # RegisterView, LoginView, LogoutView, ProfileView, ChangePasswordView, UserViewSet
+│   ├── serializers.py            # UserSerializer, UserCreateSerializer, LoginSerializer, etc.
+│   ├── permissions.py            # IsAdmin, IsAdminOrReadOnly, IsOwnerOrAdmin, IsAuthenticated
+│   ├── urls.py                   # Auth routes + user management router
+│   └── tests/
+├── nursery_settings/             # Django app: singleton NurserySetting
+│   ├── models.py                 # NurserySetting (daily_booking_limit, always pk=1)
+│   ├── views.py                  # get_nursery_settings, update_nursery_settings (function-based views)
+│   ├── serializers.py            # NurserySettingSerializer
+│   └── urls.py                   # /api/settings/ and /api/settings/update/
+├── translations/                 # JSON i18n files
+│   ├── en.json                   # English translations
+│   └── es.json                   # Spanish translations
+├── requirements.txt
+├── manage.py
+└── Dockerfile
 ```
 
-## Django Configuration
+### Architectural Pattern
 
-### Settings Structure
+The project separates **domain models** from **Django app logic**:
 
-The settings are organized for different environments with environment variable support:
+- **`domain/`** contains pure model definitions with business logic methods (e.g., `is_compatible_with()`, `check_conflicts()`). Every model in `domain/` uses `app_label = 'pets'` in its `Meta` class so Django registers them under a single database namespace.
+- **`pets/models.py`** re-exports all domain models (`Owner`, `Pet`, `VaccinationType`, `Vaccination`, `Schedule`, `Document`, `MedicalNote`), making them available as `pets.Owner`, `pets.Pet`, etc., for migrations, serializers, and views.
+- **`accounts/`** manages its own `User` model independently.
+- **`nursery_settings/`** manages a singleton configuration record.
 
-```python
-# Core Django settings
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-dev-key-change-in-production')
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
-ALLOWED_HOSTS = ['*']  # Configure properly for production
-
-# Installed applications
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    # Third-party apps
-    'rest_framework',
-    'rest_framework_simplejwt',
-    'rest_framework_simplejwt.token_blacklist',
-    'corsheaders',
-    'drf_spectacular',
-    # Local apps
-    'accounts',
-    'pets',
-]
-```
-
-### Database Configuration
-
-PostgreSQL is used as the primary database with connection pooling:
-
-```python
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('POSTGRES_DB', 'nursery'),
-        'USER': os.environ.get('POSTGRES_USER', 'nursery'),
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'nursery'),
-        'HOST': os.environ.get('POSTGRES_HOST', 'db'),
-        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
-    }
-}
-```
-
-### REST Framework Configuration
-
-DRF is configured with JWT authentication and OpenAPI documentation:
-
-```python
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
-    ],
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-}
-
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'AUTH_HEADER_TYPES': ('Bearer',),
-}
-```
+---
 
 ## Data Models
 
-### User Model (Custom)
+### User (`accounts/models.py`)
 
-Extends Django's AbstractUser with role-based permissions:
+Extends `AbstractUser`. Uses **email** as the login identifier; the `username` field is explicitly removed.
 
-```python
-class User(AbstractUser):
-    ROLE_CHOICES = [
-        ('admin', 'Admin'),
-        ('user', 'User'),
-    ]
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+| Field | Type | Details |
+|---|---|---|
+| `username` | — | Set to `None` (removed from AbstractUser) |
+| `email` | `EmailField` | **unique**, `USERNAME_FIELD` |
+| `role` | `CharField(10)` | Choices: `admin`, `user`. Default: `user` |
+| `first_name` | `CharField(150)` | Inherited from AbstractUser |
+| `last_name` | `CharField(150)` | Inherited from AbstractUser |
+| `created_at` | `DateTimeField` | `auto_now_add=True` |
+| `updated_at` | `DateTimeField` | `auto_now=True` |
 
-    class Meta:
-        ordering = ['-created_at']
+- **`REQUIRED_FIELDS`**: `first_name`, `last_name`
+- **Properties**: `full_name` (returns combined name), `is_admin` (returns `self.role == 'admin'`)
 
-    def is_admin(self):
-        return self.role == 'admin'
-```
+---
 
-### Pet Model
+### Owner (`domain/owners/models.py`)
 
-Comprehensive pet profile with behavioral characteristics:
+Represents a pet owner. `Meta: app_label = 'pets'`, ordered by `last_name, first_name`.
 
-```python
-class Pet(models.Model):
-    SPECIES_CHOICES = [
-        ('dog', 'Dog'),
-        ('cat', 'Cat'),
-        ('bird', 'Bird'),
-        ('rabbit', 'Rabbit'),
-        ('other', 'Other'),
-    ]
-    TEMPERAMENT_CHOICES = [
-        ('calm', 'Calm'),
-        ('playful', 'Playful'),
-        ('aggressive', 'Aggressive'),
-        ('anxious', 'Anxious'),
-        ('friendly', 'Friendly'),
-    ]
-    SIZE_CHOICES = [
-        ('small', 'Small'),
-        ('medium', 'Medium'),
-        ('large', 'Large'),
-    ]
+| Field | Type | Details |
+|---|---|---|
+| `first_name` | `CharField(100)` | Required |
+| `last_name` | `CharField(100)` | Required |
+| `email` | `EmailField` | **unique** |
+| `phone` | `CharField(20)` | Required |
+| `id_number` | `CharField(20)` | **unique**, optional — DNI/national ID |
+| `address` | `TextField` | Optional |
+| `birth_date` | `DateField` | Optional |
+| `emergency_contact` | `CharField(100)` | Optional |
+| `emergency_phone` | `CharField(20)` | Optional |
+| `emergency_contact_can_pickup` | `BooleanField` | Default: `False` |
+| `notes` | `TextField` | Optional |
+| `profile_picture` | `ImageField` | `upload_to='profile_pictures/owners/'`, max 5 MB, JPEG/PNG/GIF/WEBP |
+| `created_at` | `DateTimeField` | `auto_now_add=True` |
+| `updated_at` | `DateTimeField` | `auto_now=True` |
 
-    name = models.CharField(max_length=100)
-    species = models.CharField(max_length=20, choices=SPECIES_CHOICES)
-    breed = models.CharField(max_length=100, blank=True)
-    age = models.PositiveIntegerField()
-    size = models.CharField(max_length=10, choices=SIZE_CHOICES)
-    temperament = models.CharField(max_length=20, choices=TEMPERAMENT_CHOICES)
-    dominance_level = models.PositiveIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(10)]
-    )
-    special_notes = models.TextField(blank=True)
-    owner = models.ForeignKey(Owner, on_delete=models.CASCADE, related_name='pets')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+- **Property**: `full_name`
 
-    class Meta:
-        ordering = ['-created_at']
-```
+---
 
-### Owner Model
+### Pet (`domain/pets/models.py`)
 
-Owner information with contact details:
+Represents a pet in the nursery. `Meta: app_label = 'pets'`.
 
-```python
-class Owner(models.Model):
-    name = models.CharField(max_length=200)
-    email = models.EmailField(unique=True)
-    phone = models.CharField(max_length=20, blank=True)
-    address = models.TextField(blank=True)
-    emergency_contact = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+| Field | Type | Details |
+|---|---|---|
+| `name` | `CharField(100)` | Required |
+| `species` | `CharField(20)` | Choices: `dog`, `cat`, `bird`, `rabbit`, `other` |
+| `breed` | `CharField(100)` | Optional |
+| `age` | `PositiveIntegerField` | Age in years |
+| `temperament` | `CharField(20)` | Choices: `calm`, `playful`, `aggressive`, `anxious`, `friendly` |
+| `dominance_level` | `IntegerField` | Validators: `MinValueValidator(1)`, `MaxValueValidator(10)` |
+| `size` | `CharField(10)` | Choices: `small`, `medium`, `large` |
+| `neutered` | `BooleanField` | Default: `False` |
+| `sex` | `CharField(10)` | Choices: `male`, `female` |
+| `birth_date` | `DateField` | Optional |
+| `weight` | `DecimalField(6,2)` | Optional, in kg |
+| `special_notes` | `TextField` | Optional |
+| `owner` | `ForeignKey -> Owner` | `CASCADE`, optional |
+| `profile_picture` | `ImageField` | `upload_to='profile_pictures/pets/'`, max 5 MB |
+| `created_at` | `DateTimeField` | `auto_now_add=True` |
+| `updated_at` | `DateTimeField` | `auto_now=True` |
 
-    class Meta:
-        ordering = ['name']
+- **Method**: `is_compatible_with(other_pet)` → `(bool, str)` — Runs the 5-rule compatibility algorithm (see [Conflict Detection](#conflict-detection-system) below).
 
-    def __str__(self):
-        return self.name
-```
+---
 
-### Schedule Model
+### Schedule (`domain/schedules/models.py`)
 
-Schedule entries with status tracking:
+Represents a booking. Supports **multi-day** stays with separate date and time fields. `Meta: app_label = 'pets'`.
 
-```python
-class Schedule(models.Model):
-    STATUS_CHOICES = [
-        ('scheduled', 'Scheduled'),
-        ('checked_in', 'Checked In'),
-        ('completed', 'Completed'),
-        ('cancelled', 'Cancelled'),
-    ]
+| Field | Type | Details |
+|---|---|---|
+| `pet` | `ForeignKey -> Pet` | `CASCADE` |
+| `start_date` | `DateField` | Start of the stay |
+| `end_date` | `DateField` | End of the stay (supports multi-day) |
+| `start_time` | `TimeField` | Check-in time |
+| `end_time` | `TimeField` | Check-out time |
+| `status` | `CharField(20)` | Choices: `scheduled`, `checked_in`, `completed`, `cancelled` |
+| `notes` | `TextField` | Optional |
+| `created_at` | `DateTimeField` | `auto_now_add=True` |
+| `updated_at` | `DateTimeField` | `auto_now=True` |
 
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
-    pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='schedules')
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='created_schedules'
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+- **Method**: `get_overlapping_schedules()` — Returns queryset of schedules that overlap with this schedule's date/time range.
+- **Method**: `check_conflicts()` — Uses `get_overlapping_schedules()` to find all pets present during this schedule and runs `is_compatible_with()` against each one. Returns conflict warnings.
 
-    class Meta:
-        ordering = ['-start_time']
-        indexes = [
-            models.Index(fields=['start_time', 'end_time']),
-            models.Index(fields=['pet', 'start_time']),
-        ]
+---
 
-    def clean(self):
-        if self.end_time <= self.start_time:
-            raise ValidationError('End time must be after start time')
-```
+### VaccinationType (`domain/vaccinations/models.py`)
+
+Catalog of available vaccination types.
+
+| Field | Type | Details |
+|---|---|---|
+| `name` | `CharField` | **unique** |
+| `label` | `CharField` | Display label |
+| `enabled` | `BooleanField` | Whether this type is active |
+| `order` | `IntegerField` | Sort order |
+
+---
+
+### Vaccination (`domain/vaccinations/models.py`)
+
+Records a vaccination given to a pet.
+
+| Field | Type | Details |
+|---|---|---|
+| `pet` | `ForeignKey -> Pet` | `CASCADE` |
+| `vax_type` | `CharField` | Vaccination type name (stored as string, **not** a FK to VaccinationType) |
+| `date` | `DateField` | Date of vaccination |
+
+---
+
+### Document (`domain/documents/models.py`)
+
+File attachments for pets or owners.
+
+| Field | Type | Details |
+|---|---|---|
+| `pet` | `ForeignKey -> Pet` | Optional |
+| `owner` | `ForeignKey -> Owner` | Optional |
+| `file` | `FileField` | `upload_to='documents/%Y/%m/'` |
+| `original_filename` | `CharField` | Original file name at upload time |
+| `description` | `TextField` | Optional |
+| `uploaded_at` | `DateTimeField` | `auto_now_add=True` |
+
+**Validation**: A document must belong to either a `pet` OR an `owner`, but not both and not neither.
+
+---
+
+### Note (abstract) and MedicalNote (`domain/notes/models.py`)
+
+| Field | Type | Details |
+|---|---|---|
+| `title` | `CharField` | Required |
+| `description` | `TextField` | Required |
+| `created_at` | `DateTimeField` | `auto_now_add=True` |
+| `updated_at` | `DateTimeField` | `auto_now=True` |
+
+`Note` is an **abstract** model. `MedicalNote` extends it and adds:
+
+| Field | Type | Details |
+|---|---|---|
+| `pet` | `ForeignKey -> Pet` | `CASCADE` |
+
+---
+
+### NurserySetting (`nursery_settings/models.py`)
+
+A **singleton** configuration record (pk is always forced to `1` in `save()`).
+
+| Field | Type | Details |
+|---|---|---|
+| `daily_booking_limit` | `PositiveIntegerField` | Default: `0` (0 = unlimited) |
+
+- **Class method**: `load()` — Returns the singleton instance, creating it if it doesn't exist.
+
+---
+
+## File Upload & Validation
+
+Validators are defined in `domain/files/validators.py`:
+
+- **`validate_file_size`**: Rejects files larger than **5 MB** (`MAX_UPLOAD_SIZE` from settings).
+- **`validate_image_type`**: Accepts JPEG, PNG, GIF, WEBP.
+- **`validate_document_type`**: Accepts images (JPEG, PNG, GIF, WEBP) plus PDF, DOC, DOCX.
+
+Profile pictures (Owner and Pet) use `validate_image_type`. Documents use `validate_document_type`.
+
+---
 
 ## Conflict Detection System
 
-### Core Algorithm
+Compatibility logic lives in `Pet.is_compatible_with(other_pet)` on the domain model. It returns a tuple `(bool, str)` — a boolean for compatible/incompatible and a reason string.
 
-The conflict detection is implemented in `pets/utils.py` with a comprehensive rule engine:
+### The 5 Rules
 
-```python
-def check_pet_compatibility(pet1: Pet, pet2: Pet) -> List[str]:
-    """
-    Check compatibility between two pets based on multiple rules.
-    Returns a list of conflict messages.
-    """
-    conflicts = []
+| # | Rule | Condition | Result |
+|---|---|---|---|
+| 1 | **Aggressive pet** | Either pet has `temperament == 'aggressive'` | Incompatible |
+| 2 | **High dominance pair** | Both pets have `dominance_level > 7` | Incompatible |
+| 3 | **Size + dominance gap** | `size_diff >= 2` AND `dominance_diff >= 5` | Incompatible |
+| 4 | **Cross-species temperament** | Different species AND temperament pair is (`aggressive`, `anxious`) or (`aggressive`, `calm`) | Incompatible |
+| 5 | **Anxious + playful** | One `anxious` + one `playful` AND `dominance_diff > 4` | Incompatible |
+| — | **Default** | None of the above triggered | Compatible |
 
-    # Rule 1: Aggressive pets cannot be with others
-    if pet1.temperament == 'aggressive' or pet2.temperament == 'aggressive':
-        conflicts.append("Aggressive pets cannot be scheduled with other pets")
+**Size ordering** for Rule 3: `small = 1`, `medium = 2`, `large = 3`. Size diff and dominance diff are absolute values.
 
-    # Rule 2: High dominance pets cannot be together
-    if pet1.dominance_level > 7 and pet2.dominance_level > 7:
-        conflicts.append("Two pets with high dominance levels cannot be together")
+### How Conflicts Surface
 
-    # Rule 3: Size and dominance combination
-    size_diff = abs(SIZE_ORDER[pet1.size] - SIZE_ORDER[pet2.size])
-    dominance_diff = abs(pet1.dominance_level - pet2.dominance_level)
+- **`Schedule.check_conflicts()`** finds all overlapping schedules via `get_overlapping_schedules()`, then runs `is_compatible_with()` for each pair.
+- **`ScheduleSerializer`** includes a computed `conflicts` field that calls `check_conflicts()` on every read, so the frontend always sees current conflict data.
+- **Conflicts are NON-BLOCKING**: schedules are **always created** regardless of conflicts. The API returns conflict information as **warnings**, not errors. The frontend can display these warnings but the booking is never rejected based on compatibility.
 
-    if size_diff >= 2 and dominance_diff >= 5:
-        conflicts.append("Large size difference with high dominance difference may cause issues")
-
-    # Rule 4: Cross-species temperament rules
-    if pet1.species != pet2.species:
-        if _check_cross_species_conflict(pet1, pet2):
-            conflicts.append("Cross-species temperament combination is incompatible")
-
-    # Rule 5: Anxious and playful combination
-    if ((pet1.temperament == 'anxious' and pet2.temperament == 'playful') or
-        (pet2.temperament == 'anxious' and pet1.temperament == 'playful')):
-        anxious_pet = pet1 if pet1.temperament == 'anxious' else pet2
-        playful_pet = pet2 if pet2.temperament == 'playful' else pet1
-
-        if dominance_diff > 4:
-            conflicts.append("Anxious pets should not be with highly playful pets when dominance levels differ significantly")
-
-    return conflicts
-```
-
-### Batch Conflict Checking
-
-For multi-pet scheduling, the system checks all pet combinations:
-
-```python
-def check_schedule_conflicts(pets: List[Pet], start_time: datetime, end_time: datetime) -> Dict[str, List[str]]:
-    """
-    Check for conflicts when scheduling multiple pets together.
-    Returns a dictionary mapping pet names to their conflict lists.
-    """
-    conflicts = {}
-
-    # Check each pet against all others
-    for i, pet1 in enumerate(pets):
-        pet_conflicts = []
-        for j, pet2 in enumerate(pets):
-            if i != j:  # Don't check pet against itself
-                pet_conflicts.extend(check_pet_compatibility(pet1, pet2))
-
-        # Check for existing schedules at the same time
-        overlapping_schedules = Schedule.objects.filter(
-            pet=pet1,
-            start_time__lt=end_time,
-            end_time__gt=start_time
-        ).exclude(status='cancelled')
-
-        if overlapping_schedules.exists():
-            pet_conflicts.append("Pet already has a schedule at this time")
-
-        if pet_conflicts:
-            conflicts[pet1.name] = list(set(pet_conflicts))  # Remove duplicates
-
-    return conflicts
-```
+---
 
 ## API Endpoints
 
-### Authentication Endpoints
+### Owners — `/api/owners/`
 
-- `POST /api/auth/register/` - User registration
-- `POST /api/auth/login/` - User login with JWT tokens
-- `POST /api/auth/logout/` - Logout with token blacklisting
-- `POST /api/auth/refresh/` - Refresh access token
-- `GET /api/auth/profile/` - Get current user profile
-- `PATCH /api/auth/profile/` - Update user profile
-- `PUT /api/auth/change-password/` - Change password
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/owners/` | List all owners |
+| `POST` | `/api/owners/` | Create an owner |
+| `GET` | `/api/owners/{id}/` | Retrieve owner (includes pets list via `OwnerWithPetsSerializer`) |
+| `PATCH` | `/api/owners/{id}/` | Partial update |
+| `PUT` | `/api/owners/{id}/` | Full update |
+| `DELETE` | `/api/owners/{id}/` | Delete owner |
+| `GET` | `/api/owners/dropdown/` | Minimal list for dropdown selectors (`OwnerListSerializer`) |
+| `POST` | `/api/owners/{id}/upload_profile_picture/` | Upload profile picture (multipart) |
+| `DELETE` | `/api/owners/{id}/delete_profile_picture/` | Remove profile picture |
 
-### Pet Management
+### Pets — `/api/pets/`
 
-- `GET /api/pets/` - List pets (with filtering)
-- `POST /api/pets/` - Create new pet
-- `GET /api/pets/{id}/` - Get pet details
-- `PATCH /api/pets/{id}/` - Update pet
-- `DELETE /api/pets/{id}/` - Delete pet
-- `GET /api/pets/{id}/compatibility/` - Check compatibility with other pets
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/pets/` | List all pets |
+| `POST` | `/api/pets/` | Create pet (supports nested `vaccinations` array) |
+| `GET` | `/api/pets/{id}/` | Retrieve pet details |
+| `PATCH` | `/api/pets/{id}/` | Partial update |
+| `PUT` | `/api/pets/{id}/` | Full update |
+| `DELETE` | `/api/pets/{id}/` | Delete pet (cascades to schedules) |
+| `GET` | `/api/pets/{id}/compatibility/` | Check compatibility with other scheduled pets |
+| `POST` | `/api/pets/{id}/upload_profile_picture/` | Upload profile picture |
+| `DELETE` | `/api/pets/{id}/delete_profile_picture/` | Remove profile picture |
 
-### Owner Management
+### Schedules — `/api/schedules/`
 
-- `GET /api/owners/` - List owners
-- `POST /api/owners/` - Create owner
-- `GET /api/owners/{id}/` - Get owner details
-- `PATCH /api/owners/{id}/` - Update owner
-- `DELETE /api/owners/{id}/` - Delete owner
-- `GET /api/owners/{id}/with_pets/` - Get owner with all pets
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/schedules/` | List schedules. **Filters**: `date`, `start_date`, `end_date`, `pet_id`, `status` |
+| `POST` | `/api/schedules/` | Create schedule (returns conflict warnings in response) |
+| `GET` | `/api/schedules/{id}/` | Retrieve schedule detail |
+| `PATCH` | `/api/schedules/{id}/` | Partial update |
+| `PUT` | `/api/schedules/{id}/` | Full update |
+| `DELETE` | `/api/schedules/{id}/` | Delete schedule |
+| `POST` | `/api/schedules/check_conflicts/` | Pre-flight conflict check. Accepts `pet_id`, dates, times, optional `exclude_schedule_id` |
+| `GET` | `/api/schedules/daily_summary/?date=YYYY-MM-DD` | Summary of all schedules for a given day |
+| `GET` | `/api/schedules/daily_count/?date=YYYY-MM-DD` | Returns `count`, `limit`, `limit_reached`, `limit_exceeded` |
+| `POST` | `/api/schedules/batch_create/` | Create schedules for multiple pets at once (`pet_ids` list + shared schedule fields) |
 
-### Schedule Management
+### Vaccination Types — `/api/vaccination-types/`
 
-- `GET /api/schedules/` - List schedules (with date filters)
-- `POST /api/schedules/` - Create schedule
-- `GET /api/schedules/{id}/` - Get schedule details
-- `PATCH /api/schedules/{id}/` - Update schedule
-- `DELETE /api/schedules/{id}/` - Delete schedule
-- `POST /api/schedules/check_conflicts/` - Check conflicts before scheduling
-- `GET /api/schedules/daily_summary/?date=YYYY-MM-DD` - Get daily schedule summary
-- `POST /api/schedules/batch_create/` - Create multiple schedules
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/vaccination-types/` | List all vaccination types |
+| `POST` | `/api/vaccination-types/` | Create vaccination type |
+| `GET` | `/api/vaccination-types/{id}/` | Retrieve |
+| `PATCH` | `/api/vaccination-types/{id}/` | Update |
+| `PUT` | `/api/vaccination-types/{id}/` | Full update |
+| `DELETE` | `/api/vaccination-types/{id}/` | Delete |
 
-### Translation Endpoints
+### Documents — `/api/documents/`
 
-- `GET /api/translations/{language}/` - Get translations for language
-- `GET /api/translations/` - Get default (English) translations
-- `GET /api/languages/` - Get available languages
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/documents/` | List documents. **Filters**: `pet_id`, `owner_id` |
+| `POST` | `/api/documents/` | Upload document (multipart form data) |
+| `DELETE` | `/api/documents/{id}/` | Delete document |
 
-### Admin Endpoints
+### Medical Notes — `/api/medical-notes/`
 
-- `GET /api/users/` - List all users (admin only)
-- `GET /api/users/{id}/` - Get user details (admin only)
-- `PATCH /api/users/{id}/` - Update user role/status (admin only)
-- `DELETE /api/users/{id}/` - Delete user (admin only)
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/medical-notes/` | List medical notes. **Filter**: `pet_id` |
+| `POST` | `/api/medical-notes/` | Create medical note |
+| `PATCH` | `/api/medical-notes/{id}/` | Partial update |
+| `PUT` | `/api/medical-notes/{id}/` | Full update |
+| `DELETE` | `/api/medical-notes/{id}/` | Delete |
 
-## Serialization
+### Authentication — `/api/auth/`
 
-### Pet Serializer
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/auth/register/` | Register new user |
+| `POST` | `/api/auth/login/` | Login, returns access + refresh tokens |
+| `POST` | `/api/auth/logout/` | Logout (blacklists refresh token) |
+| `POST` | `/api/auth/refresh/` | Refresh access token |
+| `GET` | `/api/auth/profile/` | Get current user profile |
+| `PATCH` | `/api/auth/profile/` | Update current user profile |
+| `PUT` | `/api/auth/change-password/` | Change password |
 
-```python
-class PetSerializer(serializers.ModelSerializer):
-    owner_name = serializers.CharField(source='owner.name', read_only=True)
-    age_display = serializers.SerializerMethodField()
+### User Management — `/api/users/` (admin only)
 
-    class Meta:
-        model = Pet
-        fields = [
-            'id', 'name', 'species', 'breed', 'age', 'age_display',
-            'size', 'temperament', 'dominance_level', 'special_notes',
-            'owner', 'owner_name', 'created_at', 'updated_at'
-        ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/users/` | List all users |
+| `GET` | `/api/users/{id}/` | Get user details |
+| `PATCH` | `/api/users/{id}/` | Update user (role, etc.) |
+| `DELETE` | `/api/users/{id}/` | Delete user |
+| `GET` | `/api/users/me/` | Get current authenticated user |
 
-    def get_age_display(self, obj):
-        if obj.age == 1:
-            return "1 year old"
-        return f"{obj.age} years old"
+### Nursery Settings — `/api/settings/`
 
-    def validate_dominance_level(self, value):
-        if not 1 <= value <= 10:
-            raise serializers.ValidationError("Dominance level must be between 1 and 10")
-        return value
-```
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/settings/` | Get nursery settings (daily booking limit) |
+| `PUT` / `PATCH` | `/api/settings/update/` | Update nursery settings |
 
-### Schedule Serializer with Validation
+### Translations
 
-```python
-class ScheduleSerializer(serializers.ModelSerializer):
-    pet_name = serializers.CharField(source='pet.name', read_only=True)
-    owner_name = serializers.CharField(source='pet.owner.name', read_only=True)
-    conflicts = serializers.SerializerMethodField()
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/translations/{language}/` | Get translations for a specific language (e.g., `en`, `es`) |
+| `GET` | `/api/translations/` | Get default translations |
+| `GET` | `/api/languages/` | Get list of available languages |
 
-    class Meta:
-        model = Schedule
-        fields = [
-            'id', 'start_time', 'end_time', 'status', 'pet', 'pet_name',
-            'owner_name', 'created_by', 'conflicts', 'created_at', 'updated_at'
-        ]
-        read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
+### API Documentation
 
-    def get_conflicts(self, obj):
-        # Check conflicts for this schedule
-        return check_schedule_conflicts([obj.pet], obj.start_time, obj.end_time)
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/schema/` | OpenAPI 3 schema (YAML) |
+| `GET` | `/api/docs/` | Swagger UI |
+| `GET` | `/api/redoc/` | ReDoc |
 
-    def validate(self, data):
-        start_time = data.get('start_time')
-        end_time = data.get('end_time')
+---
 
-        if start_time and end_time:
-            if end_time <= start_time:
-                raise serializers.ValidationError("End time must be after start time")
+## Key Serializers
 
-            # Check for conflicts
-            pet = data.get('pet')
-            if pet:
-                conflicts = check_schedule_conflicts([pet], start_time, end_time)
-                if conflicts:
-                    raise serializers.ValidationError({
-                        'conflicts': conflicts
-                    })
+### PetSerializer
 
-        return data
-```
+- Includes **nested vaccinations** array. On create/update, vaccinations are replaced atomically using `@transaction.atomic` (replace-all strategy: existing vaccinations are deleted and re-created from the submitted list).
+- Read fields: `owner_details` (nested owner info), `profile_picture_url`, `medical_notes_count`.
+- Validates `dominance_level` range (1–10).
+
+### ScheduleSerializer
+
+- Read fields: `pet_details` (nested pet info), computed `conflicts` field.
+- The `conflicts` field calls `check_conflicts()` on **every read**, ensuring conflict data is always fresh.
+
+### ScheduleCreateSerializer
+
+- Validates `start_time < end_time` and `start_date <= end_date`.
+
+### BatchScheduleCreateSerializer
+
+- Accepts a `pet_ids` list plus shared schedule fields (`start_date`, `end_date`, `start_time`, `end_time`, `status`, `notes`).
+- Creates one schedule per pet in the list.
+
+### ConflictCheckSerializer
+
+- Used by the `check_conflicts/` endpoint for pre-flight checks.
+- Fields: `pet_id`, `start_date`, `end_date`, `start_time`, `end_time`, optional `exclude_schedule_id` (to ignore a specific schedule when editing).
+
+### DocumentSerializer
+
+- Validates that exactly one of `pet` or `owner` is provided (not both, not neither).
+- Captures `original_filename` from the uploaded file on creation.
+
+### OwnerSerializer
+
+- Includes computed `pet_count` and `profile_picture_url`.
+
+### OwnerWithPetsSerializer
+
+- Extends owner data to include the full `pets` list (used on owner detail retrieval).
+
+### OwnerListSerializer
+
+- Minimal fields for dropdown/select components.
+
+---
 
 ## Authentication & Permissions
 
-### Custom Permissions
-
-```python
-class IsAdminOrReadOnly(permissions.BasePermission):
-    """
-    Allow read access to all users, write access to admins only.
-    """
-    def has_permission(self, request, view):
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return request.user and request.user.is_admin()
-
-class IsOwnerOrAdmin(permissions.BasePermission):
-    """
-    Allow access to pet/owner data for owners or admins.
-    """
-    def has_object_permission(self, request, view, obj):
-        if request.user.is_admin():
-            return True
-
-        # For pet objects, check if user owns the pet's owner
-        if hasattr(obj, 'owner'):
-            return obj.owner.user == request.user
-        return False
-```
-
 ### JWT Configuration
 
-The JWT setup provides secure token-based authentication:
+| Setting | Value |
+|---|---|
+| Access token lifetime | 60 minutes |
+| Refresh token lifetime | 7 days |
+| Token rotation | Enabled (new refresh token on each refresh) |
+| Blacklisting | Enabled (old refresh tokens blacklisted after rotation) |
+| Auth header type | `Bearer` |
+| Custom user model | `accounts.User` (`AUTH_USER_MODEL = 'accounts.User'`) |
 
-- Access tokens: 60 minutes lifetime
-- Refresh tokens: 7 days lifetime
-- Automatic token rotation
-- Token blacklisting on logout
-- Bearer token authentication
+### Permission Classes (`accounts/permissions.py`)
+
+| Class | Logic |
+|---|---|
+| `IsAdmin` | Grants access only if `user.role == 'admin'` |
+| `IsAdminOrReadOnly` | Authenticated users can read (safe methods); only admins can write |
+| `IsOwnerOrAdmin` | Object-level: grants access if user is the object's owner or an admin |
+| `IsAuthenticated` | Grants access if `user.is_authenticated` |
+
+### Default Permission
+
+The global DRF default is `AllowAny`. Individual views override this with the appropriate permission class (e.g., `UserViewSet` uses `IsAdmin`, auth endpoints use `AllowAny`, etc.).
+
+---
+
+## Django Settings Highlights
+
+| Setting | Value |
+|---|---|
+| `AUTH_USER_MODEL` | `'accounts.User'` |
+| `CORS_ALLOW_ALL_ORIGINS` | `True` (development configuration) |
+| `MAX_UPLOAD_SIZE` | 5 MB |
+| `ALLOWED_IMAGE_TYPES` | JPEG, PNG, GIF, WEBP |
+| `ALLOWED_DOCUMENT_TYPES` | JPEG, PNG, GIF, WEBP, PDF, DOC, DOCX |
+| Default DRF permission | `AllowAny` (overridden per-view) |
+| Default DRF schema class | `drf_spectacular.openapi.AutoSchema` |
+| Database | PostgreSQL (env vars: `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT`) |
+| Test database | SQLite in-memory (`nursery/test_settings.py`) |
+
+---
 
 ## Internationalization
 
-### Translation Files Structure
+Translation files are stored as JSON in `backend/translations/`:
 
-Translations are stored in JSON files with nested structure:
+- `en.json` — English
+- `es.json` — Spanish
 
-```json
-// backend/translations/en.json
-{
-  "common": {
-    "save": "Save",
-    "cancel": "Cancel",
-    "delete": "Delete",
-    "edit": "Edit"
-  },
-  "pets": {
-    "name": "Name",
-    "species": "Species",
-    "temperament": "Temperament",
-    "dominanceLevel": "Dominance Level"
-  },
-  "validation": {
-    "required": "This field is required",
-    "invalidEmail": "Please enter a valid email address"
-  }
-}
-```
+The `get_translations` view in `pets/views.py` reads the requested JSON file and returns it as a response. The `get_available_languages` view returns the list of available language codes.
 
-### API Response
-
-```python
-class TranslationView(APIView):
-    def get(self, request, language):
-        try:
-            with open(f'translations/{language}.json', 'r') as f:
-                translations = json.load(f)
-            return Response(translations)
-        except FileNotFoundError:
-            return Response(
-                {'error': f'Translations for language {language} not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-```
-
-## Database Optimization
-
-### Indexes
-
-Critical indexes are defined on frequently queried fields:
-
-```python
-class Meta:
-    indexes = [
-        models.Index(fields=['start_time', 'end_time']),
-        models.Index(fields=['pet', 'start_time']),
-        models.Index(fields=['status']),
-    ]
-```
-
-### Query Optimization
-
-Views use `select_related` and `prefetch_related` for efficient queries:
-
-```python
-def get_queryset(self):
-    return Schedule.objects.select_related(
-        'pet', 'pet__owner', 'created_by'
-    ).prefetch_related('pet__schedules')
-```
-
-## Error Handling
-
-### Custom Exception Handler
-
-```python
-def custom_exception_handler(exc, context):
-    response = exception_handler(exc, context)
-
-    if response is not None:
-        response.data['status_code'] = response.status_code
-        response.data['detail'] = response.data.get('detail', str(exc))
-
-    return response
-```
-
-### Validation Errors
-
-Serializers provide detailed validation with field-specific error messages:
-
-```python
-{
-  "dominance_level": ["Dominance level must be between 1 and 10"],
-  "start_time": ["Start time cannot be in the past"],
-  "conflicts": {
-    "Fluffy": ["Aggressive pets cannot be scheduled with other pets"]
-  }
-}
-```
+---
 
 ## Testing
 
-### Model Tests
+Tests are organized per-app:
 
-```python
-class PetModelTest(TestCase):
-    def setUp(self):
-        self.owner = Owner.objects.create(name="John Doe", email="john@example.com")
-        self.pet = Pet.objects.create(
-            name="Fluffy",
-            species="dog",
-            age=3,
-            size="medium",
-            temperament="friendly",
-            dominance_level=5,
-            owner=self.owner
-        )
+- **`pets/tests/`**: `test_pet_api.py`, `test_owner_api.py`, `test_schedule_api.py`, `test_models.py`, and others.
+- **`accounts/tests/`**: Auth and user management tests.
 
-    def test_pet_creation(self):
-        self.assertEqual(self.pet.name, "Fluffy")
-        self.assertEqual(self.pet.owner.name, "John Doe")
+The test runner uses `nursery/test_settings.py`, which configures **SQLite in-memory** for fast, isolated test execution without requiring a PostgreSQL instance.
 
-    def test_dominance_level_validation(self):
-        with self.assertRaises(ValidationError):
-            Pet.objects.create(
-                name="Bad Dog",
-                species="dog",
-                age=2,
-                size="large",
-                temperament="aggressive",
-                dominance_level=15,  # Invalid
-                owner=self.owner
-            )
-```
-
-### API Tests
-
-```python
-class PetAPITest(APITestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(username='testuser', password='testpass')
-        self.client.force_authenticate(user=self.user)
-
-    def test_pet_list(self):
-        response = self.client.get('/api/pets/')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_pet_create(self):
-        data = {
-            'name': 'New Pet',
-            'species': 'cat',
-            'age': 2,
-            'size': 'small',
-            'temperament': 'calm',
-            'dominance_level': 3,
-            'owner': self.owner.id
-        }
-        response = self.client.post('/api/pets/', data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-```
+---
 
 ## Deployment
 
-### Docker Configuration
-
-```dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-COPY . .
-
-RUN python manage.py collectstatic --noinput
-
-EXPOSE 8000
-
-CMD ["gunicorn", "nursery.wsgi:application", "--bind", "0.0.0.0:8000"]
-```
+The backend includes a `Dockerfile` for containerized deployment. In production the application is served by **Gunicorn** bound to the `nursery.wsgi` application.
 
 ### Environment Variables
 
-- `DEBUG`: Enable/disable debug mode
-- `DJANGO_SECRET_KEY`: Secret key for Django
-- `POSTGRES_DB`: Database name
-- `POSTGRES_USER`: Database user
-- `POSTGRES_PASSWORD`: Database password
-- `POSTGRES_HOST`: Database host
-- `POSTGRES_PORT`: Database port
-
-## Performance Monitoring
-
-### Query Optimization
-
-The application uses Django Debug Toolbar in development and implements query optimization:
-
-- N+1 query prevention with `select_related` and `prefetch_related`
-- Database indexing on critical fields
-- Efficient conflict detection algorithms
-- Caching for translation data
-
-### Scalability Considerations
-
-- Stateless API design for horizontal scaling
-- Database connection pooling
-- Background task processing for heavy operations
-- CDN integration for static assets
-
-## Security Measures
-
-### Authentication Security
-- JWT token expiration and refresh
-- Password hashing with Django's auth system
-- Token blacklisting for secure logout
-
-### API Security
-- CORS configuration
-- Input validation and sanitization
-- SQL injection prevention through ORM
-- Rate limiting (recommended)
-
-### Data Protection
-- Secure database connections
-- Audit logging for sensitive operations
-- Data encryption at rest (recommended for production)
-
-This backend architecture provides a solid foundation for the pet nursery scheduling system, with comprehensive business logic, security measures, and scalability considerations.
+| Variable | Purpose |
+|---|---|
+| `DEBUG` | Enable/disable debug mode |
+| `DJANGO_SECRET_KEY` | Django secret key |
+| `POSTGRES_DB` | Database name |
+| `POSTGRES_USER` | Database user |
+| `POSTGRES_PASSWORD` | Database password |
+| `POSTGRES_HOST` | Database host |
+| `POSTGRES_PORT` | Database port |

@@ -84,6 +84,7 @@ Property: `full_name` → `"{first_name} {last_name}"`
 | `neutered`        | BooleanField  | Default False                                 |
 | `sex`             | CharField(10) | male, female                                  |
 | `birth_date`      | DateField     | Optional                                      |
+| `weight`          | DecimalField(6,2) | Optional — Weight in kg                    |
 | `special_notes`   | TextField     | Optional                                      |
 | `owner`           | FK → Owner    | CASCADE delete; optional (null/blank)         |
 | `profile_picture` | ImageField    | Uploaded to `profile_pictures/pets/`. Max 5 MB; JPEG/PNG/GIF/WEBP only. |
@@ -179,6 +180,15 @@ Standard CRUD ViewSet.
 | POST   | `/api/documents/`     | Upload document (multipart/form-data)           |
 | DELETE | `/api/documents/{id}/`| Delete document                                 |
 
+### Medical Notes — `/api/medical-notes/`
+| Method | Path                       | Description                          |
+|--------|----------------------------|--------------------------------------|
+| GET    | `/api/medical-notes/`      | List (filter: `pet_id`)             |
+| POST   | `/api/medical-notes/`      | Create medical note                  |
+| PATCH  | `/api/medical-notes/{id}/` | Partial update                       |
+| PUT    | `/api/medical-notes/{id}/` | Full update                          |
+| DELETE | `/api/medical-notes/{id}/` | Delete medical note                  |
+
 ### Authentication — `/api/auth/`
 | Method | Path                         | Description                                    |
 |--------|------------------------------|------------------------------------------------|
@@ -267,4 +277,6 @@ Standard CRUD ViewSet.
 - Installs `postgresql-client` (for `pg_isready` health checks).
 - Copies `requirements.txt`, installs deps, copies source.
 - Default CMD: `python manage.py migrate && python manage.py runserver 0.0.0.0:8000`.
+- In `docker-compose.yml` the `backend/` directory is mounted as a volume so source changes are reflected without rebuild.
+`python manage.py migrate && python manage.py runserver 0.0.0.0:8000`.
 - In `docker-compose.yml` the `backend/` directory is mounted as a volume so source changes are reflected without rebuild.

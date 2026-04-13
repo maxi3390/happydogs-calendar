@@ -1,0 +1,355 @@
+# Pet Management Specification
+
+## Purpose
+
+This specification defines the behavior for managing pets within the pet nursery management system. It covers the full lifecycle of pet records including creation, retrieval, updating, deletion, profile picture management, nested vaccination management, and compatibility checking between pets. All pet management endpoints require authentication.
+
+## Requirements
+
+### Requirement: Pet Creation
+
+The system SHALL allow authenticated users to create pet records. A pet record MUST include a name, species, breed, age, temperament, dominance level, size, neutered status, and sex. A pet record MAY optionally include a birth date, weight, special notes, and an associated owner. A pet MAY optionally be created with a list of vaccinations.
+
+#### Scenario: Create a Pet With All Required Fields
+
+- Given an authenticated user provides a valid pet name, species, breed, age, temperament, dominance level, size, neutered status, and sex
+- When the user submits the pet creation request
+- Then the system SHALL create a new pet record
+- And the system SHALL return the created pet details
+
+#### Scenario: Create a Pet Linked to an Owner
+
+- Given an authenticated user provides valid pet data and a valid owner identifier
+- When the user submits the pet creation request
+- Then the system SHALL create the pet record linked to the specified owner
+- And the pet SHALL appear in that owner's list of associated pets
+
+#### Scenario: Create a Pet Without an Owner
+
+- Given an authenticated user provides valid pet data without specifying an owner
+- When the user submits the pet creation request
+- Then the system SHALL create the pet record with no owner association
+
+#### Scenario: Create a Pet With Vaccinations
+
+- Given an authenticated user provides valid pet data along with a list of vaccination records
+- When the user submits the pet creation request
+- Then the system SHALL create the pet record
+- And the system SHALL create all provided vaccination records associated with the pet
+
+#### Scenario: Create a Pet With Missing Required Fields
+
+- Given an authenticated user omits one or more required fields
+- When the user submits the pet creation request
+- Then the system SHALL reject the request with a validation error identifying the missing fields
+
+#### Scenario: Create a Pet Without Authentication
+
+- Given an unauthenticated visitor attempts to create a pet
+- When the visitor submits the pet creation request
+- Then the system SHALL reject the request with an authentication error
+
+### Requirement: Pet Attributes and Validation
+
+The system SHALL enforce the following attribute constraints for pet records:
+
+- **Species** SHALL be one of: dog, cat, bird, rabbit, or other.
+- **Temperament** SHALL be one of: calm, playful, aggressive, anxious, or friendly.
+- **Dominance level** SHALL be an integer between 1 and 10 inclusive.
+- **Size** SHALL be one of: small, medium, or large.
+- **Sex** SHALL be one of: male or female.
+- **Neutered** SHALL be a boolean value.
+- **Age** SHALL be expressed in years.
+- **Weight** SHALL be expressed in kilograms when provided.
+- **Birth date** MAY be optionally provided.
+- **Special notes** MAY be optionally provided as free text.
+
+#### Scenario: Create a Pet With Invalid Species
+
+- Given an authenticated user provides a species value not in the allowed list
+- When the user submits the pet creation request
+- Then the system SHALL reject the request with a validation error for the species field
+
+#### Scenario: Create a Pet With Out-of-Range Dominance Level
+
+- Given an authenticated user provides a dominance level less than 1 or greater than 10
+- When the user submits the pet creation request
+- Then the system SHALL reject the request with a validation error for the dominance level field
+
+#### Scenario: Create a Pet With Invalid Temperament
+
+- Given an authenticated user provides a temperament value not in the allowed list
+- When the user submits the pet creation request
+- Then the system SHALL reject the request with a validation error for the temperament field
+
+#### Scenario: Create a Pet With Invalid Size
+
+- Given an authenticated user provides a size value not in the allowed list
+- When the user submits the pet creation request
+- Then the system SHALL reject the request with a validation error for the size field
+
+#### Scenario: Create a Pet With Invalid Sex
+
+- Given an authenticated user provides a sex value not in the allowed list
+- When the user submits the pet creation request
+- Then the system SHALL reject the request with a validation error for the sex field
+
+### Requirement: Pet Listing
+
+The system SHALL allow authenticated users to retrieve a list of all pet records. Each pet in the list SHALL include a count of its associated medical notes.
+
+#### Scenario: List All Pets
+
+- Given an authenticated user requests the list of pets
+- When the system processes the request
+- Then the system SHALL return all pet records
+- And each pet record SHALL include a medical notes count
+
+#### Scenario: List Pets When No Pets Exist
+
+- Given an authenticated user requests the list of pets and no pet records exist
+- When the system processes the request
+- Then the system SHALL return an empty list
+
+### Requirement: Pet Retrieval
+
+The system SHALL allow authenticated users to retrieve the full details of a single pet by its identifier. The response SHALL include a count of associated medical notes.
+
+#### Scenario: Retrieve an Existing Pet
+
+- Given an authenticated user requests a pet by a valid identifier
+- When the system processes the request
+- Then the system SHALL return the full pet details including the medical notes count
+
+#### Scenario: Retrieve a Non-Existent Pet
+
+- Given an authenticated user requests a pet by an identifier that does not exist
+- When the system processes the request
+- Then the system SHALL return a not-found error
+
+### Requirement: Pet Updating
+
+The system SHALL allow authenticated users to update an existing pet record. When vaccinations are included in an update, the system SHALL replace all existing vaccinations atomically — all previous vaccination records for that pet SHALL be removed and replaced with the newly provided set.
+
+#### Scenario: Update Pet Basic Fields
+
+- Given an authenticated user provides updated values for a pet's basic fields (e.g., name, breed, weight)
+- When the user submits the pet update request
+- Then the system SHALL update the pet record with the new values
+- And the system SHALL return the updated pet details
+
+#### Scenario: Update Pet With New Vaccinations
+
+- Given an authenticated user provides a new list of vaccinations for an existing pet
+- When the user submits the pet update request
+- Then the system SHALL remove all existing vaccination records for the pet
+- And the system SHALL create all newly provided vaccination records
+- And this operation SHALL be performed atomically
+
+#### Scenario: Update Pet With Empty Vaccinations List
+
+- Given an authenticated user provides an empty list of vaccinations for an existing pet that has existing vaccinations
+- When the user submits the pet update request
+- Then the system SHALL remove all existing vaccination records for the pet
+- And the pet SHALL have zero vaccination records afterward
+
+#### Scenario: Update a Non-Existent Pet
+
+- Given an authenticated user attempts to update a pet that does not exist
+- When the user submits the pet update request
+- Then the system SHALL return a not-found error
+
+### Requirement: Pet Deletion
+
+The system SHALL allow authenticated users to delete a pet record by its identifier.
+
+#### Scenario: Delete an Existing Pet
+
+- Given an authenticated user requests deletion of an existing pet
+- When the system processes the request
+- Then the system SHALL delete the pet record
+- And all associated data (vaccinations, schedules) SHALL be removed
+
+#### Scenario: Delete a Non-Existent Pet
+
+- Given an authenticated user requests deletion of a pet that does not exist
+- When the system processes the request
+- Then the system SHALL return a not-found error
+
+### Requirement: Owner Association and Cascade Deletion
+
+A pet MAY be optionally linked to an owner through a foreign key relationship. When an owner is deleted, all pets associated with that owner MUST be deleted automatically through cascade deletion.
+
+#### Scenario: Owner Deletion Cascades to Pets
+
+- Given an owner has three associated pets
+- When the owner is deleted
+- Then all three pet records SHALL be deleted automatically
+- And no orphaned pet records SHALL remain
+
+#### Scenario: Pet With No Owner Is Unaffected by Owner Deletion
+
+- Given a pet has no associated owner
+- When any owner is deleted
+- Then the pet record SHALL remain unaffected
+
+### Requirement: Profile Picture Upload
+
+The system SHALL allow authenticated users to upload a profile picture for a pet. The uploaded image MUST NOT exceed 5 MB in size. The system SHALL accept only JPEG, PNG, GIF, and WEBP image formats.
+
+#### Scenario: Upload a Valid Profile Picture
+
+- Given an authenticated user provides a valid image file (JPEG, PNG, GIF, or WEBP) under 5 MB
+- When the user submits the profile picture upload for an existing pet
+- Then the system SHALL store the image
+- And the system SHALL return the updated pet record with the profile picture URL
+
+#### Scenario: Upload a Profile Picture Exceeding Size Limit
+
+- Given an authenticated user provides an image file larger than 5 MB
+- When the user submits the profile picture upload
+- Then the system SHALL reject the request with a validation error indicating the file exceeds the maximum size
+
+#### Scenario: Upload a Profile Picture With Invalid Format
+
+- Given an authenticated user provides a file that is not a JPEG, PNG, GIF, or WEBP image
+- When the user submits the profile picture upload
+- Then the system SHALL reject the request with a validation error indicating the file format is not supported
+
+### Requirement: Profile Picture Deletion
+
+The system SHALL allow authenticated users to delete a pet's profile picture. After deletion, the pet record SHALL have no profile picture.
+
+#### Scenario: Delete an Existing Profile Picture
+
+- Given a pet has an associated profile picture
+- When an authenticated user requests deletion of the pet's profile picture
+- Then the system SHALL remove the profile picture
+- And the pet record SHALL reflect that no profile picture exists
+
+#### Scenario: Delete Profile Picture When None Exists
+
+- Given a pet has no profile picture
+- When an authenticated user requests deletion of the pet's profile picture
+- Then the system SHOULD handle the request gracefully without error
+
+### Requirement: Compatibility Check
+
+The system SHALL provide an endpoint to check the compatibility of a specific pet against all other pets in the system. The system SHALL evaluate compatibility based on five rules and return a list of incompatible pets with the reasons for incompatibility.
+
+The five compatibility rules are:
+
+1. **Aggressive Pet Rule**: A pet with an aggressive temperament SHALL be deemed incompatible with every other pet.
+2. **High Dominance Rule**: Two pets that both have a dominance level greater than 7 SHALL be deemed incompatible.
+3. **Size and Dominance Disparity Rule**: Two pets with a size difference of 2 or more levels (where small=1, medium=2, large=3) AND a dominance level difference of 5 or more SHALL be deemed incompatible.
+4. **Cross-Species Temperament Rule**: Two pets of different species where the temperament pair is (aggressive, anxious) or (aggressive, calm) in any order SHALL be deemed incompatible.
+5. **Anxious-Playful Dominance Rule**: Two pets where one is anxious and the other is playful, and their dominance level difference is greater than 4, SHALL be deemed incompatible.
+
+A single pair of pets MAY trigger multiple incompatibility rules simultaneously. All triggered rules SHALL be reported.
+
+#### Scenario: Aggressive Pet Is Incompatible With All Others
+
+- Given a pet has an aggressive temperament
+- And other pets exist in the system
+- When an authenticated user requests a compatibility check for the aggressive pet
+- Then the system SHALL return all other pets as incompatible
+- And each incompatibility SHALL cite the aggressive pet rule
+
+#### Scenario: Two High-Dominance Pets Are Incompatible
+
+- Given pet A has a dominance level of 8
+- And pet B has a dominance level of 9
+- When an authenticated user requests a compatibility check for pet A
+- Then pet B SHALL be listed as incompatible
+- And the incompatibility SHALL cite the high dominance rule
+
+#### Scenario: Size and Dominance Disparity Causes Incompatibility
+
+- Given pet A is small (level 1) with a dominance level of 2
+- And pet B is large (level 3) with a dominance level of 8
+- When an authenticated user requests a compatibility check for pet A
+- Then pet B SHALL be listed as incompatible
+- And the incompatibility SHALL cite the size and dominance disparity rule (size difference = 2, dominance difference = 6)
+
+#### Scenario: Size Difference Alone Does Not Cause Incompatibility
+
+- Given pet A is small (level 1) with a dominance level of 5
+- And pet B is large (level 3) with a dominance level of 6
+- When an authenticated user requests a compatibility check for pet A
+- Then pet B SHALL NOT be listed as incompatible under the size and dominance disparity rule (dominance difference = 1, which is less than 5)
+
+#### Scenario: Cross-Species Aggressive-Anxious Pair Is Incompatible
+
+- Given pet A is a dog with an aggressive temperament
+- And pet B is a cat with an anxious temperament
+- When an authenticated user requests a compatibility check for pet A
+- Then pet B SHALL be listed as incompatible
+- And the incompatibility SHALL cite the cross-species temperament rule
+
+#### Scenario: Cross-Species Aggressive-Calm Pair Is Incompatible
+
+- Given pet A is a bird with an aggressive temperament
+- And pet B is a rabbit with a calm temperament
+- When an authenticated user requests a compatibility check for pet A
+- Then pet B SHALL be listed as incompatible
+- And the incompatibility SHALL cite the cross-species temperament rule
+
+#### Scenario: Same-Species Aggressive-Anxious Pair Does Not Trigger Cross-Species Rule
+
+- Given pet A is a dog with an aggressive temperament
+- And pet B is a dog with an anxious temperament
+- When an authenticated user requests a compatibility check for pet A
+- Then the cross-species temperament rule SHALL NOT be triggered for this pair
+- But pet A SHALL still be incompatible with pet B due to the aggressive pet rule
+
+#### Scenario: Anxious-Playful Pair With High Dominance Difference Is Incompatible
+
+- Given pet A is anxious with a dominance level of 2
+- And pet B is playful with a dominance level of 8
+- When an authenticated user requests a compatibility check for pet A
+- Then pet B SHALL be listed as incompatible
+- And the incompatibility SHALL cite the anxious-playful dominance rule (dominance difference = 6, which is greater than 4)
+
+#### Scenario: Anxious-Playful Pair With Low Dominance Difference Is Compatible
+
+- Given pet A is anxious with a dominance level of 5
+- And pet B is playful with a dominance level of 7
+- When an authenticated user requests a compatibility check for pet A
+- Then pet B SHALL NOT be listed as incompatible under the anxious-playful dominance rule (dominance difference = 2, which is not greater than 4)
+
+#### Scenario: Multiple Rules Triggered for Same Pair
+
+- Given pet A is a small aggressive dog with dominance level 9
+- And pet B is a large anxious cat with dominance level 2
+- When an authenticated user requests a compatibility check for pet A
+- Then pet B SHALL be listed as incompatible
+- And the response SHALL cite the aggressive pet rule, the size and dominance disparity rule, and the cross-species temperament rule
+
+#### Scenario: Compatible Pet Not Listed
+
+- Given pet A is a medium, calm dog with dominance level 5
+- And pet B is a medium, friendly dog with dominance level 4
+- When an authenticated user requests a compatibility check for pet A
+- Then pet B SHALL NOT appear in the incompatibility results
+
+#### Scenario: Compatibility Check for Non-Existent Pet
+
+- Given an authenticated user requests a compatibility check for a pet identifier that does not exist
+- When the system processes the request
+- Then the system SHALL return a not-found error
+
+#### Scenario: Compatibility Check Without Authentication
+
+- Given an unauthenticated visitor requests a compatibility check
+- When the system processes the request
+- Then the system SHALL reject the request with an authentication error
+
+### Requirement: Authentication Enforcement
+
+All pet management endpoints MUST require authentication. Any request from an unauthenticated visitor SHALL be rejected with an authentication error.
+
+#### Scenario: Unauthenticated Access to Any Pet Endpoint
+
+- Given an unauthenticated visitor
+- When the visitor attempts to access any pet management endpoint (list, create, retrieve, update, delete, profile picture, or compatibility check)
+- Then the system SHALL reject the request with an authentication error

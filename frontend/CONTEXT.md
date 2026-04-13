@@ -32,7 +32,14 @@ frontend/
 │   │   ├── PublicCalendar.tsx      # Public-facing calendar view
 │   │   ├── Navigation.tsx          # Reusable nav bar (links, lang switcher, theme toggle)
 │   │   ├── LanguageSwitcher.tsx    # Language selector component
-│   │   └── ThemeToggle.tsx         # Dark mode toggle
+│   │   ├── ThemeToggle.tsx         # Dark mode toggle
+│   │   ├── MedicalNotesSection.tsx # Inline medical notes CRUD for pets
+│   │   └── ui/                     # Reusable UI component library
+│   │       ├── Button.tsx          # Variants: primary/secondary/danger/ghost/outline; Sizes: sm/md/lg/icon
+│   │       ├── Input.tsx           # Label, left/right icons, error message support
+│   │       ├── Card.tsx            # Composable: Card/CardHeader/CardTitle/CardContent/CardFooter
+│   │       ├── Select.tsx          # Styled dropdown select
+│   │       └── Badge.tsx           # Status/tag display
 │   ├── domain/                     # Domain-sliced API clients and TypeScript types
 │   │   ├── _http/client.ts         # Base HTTP helpers: fetchApi<T> and uploadFile<T>
 │   │   ├── auth/types.ts           # User, AuthTokens, RegisterData, AuthContextType
@@ -41,11 +48,15 @@ frontend/
 │   │   ├── schedules/              # schedules api.ts, types.ts, index.ts
 │   │   ├── vaccinations/           # vaccination-types api.ts, types.ts, index.ts
 │   │   ├── documents/              # documents api.ts, types.ts, index.ts
+│   │   ├── medical-notes/         # medical-notes api.ts, types.ts
 │   │   ├── settings/               # nursery-settings api.ts, types.ts, index.ts
-│   │   └── translations/           # translation types
+│   │   ├── translations/           # translation types
+│   │   └── users/                 # users api.ts, types.ts
 │   └── lib/
 │       ├── api.ts                  # Barrel: re-exports all domain types + api object
 │       ├── auth.tsx                # AuthProvider, useAuth hook, authFetch helper
+│       ├── withAuth.tsx            # HOC: redirects unauthenticated users to /login
+│       ├── withAdmin.tsx           # HOC: redirects non-admin users to /
 │       └── translations.tsx        # TranslationProvider, useTranslation hook
 ├── tests/                          # Playwright E2E tests
 │   ├── auth.spec.ts
@@ -130,6 +141,7 @@ Auth flow:
 | `/pets`      | `app/pets/page.tsx`         | Pet list and CRUD operations                                 |
 | `/owners`    | `app/owners/page.tsx`       | Owner list and CRUD operations                               |
 | `/settings`  | `app/settings/page.tsx`     | Nursery settings and incompatibility rule management         |
+| `/admin/users` | `app/admin/users/page.tsx`| Admin user management (withAdmin protected)                  |
 
 ---
 
@@ -152,6 +164,16 @@ Auth flow:
 | `Navigation.tsx`           | Top nav bar: links to Calendar, Owners, Pets, Settings; language switcher; theme toggle; mobile hamburger menu |
 | `LanguageSwitcher.tsx`     | Dropdown/button to switch between `en` and `es`                                    |
 | `ThemeToggle.tsx`          | Toggle between light and dark mode (system preference detected on first load)      |
+| `MedicalNotesSection.tsx`  | Inline medical notes CRUD for a pet                                                |
+
+### UI Component Library (`src/components/ui/`)
+| Component   | Purpose                                                                        |
+|-------------|--------------------------------------------------------------------------------|
+| `Button.tsx`| 5 variants (primary/secondary/danger/ghost/outline), 4 sizes (sm/md/lg/icon)   |
+| `Input.tsx` | Form input with optional label, left/right icons, error message, full-width    |
+| `Card.tsx`  | Composable card: Card, CardHeader, CardTitle, CardContent, CardFooter          |
+| `Select.tsx`| Styled dropdown select, consistent with Input styling                          |
+| `Badge.tsx` | Status/tag display with variant support                                        |
 
 ---
 

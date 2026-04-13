@@ -1,0 +1,240 @@
+# User Management Specification
+
+## Purpose
+
+Provide an administrative interface for managing system users, including creating, editing, searching, and deleting user accounts. The page SHALL display summary statistics and a searchable table of all users. Access MUST be restricted to users with the admin role.
+
+## Requirements
+
+### Requirement: Admin-Only Access
+
+The user management page MUST be accessible only to authenticated users with the admin role. Non-admin authenticated users and unauthenticated visitors SHALL be redirected away from the page.
+
+#### Scenario: Admin user accesses user management
+
+- Given the user is authenticated with the admin role
+- When the user navigates to the user management page
+- Then the page SHALL be displayed with all management controls visible
+
+#### Scenario: Non-admin authenticated user accesses user management
+
+- Given the user is authenticated but does not have the admin role
+- When the user navigates to the user management page
+- Then the user SHALL be redirected away from the page
+- And user management content SHALL NOT be rendered
+
+#### Scenario: Unauthenticated user accesses user management
+
+- Given the user is not authenticated
+- When the user attempts to navigate to the user management page
+- Then the user SHALL be redirected to the login page
+
+### Requirement: Statistics Cards
+
+The user management page SHALL display summary statistics as visual cards showing key metrics about the user base.
+
+#### Scenario: Display total user count
+
+- Given the user is on the user management page
+- When the page loads
+- Then a statistics card SHALL display the total number of registered users
+
+#### Scenario: Display admin count
+
+- Given the user is on the user management page
+- When the page loads
+- Then a statistics card SHALL display the number of users with the admin role
+
+#### Scenario: Display active user count
+
+- Given the user is on the user management page
+- When the page loads
+- Then a statistics card SHALL display the number of currently active users
+
+#### Scenario: Statistics update after user changes
+
+- Given the user has created, edited, or deleted a user
+- When the operation completes successfully
+- Then the statistics cards SHALL update to reflect the current counts
+
+### Requirement: User Search
+
+The page SHALL provide a search mechanism to filter the displayed users by email address, first name, or last name.
+
+#### Scenario: Search by email
+
+- Given the user table contains multiple users
+- When the admin enters an email address or partial email in the search field
+- Then the table SHALL display only users whose email matches the search term
+
+#### Scenario: Search by first name
+
+- Given the user table contains multiple users
+- When the admin enters a first name or partial first name in the search field
+- Then the table SHALL display only users whose first name matches the search term
+
+#### Scenario: Search by last name
+
+- Given the user table contains multiple users
+- When the admin enters a last name or partial last name in the search field
+- Then the table SHALL display only users whose last name matches the search term
+
+#### Scenario: Search with no results
+
+- Given the user table contains multiple users
+- When the admin enters a search term that matches no users
+- Then the table SHALL display an empty state or a message indicating no users were found
+
+#### Scenario: Clear search
+
+- Given the admin has an active search filter
+- When the admin clears the search field
+- Then the table SHALL display all users without any filter applied
+
+### Requirement: User Table Display
+
+The page SHALL present users in a table format with specific columns for user identity, role, status, creation date, and available actions.
+
+#### Scenario: Display user identity column
+
+- Given the user table is visible
+- When users are listed
+- Then each row SHALL display the user's avatar, full name, and email address in the user column
+
+#### Scenario: Display user avatar with initials fallback
+
+- Given a user does not have a profile image
+- When the user's row is rendered in the table
+- Then an avatar SHALL be displayed showing the user's initials as a fallback
+
+#### Scenario: Display user avatar with image
+
+- Given a user has a profile image
+- When the user's row is rendered in the table
+- Then the avatar SHALL display the user's profile image
+
+#### Scenario: Display role column with badge
+
+- Given users have assigned roles
+- When the table is rendered
+- Then each user's role SHALL be displayed as a badge
+- And admin roles SHALL be displayed with a purple badge
+- And regular user roles SHALL be displayed with a blue badge
+
+#### Scenario: Display status column with badge
+
+- Given users have active or inactive statuses
+- When the table is rendered
+- Then each user's status SHALL be displayed as a badge
+- And active status SHALL be displayed with a green badge
+- And inactive status SHALL be displayed with a red badge
+
+#### Scenario: Display creation date column
+
+- Given users have creation timestamps
+- When the table is rendered
+- Then each user's creation date SHALL be displayed in the created date column
+
+#### Scenario: Display actions column
+
+- Given the table is rendered
+- When a user row is displayed
+- Then the actions column SHALL provide controls for editing and deleting that user
+
+### Requirement: Create User
+
+The admin SHALL be able to create new user accounts through a modal dialog with fields for all required user information.
+
+#### Scenario: Open create user modal
+
+- Given the admin is on the user management page
+- When the admin activates the create user action
+- Then a modal dialog SHALL appear with fields for email, first name, last name, role selection, and password
+
+#### Scenario: Successfully create a new user
+
+- Given the create user modal is open
+- And the admin has filled in all required fields with valid data
+- When the admin confirms the creation
+- Then a new user account SHALL be created with the provided information
+- And the modal SHALL close
+- And the new user SHALL appear in the user table
+
+#### Scenario: Create user with role selection
+
+- Given the create user modal is open
+- When the admin selects a role from the role dropdown
+- Then the available options SHALL include admin and regular user roles
+
+#### Scenario: Cancel user creation
+
+- Given the create user modal is open
+- When the admin cancels the operation
+- Then the modal SHALL close
+- And no new user SHALL be created
+
+### Requirement: Edit User
+
+The admin SHALL be able to edit existing user accounts through a modal dialog with fields for modifiable user properties.
+
+#### Scenario: Open edit user modal
+
+- Given the admin is on the user management page
+- When the admin activates the edit action for a specific user
+- Then a modal dialog SHALL appear pre-populated with the user's current first name, last name, role, and active status
+
+#### Scenario: Edit user name
+
+- Given the edit user modal is open
+- And the admin has modified the first name or last name
+- When the admin confirms the changes
+- Then the user's name SHALL be updated
+- And the user table SHALL reflect the updated name
+
+#### Scenario: Edit user role
+
+- Given the edit user modal is open
+- When the admin selects a different role from the role dropdown
+- And the admin confirms the changes
+- Then the user's role SHALL be updated
+- And the role badge in the table SHALL update accordingly
+
+#### Scenario: Toggle user active status
+
+- Given the edit user modal is open
+- When the admin toggles the active status
+- And the admin confirms the changes
+- Then the user's active status SHALL be updated
+- And the status badge in the table SHALL update accordingly
+
+#### Scenario: Cancel user edit
+
+- Given the edit user modal is open
+- When the admin cancels the operation
+- Then the modal SHALL close
+- And no changes SHALL be applied to the user
+
+### Requirement: Delete User
+
+The admin SHALL be able to delete user accounts with a confirmation step to prevent accidental deletions.
+
+#### Scenario: Initiate user deletion
+
+- Given the admin is on the user management page
+- When the admin activates the delete action for a specific user
+- Then a confirmation modal SHALL appear asking the admin to confirm the deletion
+
+#### Scenario: Confirm user deletion
+
+- Given the deletion confirmation modal is displayed
+- When the admin confirms the deletion
+- Then the user account SHALL be deleted
+- And the user SHALL be removed from the user table
+- And the statistics cards SHALL update to reflect the removal
+
+#### Scenario: Cancel user deletion
+
+- Given the deletion confirmation modal is displayed
+- When the admin cancels the deletion
+- Then the modal SHALL close
+- And the user account SHALL remain unchanged
