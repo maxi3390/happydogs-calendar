@@ -277,7 +277,8 @@ Both `PetViewSet` and `OwnerViewSet` use `parser_classes = [MultiPartParser, For
 ## Test Configuration
 
 - Test settings: `nursery/test_settings.py` — overrides `DATABASES` to SQLite in-memory and uses `MD5PasswordHasher` for speed.
-- Run via: `make test-backend` or `docker compose exec backend python manage.py test --settings=nursery.test_settings`.
+- `manage.py` auto-detects the `test` command and switches to `nursery.test_settings` automatically, so `--settings` is optional.
+- Run via: `make test-backend` or `docker compose exec backend python manage.py test`.
 
 ---
 

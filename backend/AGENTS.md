@@ -56,11 +56,11 @@ make lint                                # no lint errors
 ```bash
 # Run all backend tests (SQLite in-memory, fast)
 make test-backend
-# or directly:
-docker compose exec backend python manage.py test --settings=nursery.test_settings
+# or directly (manage.py auto-selects test_settings when running 'test'):
+docker compose exec backend python manage.py test
 
 # Run a specific test file
-docker compose exec backend python manage.py test pets.tests.test_pet_api --settings=nursery.test_settings
+docker compose exec backend python manage.py test pets.tests.test_pet_api
 
 # Run linting
 make lint
