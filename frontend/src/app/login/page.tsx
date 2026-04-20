@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/translations';
+import { api } from '@/lib/api';
 import { Eye, EyeOff, LogIn, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -19,6 +20,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -26,6 +28,10 @@ export default function LoginPage() {
       router.push('/');
     }
   }, [isAuthenticated, router]);
+
+  useEffect(() => {
+    api.nurserySettings.get().then(s => setLogoUrl(s.logo_url)).catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

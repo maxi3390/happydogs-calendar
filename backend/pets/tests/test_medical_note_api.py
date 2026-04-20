@@ -62,3 +62,34 @@ class MedicalNoteAPITests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(MedicalNote.objects.filter(id=note.id).exists())
+
+    def test_create_medical_note_without_title_rejected(self):
+        data = {'pet': self.pet.id, 'description': 'no title'}
+        response = self.client.post(self.list_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_medical_note_without_pet_rejected(self):
+        data = {'title': 'Test', 'description': 'no pet'}
+        response = self.client.post(self.list_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_medical_notes_count_updates_on_create_and_delete(self):
+        """The medical_notes_count on pet detail updates when notes are added/removed."""
+        pet_url = reverse('pet-detail', args=[self.pet.id])
+        # Initial count
+        initial = self.client.get(pet_url).data['medical_notes_count']
+        # Create a note
+        note_resp = self.client.post(
+            self.list_url,
+            {'pet': self.pet.id, 'title': 'CountTest', 'description': ''},
+            format='json',
+        )
+        self.assertEqual(note_resp.status_code, status.HTTP_201_CREATED)
+        after_create = self.client.get(pet_url).data['medical_notes_count']
+        self.assertEqual(after_create, initial + 1)
+        # Delete the note
+        note_id = note_resp.data['id']
+        del_resp = self.client.delete(reverse('medicalnote-detail', args=[note_id]))
+        self.assertEqual(del_resp.status_code, status.HTTP_204_NO_CONTENT)
+        after_delete = self.client.get(pet_url).data['medical_notes_count']
+        self.assertEqual(after_delete, initial)

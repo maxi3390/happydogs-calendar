@@ -8,6 +8,7 @@ import ThemeToggle from './ThemeToggle';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useTranslation } from '@/lib/translations';
 import { useAuth } from '@/lib/auth';
+import { api } from '@/lib/api';
 
 interface NavigationProps {
   onNewSchedule?: () => void;
@@ -20,6 +21,7 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
 
   useEffect(() => {
@@ -28,6 +30,10 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    api.nurserySettings.get().then(s => setLogoUrl(s.logo_url)).catch(() => {});
   }, []);
 
   const isActive = (path: string) => {

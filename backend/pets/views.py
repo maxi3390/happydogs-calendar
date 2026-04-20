@@ -2,7 +2,7 @@ import json
 import os
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
@@ -63,7 +63,7 @@ class OwnerViewSet(viewsets.ModelViewSet):
     queryset = Owner.objects.all()
     serializer_class = OwnerSerializer
     permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -162,7 +162,7 @@ class PetViewSet(viewsets.ModelViewSet):
     queryset = Pet.objects.select_related('owner').all()
     serializer_class = PetSerializer
     permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_serializer_class(self):
         return PetSerializer
@@ -180,11 +180,23 @@ class PetViewSet(viewsets.ModelViewSet):
                 pass
         return vaccinations_raw
 
-    def create(self, request, *args, **kwargs):
-        data = request.data.copy()
+    def _normalize_data(self, request):
+        """Return a plain dict from request.data (handles QueryDict for multipart)."""
+        if hasattr(request.data, 'lists'):
+            # QueryDict from multipart — unwrap single-valued keys
+            data = {}
+            for key in request.data:
+                values = request.data.getlist(key)
+                data[key] = values[0] if len(values) == 1 else values
+        else:
+            data = dict(request.data)
         vaccinations = self._parse_vaccinations(request)
         if vaccinations is not None:
             data['vaccinations'] = vaccinations
+        return data
+
+    def create(self, request, *args, **kwargs):
+        data = self._normalize_data(request)
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -198,10 +210,7 @@ class PetViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        data = request.data.copy()
-        vaccinations = self._parse_vaccinations(request)
-        if vaccinations is not None:
-            data['vaccinations'] = vaccinations
+        data = self._normalize_data(request)
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
@@ -271,12 +280,13 @@ class PetViewSet(viewsets.ModelViewSet):
 
         results = []
         for other in other_pets:
-            is_compatible, reason = pet.is_compatible_with(other)
+            is_compatible, reasons = pet.is_compatible_with(other)
             results.append({
                 'pet_id': other.id,
                 'pet_name': other.name,
                 'is_compatible': is_compatible,
-                'reason': reason
+                'reason': reasons[0] if reasons else None,
+                'reasons': reasons,
             })
 
         return Response(results)
@@ -418,7 +428,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
 
         conflicts = []
         for schedule in overlapping_query:
-            is_compatible, reason = pet.is_compatible_with(schedule.pet)
+            is_compatible, reasons = pet.is_compatible_with(schedule.pet)
             if not is_compatible:
                 date_range = (
                     f"{schedule.start_date}"
@@ -429,7 +439,8 @@ class ScheduleViewSet(viewsets.ModelViewSet):
                     'conflicting_pet_id': schedule.pet.id,
                     'conflicting_pet': schedule.pet.name,
                     'conflicting_schedule_id': schedule.id,
-                    'reason': reason,
+                    'reason': reasons[0] if reasons else None,
+                    'reasons': reasons,
                     'date_range': date_range,
                     'time_slot': f"{schedule.start_time.strftime('%H:%M')} - {schedule.end_time.strftime('%H:%M')}"
                 })
@@ -451,7 +462,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             'properties': {
                 'date': {'type': 'string', 'format': 'date'},
                 'count': {'type': 'integer'},
-                'limit': {'type': 'integer'},
+                'daily_booking_limit': {'type': 'integer'},
                 'limit_reached': {'type': 'boolean'},
                 'limit_exceeded': {'type': 'boolean'},
             }
@@ -479,7 +490,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         return Response({
             'date': date,
             'count': active_count,
-            'limit': limit,
+            'daily_booking_limit': limit,
             'limit_reached': limit > 0 and active_count >= limit,
             'limit_exceeded': limit > 0 and active_count > limit,
         })

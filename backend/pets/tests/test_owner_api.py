@@ -1,9 +1,20 @@
+from io import BytesIO
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
+from PIL import Image as PILImage
 from rest_framework.test import APITestCase
 from rest_framework import status
 from tests.factories import create_owner, create_pet, create_and_auth_user
 from pets.models import Owner
+
+
+def _make_test_image(name='test.png', fmt='PNG'):
+    """Create a small in-memory image for testing."""
+    buf = BytesIO()
+    PILImage.new('RGB', (50, 50), color='blue').save(buf, format=fmt)
+    buf.seek(0)
+    return SimpleUploadedFile(name, buf.read(), content_type=f'image/{fmt.lower()}')
 
 
 class OwnerAPITests(APITestCase):
@@ -139,3 +150,13 @@ class OwnerAPITests(APITestCase):
         response = self.client.post(self.list_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIsNone(response.data['profile_picture_url'])
+
+    def test_owner_deletion_cascades_to_pets(self):
+        """Deleting an owner should delete all their pets (CASCADE)."""
+        create_pet(owner=self.owner, name='Fluffy')
+        create_pet(owner=self.owner, name='Rex')
+        from pets.models import Pet
+        self.assertEqual(Pet.objects.filter(owner=self.owner).count(), 2)
+        response = self.client.delete(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Pet.objects.filter(owner_id=self.owner.id).count(), 0)

@@ -90,7 +90,7 @@ Property: `full_name` → `"{first_name} {last_name}"`
 | `owner`           | FK → Owner    | CASCADE delete; optional (null/blank)         |
 | `profile_picture` | ImageField    | Uploaded to `profile_pictures/pets/`. Max 5 MB; JPEG/PNG/GIF/WEBP only. |
 
-Method: `is_compatible_with(other_pet) → (bool, str)` — implements the 5 conflict detection rules (see root `CONTEXT.md`).
+Method: `is_compatible_with(other_pet) → (bool, list[str])` — implements the 5 conflict detection rules. Returns `(True, [])` when compatible, `(False, [reasons...])` listing every triggered rule (see root `CONTEXT.md`).
 
 ### Schedule (`domain/schedules/models.py`)
 | Field        | Type          | Notes                                                   |

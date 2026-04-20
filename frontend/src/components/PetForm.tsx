@@ -25,6 +25,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [owners, setOwners] = useState<OwnerListItem[]>([]);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(pet?.profile_picture_url || null);
+  const [pendingProfilePicture, setPendingProfilePicture] = useState<File | null>(null);
   const [vaxTypes, setVaxTypes] = useState<VaccinationType[]>([]);
   const [vaccinations, setVaccinations] = useState<Array<{ vax_type: string; date: string }>>([
     ...(pet?.vaccinations?.map(v => ({ vax_type: v.vax_type, date: v.date })) || []),

@@ -54,7 +54,7 @@ The system SHALL enforce the following attribute constraints for schedule record
 
 - **Pet** SHALL be a reference to an existing pet record (foreign key).
 - **Start date** and **end date** SHALL be valid dates. The start date MUST be before or equal to the end date.
-- **Start time** and **end time** SHALL be valid times. The start time MUST be before the end time.
+- **Start time** and **end time** SHALL be valid times. The start time MUST be strictly before the end time; a zero-duration window (start time equal to end time) is invalid and MUST be rejected.
 - **Status** SHALL be one of: scheduled, checked_in, completed, or cancelled.
 - **Notes** MAY be optionally provided as free text.
 
@@ -63,6 +63,13 @@ The system SHALL enforce the following attribute constraints for schedule record
 - Given an authenticated user provides a start time of 14:00 and an end time of 10:00
 - When the user submits the schedule creation request
 - Then the system SHALL reject the request with a validation error indicating start time must be before end time
+
+#### Scenario: Create a Schedule With Equal Start and End Time (Zero-Duration)
+
+- Given an authenticated user provides a start time of 10:00 and an end time of 10:00
+- When the user submits the schedule creation request
+- Then the system SHALL reject the request with a validation error indicating start time must be strictly before end time
+- And the schedule SHALL NOT be created
 
 #### Scenario: Create a Schedule With Start Date After End Date
 
@@ -210,6 +217,13 @@ When a pet is deleted, all schedules associated with that pet MUST be deleted au
 
 The system SHALL detect scheduling conflicts when creating or updating schedules. A conflict exists when two schedules overlap in both date range AND time range, and both schedules have an active status (scheduled or checked_in). Conflicts are WARNINGS only — the system SHALL always create or update the schedule regardless of detected conflicts. The system SHALL return any detected conflicts as warnings alongside the created or updated schedule.
 
+Each entry in the returned conflict list SHALL include:
+
+- A `reason` field: a short string describing the first triggered conflict rule, preserved for backward compatibility with earlier clients.
+- A `reasons` field: a list of every triggered conflict rule for that overlap (e.g. same-pet overlap, cross-pet overlap, daily-limit reached, pet-compatibility violation). Clients SHOULD prefer reading `reasons` over `reason`.
+
+The two fields SHALL always be consistent: `reason` equals `reasons[0]` when `reasons` is non-empty.
+
 #### Scenario: Create a Schedule With a Conflict
 
 - Given an existing schedule for pet A on Monday from 09:00 to 12:00 with status scheduled
@@ -309,7 +323,15 @@ The system SHALL provide a daily summary endpoint that returns the count of sche
 
 ### Requirement: Daily Count Endpoint
 
-The system SHALL provide a daily count endpoint that returns the total number of active schedules for a given date, the configured daily booking limit, and flags indicating whether the limit has been reached or exceeded. The limit_reached flag SHALL be true when the count equals the daily booking limit. The limit_exceeded flag SHALL be true when the count exceeds the daily booking limit.
+The system SHALL provide a daily count endpoint that returns the total number of active schedules for a given date, the configured daily booking limit, and flags indicating whether the limit has been reached or exceeded.
+
+The response SHALL include the following fields:
+
+- `date` — the date the counts apply to.
+- `count` — the total number of active schedules on that date.
+- `daily_booking_limit` — the configured daily booking limit (this field is named `daily_booking_limit`; it is NOT named `limit`).
+- `limit_reached` — true when `count` equals `daily_booking_limit`, otherwise false.
+- `limit_exceeded` — true when `count` is strictly greater than `daily_booking_limit`, otherwise false.
 
 #### Scenario: Daily Count Below Limit
 

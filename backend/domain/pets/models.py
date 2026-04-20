@@ -68,16 +68,17 @@ class Pet(models.Model):
 
     def is_compatible_with(self, other_pet):
         """
-        Check if this pet is compatible with another pet based on dominance and temperament rules.
-        Returns a tuple (is_compatible, reason)
+        Check compatibility. Returns (is_compatible, reasons_list).
+        All triggered rules are collected; reasons_list is empty when compatible.
         """
+        reasons = []
         # Rule 1: Aggressive pets should not be with other pets
         if self.temperament == 'aggressive' or other_pet.temperament == 'aggressive':
-            return False, "Aggressive pets cannot be scheduled together with other pets"
+            reasons.append("Aggressive pets cannot be scheduled together with other pets")
 
         # Rule 2: Two highly dominant pets (>7) should not be together
         if self.dominance_level > 7 and other_pet.dominance_level > 7:
-            return False, "Two highly dominant pets cannot be scheduled together"
+            reasons.append("Two highly dominant pets cannot be scheduled together")
 
         # Rule 3: Large size difference with high dominance difference
         size_order = {'small': 1, 'medium': 2, 'large': 3}
@@ -85,19 +86,19 @@ class Pet(models.Model):
         dominance_diff = abs(self.dominance_level - other_pet.dominance_level)
 
         if size_diff >= 2 and dominance_diff >= 5:
-            return False, "Large size difference with significant dominance difference poses a risk"
+            reasons.append("Large size difference with significant dominance difference poses a risk")
 
         # Rule 4: Different species with incompatible temperaments
         if self.species != other_pet.species:
             incompatible_temps = [('aggressive', 'anxious'), ('aggressive', 'calm')]
             temps = (self.temperament, other_pet.temperament)
             if temps in incompatible_temps or temps[::-1] in incompatible_temps:
-                return False, "Incompatible temperaments between different species"
+                reasons.append("Incompatible temperaments between different species")
 
         # Rule 5: Anxious pets should not be with playful/energetic pets if dominance diff > 4
         if ('anxious' in [self.temperament, other_pet.temperament] and
             'playful' in [self.temperament, other_pet.temperament] and
             dominance_diff > 4):
-            return False, "Anxious pets may be stressed by highly playful pets with different dominance levels"
+            reasons.append("Anxious pets may be stressed by highly playful pets with different dominance levels")
 
-        return True, "Compatible"
+        return (len(reasons) == 0), reasons

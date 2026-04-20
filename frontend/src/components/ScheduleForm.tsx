@@ -540,7 +540,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
           )}
 
           {/* Daily limit warning (shared) */}
-          {dailyCount && dailyCount.limit > 0 && (
+          {dailyCount && dailyCount.daily_booking_limit > 0 && (
             <div className={`p-4 rounded-lg border ${
               dailyCount.limit_reached
                 ? 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800'
@@ -556,7 +556,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                     {t('schedule.dailyLimitReachedDetail')
                       .replace('{count}', String(dailyCount.count))
                       .replace('{date}', startDate)
-                      .replace('{limit}', String(dailyCount.limit))}
+                      .replace('{limit}', String(dailyCount.daily_booking_limit))}
                   </p>
                 </div>
               ) : (
@@ -564,7 +564,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                   <AlertTriangle className="w-4 h-4" />
                   {t('schedule.dailyLimitWarningDetail')
                     .replace('{count}', String(dailyCount.count))
-                    .replace('{limit}', String(dailyCount.limit))}
+                    .replace('{limit}', String(dailyCount.daily_booking_limit))}
                 </div>
               )}
             </div>
@@ -724,7 +724,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
               </div>
               <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
                 {t('schedule.confirmOverLimitMessage')
-                  .replace('{limit}', String(dailyCount?.limit))
+                  .replace('{limit}', String(dailyCount?.daily_booking_limit))
                   .replace('{date}', startDate)}
               </p>
               <div className="flex justify-end gap-3">

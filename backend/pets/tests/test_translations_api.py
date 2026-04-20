@@ -38,3 +38,20 @@ class AvailableLanguagesAPITests(APITestCase):
         codes = [lang['code'] for lang in response.data]
         self.assertIn('en', codes)
         self.assertIn('es', codes)
+
+
+class UnauthenticatedAccessTests(APITestCase):
+    """Translation endpoints must be publicly accessible (AllowAny)."""
+
+    def test_translations_endpoint_allows_unauthenticated_access(self):
+        """Translation endpoints are public (no auth required)."""
+        from rest_framework.test import APIClient
+        anon_client = APIClient()
+        response = anon_client.get('/api/translations/en/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_available_languages_endpoint_allows_unauthenticated_access(self):
+        from rest_framework.test import APIClient
+        anon_client = APIClient()
+        response = anon_client.get('/api/languages/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

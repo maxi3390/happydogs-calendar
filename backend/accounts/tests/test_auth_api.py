@@ -147,6 +147,24 @@ class TokenRefreshTests(APITestCase):
         response = self.client.post(self.url, {'refresh': 'bad-token'}, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_blacklisted_refresh_token_is_rejected(self):
+        """After rotating a refresh token, the original token must be rejected."""
+        # Login
+        login_resp = self.client.post(reverse('login'), {
+            'email': self.user.email, 'password': self.password,
+        }, format='json')
+        original_refresh = login_resp.data['tokens']['refresh']
+        # Rotate (first refresh)
+        rotate_resp = self.client.post(reverse('token_refresh'), {
+            'refresh': original_refresh,
+        }, format='json')
+        self.assertEqual(rotate_resp.status_code, status.HTTP_200_OK)
+        # Try to use original (now blacklisted) again
+        blacklisted_resp = self.client.post(reverse('token_refresh'), {
+            'refresh': original_refresh,
+        }, format='json')
+        self.assertEqual(blacklisted_resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class ProfileTests(APITestCase):
 
@@ -186,6 +204,20 @@ class ProfileTests(APITestCase):
         self.user.refresh_from_db()
         self.assertEqual(self.user.first_name, 'Jane')
         self.assertEqual(self.user.last_name, 'Smith')
+
+    def test_profile_update_ignores_email_field(self):
+        """PATCH /profile with email should not change the email."""
+        auth_client(self.client, self.user, self.password)
+        old_email = self.user.email
+        response = self.client.patch(
+            self.url,
+            {'email': 'hacker@example.com', 'first_name': 'Renamed'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, old_email)
+        self.assertEqual(self.user.first_name, 'Renamed')
 
 
 class ChangePasswordTests(APITestCase):

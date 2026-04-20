@@ -49,9 +49,9 @@ class PetModelTests(TestCase):
     def test_aggressive_incompatible(self):
         p1 = create_pet(temperament='aggressive', dominance_level=8, size='large')
         p2 = create_pet(temperament='friendly', dominance_level=5, size='medium')
-        ok, reason = p1.is_compatible_with(p2)
+        ok, reasons = p1.is_compatible_with(p2)
         self.assertFalse(ok)
-        self.assertIn('Aggressive', reason)
+        self.assertTrue(any('Aggressive' in r for r in reasons))
 
     def test_aggressive_other_side(self):
         p1 = create_pet(temperament='friendly', dominance_level=5)
@@ -62,9 +62,9 @@ class PetModelTests(TestCase):
     def test_two_high_dominance_incompatible(self):
         p1 = create_pet(temperament='friendly', dominance_level=9, size='large')
         p2 = create_pet(temperament='friendly', dominance_level=8, size='large')
-        ok, reason = p1.is_compatible_with(p2)
+        ok, reasons = p1.is_compatible_with(p2)
         self.assertFalse(ok)
-        self.assertIn('dominant', reason.lower())
+        self.assertTrue(any('dominant' in r.lower() for r in reasons))
 
     def test_high_dominance_boundary(self):
         """Dominance 7 is NOT > 7, so two pets at 7 are compatible."""
@@ -76,9 +76,9 @@ class PetModelTests(TestCase):
     def test_size_and_dominance_diff_incompatible(self):
         p1 = create_pet(size='small', dominance_level=1, temperament='calm')
         p2 = create_pet(size='large', dominance_level=7, temperament='calm')
-        ok, reason = p1.is_compatible_with(p2)
+        ok, reasons = p1.is_compatible_with(p2)
         self.assertFalse(ok)
-        self.assertIn('size', reason.lower())
+        self.assertTrue(any('size' in r.lower() for r in reasons))
 
     def test_size_diff_without_dominance_diff_ok(self):
         p1 = create_pet(size='small', dominance_level=5, temperament='calm')
@@ -96,9 +96,9 @@ class PetModelTests(TestCase):
     def test_anxious_playful_high_dominance_diff(self):
         p1 = create_pet(temperament='anxious', dominance_level=2, size='medium')
         p2 = create_pet(temperament='playful', dominance_level=7, size='medium')
-        ok, reason = p1.is_compatible_with(p2)
+        ok, reasons = p1.is_compatible_with(p2)
         self.assertFalse(ok)
-        self.assertIn('Anxious', reason)
+        self.assertTrue(any('Anxious' in r for r in reasons))
 
     def test_anxious_playful_low_dominance_diff_ok(self):
         p1 = create_pet(temperament='anxious', dominance_level=5, size='medium')

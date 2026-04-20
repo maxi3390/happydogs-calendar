@@ -47,7 +47,7 @@ class Schedule(models.Model):
         overlapping = self.get_overlapping_schedules()
 
         for other_schedule in overlapping:
-            is_compatible, reason = self.pet.is_compatible_with(other_schedule.pet)
+            is_compatible, reasons = self.pet.is_compatible_with(other_schedule.pet)
             if not is_compatible:
                 date_range = (
                     f"{other_schedule.start_date}"
@@ -57,7 +57,8 @@ class Schedule(models.Model):
                 conflicts.append({
                     'conflicting_pet': other_schedule.pet.name,
                     'conflicting_schedule_id': other_schedule.id,
-                    'reason': reason,
+                    'reason': reasons[0] if reasons else None,
+                    'reasons': reasons,
                     'date_range': date_range,
                     'time_slot': f"{other_schedule.start_time} - {other_schedule.end_time}"
                 })

@@ -10,11 +10,11 @@ This specification defines the behavior of the nursery settings and translation 
 
 The system SHALL provide an endpoint to retrieve the current nursery settings.
 
-The response MUST include the `daily_booking_limit` value.
+The response MUST include the `daily_booking_limit` value and the `logo_url` field (null when no logo is configured).
 
 Only one settings instance SHALL exist in the system at any time (singleton).
 
-The endpoint MUST require authentication.
+`GET /api/settings/` SHALL be publicly accessible (AllowAny) without authentication. This is an intentional exception to the general authentication requirement: the login page needs to fetch the custom logo before the user has logged in. No other settings endpoint is public — all write operations require the administrator role (see Requirement: Permission Protection for Settings Endpoints).
 
 #### Scenario: Successfully retrieving nursery settings
 
@@ -30,15 +30,17 @@ The endpoint MUST require authentication.
 - When the user requests the nursery settings
 - Then the system SHALL return a default settings instance with sensible default values
 
-#### Scenario: Unauthenticated request to retrieve settings
+#### Scenario: Unauthenticated request to retrieve settings succeeds
 
 - Given no authentication credentials are provided
-- When a request is made to retrieve the nursery settings
-- Then the system SHALL reject the request with an authentication error
+- When a request is made to `GET /api/settings/`
+- Then the system SHALL return the settings successfully (HTTP 200)
+- And the response SHALL include `daily_booking_limit` and `logo_url`
+- And no authentication error SHALL be returned, because this endpoint is intentionally public to allow the login page to render the custom logo before login
 
 ### Requirement: Update Nursery Settings
 
-The system SHALL provide an endpoint to update the nursery settings.
+The system SHALL provide an endpoint to update the nursery settings (`PATCH /api/settings/update/` and `PUT /api/settings/update/`).
 
 The system MUST allow updating the `daily_booking_limit`.
 
@@ -46,39 +48,44 @@ When `daily_booking_limit` is set to 0, the system SHALL interpret this as unlim
 
 Only one settings instance SHALL exist; updates MUST modify the existing singleton rather than creating additional instances.
 
-The endpoint MUST require authentication.
+The endpoint MUST require the authenticated user to have the `admin` role. Unauthenticated requests SHALL be rejected with an authentication error (HTTP 401). Authenticated requests from non-admin users SHALL be rejected with a permission-denied error (HTTP 403).
 
-> **Note:** The settings update endpoint currently lacks fine-grained permission protection. This endpoint SHOULD be restricted to administrator-level users only in a future revision.
+#### Scenario: Admin successfully updates the daily booking limit
 
-#### Scenario: Successfully updating the daily booking limit
-
-- Given an authenticated user exists
+- Given an authenticated administrator user exists
 - And nursery settings exist with a daily_booking_limit of 10
-- When the user submits a request to update the daily_booking_limit to 25
+- When the administrator submits a request to update the daily_booking_limit to 25
 - Then the system SHALL persist the change
 - And subsequent retrieval of settings SHALL return daily_booking_limit equal to 25
 
-#### Scenario: Setting daily booking limit to zero (unlimited)
+#### Scenario: Admin sets daily booking limit to zero (unlimited)
 
-- Given an authenticated user exists
+- Given an authenticated administrator user exists
 - And nursery settings exist with a daily_booking_limit of 15
-- When the user submits a request to update the daily_booking_limit to 0
+- When the administrator submits a request to update the daily_booking_limit to 0
 - Then the system SHALL persist the change
 - And the daily_booking_limit SHALL be stored as 0, representing unlimited bookings
 
 #### Scenario: Settings remain a singleton after update
 
-- Given an authenticated user exists
+- Given an authenticated administrator user exists
 - And nursery settings exist
-- When the user updates the settings multiple times
+- When the administrator updates the settings multiple times
 - Then only one settings instance SHALL exist in the system at any time
 - And each update SHALL modify the same instance
 
-#### Scenario: Unauthenticated request to update settings
+#### Scenario: Non-admin authenticated user is rejected when updating settings
+
+- Given an authenticated user exists whose role is NOT `admin`
+- When the user submits a request to update the nursery settings
+- Then the system SHALL reject the request with a permission-denied error (HTTP 403)
+- And no settings fields SHALL be modified
+
+#### Scenario: Unauthenticated request to update settings is rejected
 
 - Given no authentication credentials are provided
 - When a request is made to update the nursery settings
-- Then the system SHALL reject the request with an authentication error
+- Then the system SHALL reject the request with an authentication error (HTTP 401)
 
 ### Requirement: Serve Translations for Supported Languages
 
@@ -158,23 +165,65 @@ This endpoint SHALL be publicly accessible without authentication.
 
 ### Requirement: Permission Protection for Settings Endpoints
 
-> **Note:** This requirement documents a known gap. The settings endpoints currently do not enforce administrator-level permissions.
+Settings write endpoints are restricted to administrator-level users. Any authenticated user without the `admin` role SHALL be denied access to modify settings. The system enforces this via DRF permission classes on the affected endpoints.
 
-The settings retrieval and update endpoints SHOULD restrict access to administrator-level users only.
+Concretely:
 
-Any non-administrator authenticated user SHOULD be denied access to modify settings.
+- `PATCH /api/settings/update/` — IS restricted: requires `admin` role.
+- `PUT /api/settings/update/` — IS restricted: requires `admin` role.
+- `POST /api/settings/upload_logo/` — IS restricted: requires `admin` role.
+- `DELETE /api/settings/delete_logo/` — IS restricted: requires `admin` role.
+- `GET /api/settings/` — IS INTENTIONALLY PUBLIC (AllowAny). This is a deliberate exception, not an oversight. The login page needs to fetch the custom system logo before the user has authenticated; restricting the GET endpoint would prevent the logo from rendering on the login screen. No sensitive data is exposed by this endpoint (it returns only `daily_booking_limit` and `logo_url`).
 
-#### Scenario: Non-administrator attempts to update settings (desired behavior)
+Unauthenticated requests to restricted endpoints SHALL receive HTTP 401. Authenticated requests from non-admin users to restricted endpoints SHALL receive HTTP 403.
 
-- Given an authenticated user exists who is not an administrator
-- When the user submits a request to update the nursery settings
-- Then the system SHOULD reject the request with a permission denied error
+#### Scenario: Administrator updates settings
 
-#### Scenario: Administrator successfully updates settings (desired behavior)
+- Given an authenticated user with role `admin`
+- When the administrator submits a PATCH request to `/api/settings/update/` with a new `daily_booking_limit`
+- Then the system SHALL accept the request (HTTP 200)
+- And the change SHALL be persisted
 
-- Given an authenticated administrator user exists
-- When the administrator submits a request to update the nursery settings
-- Then the system SHOULD accept the request and persist the changes
+#### Scenario: Administrator uploads a logo
+
+- Given an authenticated user with role `admin`
+- When the administrator submits a multipart POST to `/api/settings/upload_logo/` with a valid image
+- Then the system SHALL accept the request and store the logo
+
+#### Scenario: Administrator deletes the logo
+
+- Given an authenticated user with role `admin`
+- And a logo currently exists
+- When the administrator submits a DELETE request to `/api/settings/delete_logo/`
+- Then the system SHALL accept the request and remove the logo
+
+#### Scenario: Non-admin user is rejected when updating settings
+
+- Given an authenticated user whose role is NOT `admin`
+- When the user submits a PATCH request to `/api/settings/update/`
+- Then the system SHALL reject the request with HTTP 403
+- And no settings fields SHALL be modified
+
+#### Scenario: Non-admin user is rejected when uploading a logo
+
+- Given an authenticated user whose role is NOT `admin`
+- When the user submits a POST request to `/api/settings/upload_logo/`
+- Then the system SHALL reject the request with HTTP 403
+- And no logo file SHALL be stored
+
+#### Scenario: Non-admin user is rejected when deleting the logo
+
+- Given an authenticated user whose role is NOT `admin`
+- When the user submits a DELETE request to `/api/settings/delete_logo/`
+- Then the system SHALL reject the request with HTTP 403
+- And the existing logo (if any) SHALL remain in place
+
+#### Scenario: Public GET endpoint remains accessible without authentication
+
+- Given no authentication credentials are provided
+- When a request is made to `GET /api/settings/`
+- Then the system SHALL return HTTP 200 with the settings payload
+- And this exception is deliberate so the login page can display the custom logo before login
 
 ### Requirement: System Logo Storage
 

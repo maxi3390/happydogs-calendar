@@ -221,3 +221,53 @@ class PetAPITests(APITestCase):
         response = self.client.post(self.list_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIsNone(response.data['profile_picture_url'])
+
+    def test_compatibility_reports_multiple_rules_for_same_pair(self):
+        """A pet that triggers multiple incompatibility rules should report all of them."""
+        # self.pet is a friendly medium dog with dominance 5.
+        # Create a pet that's aggressive AND has a large size+dominance gap vs self.pet.
+        agg = create_pet(
+            name='TerrorDog',
+            species='dog',
+            temperament='aggressive',
+            dominance_level=10,
+            size='small',  # 2 levels from 'large'... wait self.pet is 'large' per setUp
+        )
+        # self.pet is large, dominance 5. 'agg' is small, dominance 10, aggressive.
+        # size_diff = 2, dominance_diff = 5 => triggers rule 3.
+        # 'agg' is aggressive => triggers rule 1.
+        url = reverse('pet-compatibility', args=[self.pet.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Find the entry for agg
+        agg_entry = next(r for r in response.data if r['pet_id'] == agg.id)
+        self.assertFalse(agg_entry['is_compatible'])
+        self.assertIn('reasons', agg_entry)
+        self.assertIsInstance(agg_entry['reasons'], list)
+        self.assertGreaterEqual(len(agg_entry['reasons']), 2)
+        # Backward-compat reason field should still be present
+        self.assertIn('reason', agg_entry)
+        self.assertEqual(agg_entry['reason'], agg_entry['reasons'][0])
+
+    def test_pet_deletion_cascades_to_schedules(self):
+        """Deleting a pet should delete its schedules (CASCADE)."""
+        from domain.schedules.models import Schedule
+        from datetime import date, time
+        # Create a schedule for self.pet
+        Schedule.objects.create(
+            pet=self.pet,
+            start_date=date.today(), end_date=date.today(),
+            start_time=time(9, 0), end_time=time(17, 0),
+            status='scheduled',
+        )
+        self.assertEqual(Schedule.objects.filter(pet=self.pet).count(), 1)
+        response = self.client.delete(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Schedule.objects.filter(pet_id=self.pet.id).count(), 0)
+
+    def test_delete_profile_picture_when_none_exists(self):
+        """Deleting a non-existent profile picture should return 204, not error."""
+        # self.pet has no profile_picture set
+        url = reverse('pet-delete-profile-picture', args=[self.pet.id])
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)

@@ -5,7 +5,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from rest_framework.test import APIClient
 from nursery_settings.models import NurserySetting
-from tests.factories import create_schedule, create_pet, auth_client
+from tests.factories import create_schedule, create_pet, create_admin, create_user, auth_client
 
 
 def _make_test_image(name='logo.png', size=(200, 200), fmt='PNG'):
@@ -41,7 +41,8 @@ class NurserySettingModelTest(TestCase):
 class NurserySettingAPITest(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = auth_client(self.client)
+        admin = create_admin(password='AdminPass123!')
+        self.user = auth_client(self.client, admin, 'AdminPass123!')
 
     def test_get_settings(self):
         NurserySetting.load()
@@ -68,7 +69,8 @@ class SystemLogoAPITest(TestCase):
 
     def setUp(self):
         self.client = APIClient()
-        self.user = auth_client(self.client)
+        admin = create_admin(password='AdminPass123!')
+        self.user = auth_client(self.client, admin, 'AdminPass123!')
         NurserySetting.load()
 
     # ── Retrieval ───────────────────────────────────────────────────────
@@ -181,7 +183,7 @@ class DailyCountAPITest(TestCase):
         resp = self.client.get(f'/api/schedules/daily_count/?date={self.today}')
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.data['count'], 0)
-        self.assertEqual(resp.data['limit'], 0)
+        self.assertEqual(resp.data['daily_booking_limit'], 0)
         self.assertFalse(resp.data['limit_reached'])
         self.assertFalse(resp.data['limit_exceeded'])
 
@@ -206,7 +208,7 @@ class DailyCountAPITest(TestCase):
 
         resp = self.client.get(f'/api/schedules/daily_count/?date={self.today}')
         self.assertEqual(resp.data['count'], 2)
-        self.assertEqual(resp.data['limit'], 2)
+        self.assertEqual(resp.data['daily_booking_limit'], 2)
         self.assertTrue(resp.data['limit_reached'])
         self.assertFalse(resp.data['limit_exceeded'])
 
@@ -245,3 +247,55 @@ class DailyCountAPITest(TestCase):
 
         resp = self.client.get(f'/api/schedules/daily_count/?date={self.today}')
         self.assertEqual(resp.data['count'], 1)
+
+
+class SettingsPermissionTest(TestCase):
+    """Tests for admin-only permission on settings write endpoints."""
+
+    def setUp(self):
+        self.regular_client = APIClient()
+        regular = create_user(password='UserPass123!')
+        auth_client(self.regular_client, regular, 'UserPass123!')
+        self.admin_client = APIClient()
+        admin = create_admin(password='AdminPass123!')
+        auth_client(self.admin_client, admin, 'AdminPass123!')
+        self.anon_client = APIClient()
+        NurserySetting.load()
+
+    def test_get_settings_allows_unauthenticated(self):
+        """GET settings is public so the login page can fetch the logo."""
+        response = self.anon_client.get('/api/settings/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_non_admin_cannot_update_settings(self):
+        response = self.regular_client.patch(
+            '/api/settings/update/', {'daily_booking_limit': 5}, format='json',
+        )
+        self.assertIn(response.status_code, [401, 403])
+
+    def test_admin_can_update_settings(self):
+        response = self.admin_client.patch(
+            '/api/settings/update/', {'daily_booking_limit': 7}, format='json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['daily_booking_limit'], 7)
+
+    def test_non_admin_cannot_upload_logo(self):
+        image = _make_test_image()
+        response = self.regular_client.post(
+            '/api/settings/upload_logo/', {'logo': image}, format='multipart',
+        )
+        self.assertIn(response.status_code, [401, 403])
+
+    def test_non_admin_cannot_delete_logo(self):
+        response = self.regular_client.delete('/api/settings/delete_logo/')
+        self.assertIn(response.status_code, [401, 403])
+
+    def test_admin_can_upload_and_delete_logo(self):
+        image = _make_test_image()
+        up = self.admin_client.post(
+            '/api/settings/upload_logo/', {'logo': image}, format='multipart',
+        )
+        self.assertEqual(up.status_code, 200)
+        dl = self.admin_client.delete('/api/settings/delete_logo/')
+        self.assertEqual(dl.status_code, 204)

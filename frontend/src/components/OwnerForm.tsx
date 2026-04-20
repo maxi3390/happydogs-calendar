@@ -33,6 +33,7 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(owner?.profile_picture_url || null);
+  const [pendingProfilePicture, setPendingProfilePicture] = useState<File | null>(null);
 
   useEffect(() => {
     if (owner) {

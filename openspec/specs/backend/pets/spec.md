@@ -247,13 +247,21 @@ The five compatibility rules are:
 
 A single pair of pets MAY trigger multiple incompatibility rules simultaneously. All triggered rules SHALL be reported.
 
+For each incompatible pet, the response SHALL include:
+
+- A `reasons` field: a list of **every** triggered rule for that pair, in evaluation order. This list SHALL be non-empty for incompatible pairs.
+- A `reason` field: the first entry of `reasons` (the first triggered rule), preserved for backward compatibility with earlier clients that expected a single reason string.
+
+When a pet is compatible with the subject pet (no rules triggered), that pet SHALL NOT appear in the incompatibility results. Equivalently, `reasons` is only ever reported as a non-empty list; there is no entry with an empty `reasons` list.
+
 #### Scenario: Aggressive Pet Is Incompatible With All Others
 
 - Given a pet has an aggressive temperament
 - And other pets exist in the system
 - When an authenticated user requests a compatibility check for the aggressive pet
 - Then the system SHALL return all other pets as incompatible
-- And each incompatibility SHALL cite the aggressive pet rule
+- And for each incompatibility the response SHALL include a `reasons` list containing the aggressive pet rule
+- And the `reason` field SHALL contain the first triggered rule (the aggressive pet rule) for backward compatibility
 
 #### Scenario: Two High-Dominance Pets Are Incompatible
 
@@ -261,7 +269,8 @@ A single pair of pets MAY trigger multiple incompatibility rules simultaneously.
 - And pet B has a dominance level of 9
 - When an authenticated user requests a compatibility check for pet A
 - Then pet B SHALL be listed as incompatible
-- And the incompatibility SHALL cite the high dominance rule
+- And the `reasons` list SHALL contain the high dominance rule
+- And the `reason` field SHALL contain the first triggered rule for backward compatibility
 
 #### Scenario: Size and Dominance Disparity Causes Incompatibility
 
@@ -269,7 +278,8 @@ A single pair of pets MAY trigger multiple incompatibility rules simultaneously.
 - And pet B is large (level 3) with a dominance level of 8
 - When an authenticated user requests a compatibility check for pet A
 - Then pet B SHALL be listed as incompatible
-- And the incompatibility SHALL cite the size and dominance disparity rule (size difference = 2, dominance difference = 6)
+- And the `reasons` list SHALL contain the size and dominance disparity rule (size difference = 2, dominance difference = 6)
+- And the `reason` field SHALL contain the first triggered rule for backward compatibility
 
 #### Scenario: Size Difference Alone Does Not Cause Incompatibility
 
@@ -284,7 +294,8 @@ A single pair of pets MAY trigger multiple incompatibility rules simultaneously.
 - And pet B is a cat with an anxious temperament
 - When an authenticated user requests a compatibility check for pet A
 - Then pet B SHALL be listed as incompatible
-- And the incompatibility SHALL cite the cross-species temperament rule
+- And the `reasons` list SHALL contain the cross-species temperament rule (and MAY also contain the aggressive pet rule)
+- And the `reason` field SHALL contain the first triggered rule for backward compatibility
 
 #### Scenario: Cross-Species Aggressive-Calm Pair Is Incompatible
 
@@ -292,7 +303,8 @@ A single pair of pets MAY trigger multiple incompatibility rules simultaneously.
 - And pet B is a rabbit with a calm temperament
 - When an authenticated user requests a compatibility check for pet A
 - Then pet B SHALL be listed as incompatible
-- And the incompatibility SHALL cite the cross-species temperament rule
+- And the `reasons` list SHALL contain the cross-species temperament rule (and MAY also contain the aggressive pet rule)
+- And the `reason` field SHALL contain the first triggered rule for backward compatibility
 
 #### Scenario: Same-Species Aggressive-Anxious Pair Does Not Trigger Cross-Species Rule
 
@@ -308,7 +320,8 @@ A single pair of pets MAY trigger multiple incompatibility rules simultaneously.
 - And pet B is playful with a dominance level of 8
 - When an authenticated user requests a compatibility check for pet A
 - Then pet B SHALL be listed as incompatible
-- And the incompatibility SHALL cite the anxious-playful dominance rule (dominance difference = 6, which is greater than 4)
+- And the `reasons` list SHALL contain the anxious-playful dominance rule (dominance difference = 6, which is greater than 4)
+- And the `reason` field SHALL contain the first triggered rule for backward compatibility
 
 #### Scenario: Anxious-Playful Pair With Low Dominance Difference Is Compatible
 
@@ -323,7 +336,8 @@ A single pair of pets MAY trigger multiple incompatibility rules simultaneously.
 - And pet B is a large anxious cat with dominance level 2
 - When an authenticated user requests a compatibility check for pet A
 - Then pet B SHALL be listed as incompatible
-- And the response SHALL cite the aggressive pet rule, the size and dominance disparity rule, and the cross-species temperament rule
+- And the `reasons` list SHALL contain all three triggered rules: the aggressive pet rule, the size and dominance disparity rule, and the cross-species temperament rule
+- And the `reason` field SHALL contain the first entry of `reasons` (the first triggered rule in evaluation order) for backward compatibility
 
 #### Scenario: Compatible Pet Not Listed
 
@@ -331,6 +345,7 @@ A single pair of pets MAY trigger multiple incompatibility rules simultaneously.
 - And pet B is a medium, friendly dog with dominance level 4
 - When an authenticated user requests a compatibility check for pet A
 - Then pet B SHALL NOT appear in the incompatibility results
+- And no entry for pet B SHALL be returned (the `reasons` list for that pair would be empty, so it is omitted from the response)
 
 #### Scenario: Compatibility Check for Non-Existent Pet
 

@@ -121,6 +121,19 @@ class ScheduleValidationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn('warnings', response.data)
 
+    def test_create_schedule_rejects_equal_start_end_time(self):
+        """start_time must be strictly before end_time."""
+        data = {
+            'pet': self.pet.id,
+            'start_date': str(date.today()),
+            'end_date': str(date.today()),
+            'start_time': '10:00:00',
+            'end_time': '10:00:00',
+            'status': 'scheduled',
+        }
+        response = self.client.post(self.list_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
 
 class ScheduleFilterTests(APITestCase):
     """Tests for queryset filtering."""
@@ -355,3 +368,19 @@ class MultiDayScheduleTests(APITestCase):
         }
         response = self.client.post(url, data, format='json')
         self.assertTrue(response.data['has_conflicts'])
+
+
+class DailyCountAPITests(APITestCase):
+    """Tests for the daily_count action."""
+
+    def setUp(self):
+        self.user = create_and_auth_user(self.client)
+
+    def test_daily_count_response_uses_daily_booking_limit_field(self):
+        """The daily_count endpoint returns `daily_booking_limit`, not `limit`."""
+        from datetime import date as _date
+        url = reverse('schedule-daily-count')
+        response = self.client.get(url, {'date': str(_date.today())})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('daily_booking_limit', response.data)
+        self.assertNotIn('limit', response.data)

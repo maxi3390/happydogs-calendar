@@ -68,7 +68,7 @@ export interface BatchScheduleResult {
 export interface DailyCountResult {
   date: string;
   count: number;
-  limit: number;
+  daily_booking_limit: number;
   limit_reached: boolean;
   limit_exceeded: boolean;
 }
