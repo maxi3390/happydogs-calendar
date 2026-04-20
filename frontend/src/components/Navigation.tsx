@@ -14,11 +14,10 @@ import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
 
 interface NavigationProps {
-  onNewSchedule?: () => void;
   onMultiPetSchedule?: () => void;
 }
 
-export default function Navigation({ onNewSchedule, onMultiPetSchedule }: NavigationProps) {
+export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
   const { t } = useTranslation();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -136,30 +135,6 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
                   <span className="hidden lg:inline font-medium">{t('nav.pets')}</span>
                 </Link>
               </>
-            )}
-
-            {isAuthenticated && (
-              onNewSchedule ? (
-                <button
-                  onClick={onNewSchedule}
-                  aria-label={t('nav.newSchedule')}
-                  title={t('nav.newSchedule')}
-                  className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 text-sm font-medium ml-1"
-                >
-                  <CalendarDays className="w-4 h-4" />
-                  <span className="hidden lg:inline">{t('nav.newSchedule')}</span>
-                </button>
-              ) : (
-                <Link
-                  href="/?new=1"
-                  aria-label={t('nav.newSchedule')}
-                  title={t('nav.newSchedule')}
-                  className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 text-sm font-medium ml-1"
-                >
-                  <CalendarDays className="w-4 h-4" />
-                  <span className="hidden lg:inline">{t('nav.newSchedule')}</span>
-                </Link>
-              )
             )}
 
             {/* Auth/Profile Section */}
@@ -310,27 +285,6 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
                 {t('nav.pets')}
               </Link>
 
-              {onNewSchedule ? (
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onNewSchedule();
-                  }}
-                  className="flex items-center gap-3 px-4 py-3 bg-primary text-primary-foreground font-medium rounded-xl shadow-md"
-                >
-                  <CalendarDays className="w-5 h-5" />
-                  {t('nav.newSchedule')}
-                </button>
-              ) : (
-                <Link
-                  href="/?new=1"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 bg-primary text-primary-foreground font-medium rounded-xl shadow-md"
-                >
-                  <CalendarDays className="w-5 h-5" />
-                  {t('nav.newSchedule')}
-                </Link>
-              )}
               {onMultiPetSchedule && (
                 <button
                   onClick={() => {
