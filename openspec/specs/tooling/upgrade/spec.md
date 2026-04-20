@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define the behavior of the `make upgrade` action which is the canonical way to update a running Happy Pet Nursery deployment to the latest version. This operator-facing target chains the four steps required for a complete upgrade (pull → build → restart → migrate) into a single command.
+Define the behavior of the `make upgrade` action which is the canonical way to update a running Happy Pet Nursery deployment to the latest version. This operator-facing target chains the five steps required for a complete upgrade (backup → pull → build → restart → migrate) into a single command so every upgrade produces a rollbackable pre-upgrade snapshot by default.
 
 ## Requirements
 
@@ -12,10 +12,11 @@ The system SHALL provide a `make upgrade` target that performs a complete upgrad
 
 The target SHALL execute, in sequence:
 
-1. `git pull` — fetch the latest commits from the current branch's upstream
-2. `docker compose build` — rebuild images (leveraging Docker's layer cache)
-3. `docker compose up -d` — recreate containers whose image hash changed
-4. `docker compose exec backend python manage.py migrate` — apply any pending Django migrations
+1. `make backup` — produce a full gzipped pre-upgrade database snapshot under `backups/` (see the `tooling/backup` capability). This step MAY be skipped by exporting `SKIP_BACKUP=1`; when skipped the target SHALL print a visible warning.
+2. `git pull` — fetch the latest commits from the current branch's upstream
+3. `docker compose build` — rebuild images (leveraging Docker's layer cache)
+4. `docker compose up -d` — recreate containers whose image hash changed
+5. `docker compose exec backend python manage.py migrate` — apply any pending Django migrations
 
 If any step fails, the target MUST stop immediately and surface the failing command's exit code. Subsequent steps MUST NOT run.
 
@@ -24,23 +25,40 @@ If any step fails, the target MUST stop immediately and surface the failing comm
 - GIVEN an operator has a running stack on the current branch's upstream
 - AND there are new commits upstream, including code changes and a new migration
 - WHEN the operator runs `make upgrade`
-- THEN the latest code SHALL be pulled
+- THEN a pre-upgrade database backup SHALL be written to `backups/`
+- AND the latest code SHALL be pulled
 - AND Docker images SHALL be rebuilt
 - AND running containers SHALL be recreated for changed images
 - AND any pending Django migrations SHALL be applied
 - AND a completion message SHALL be printed
 
-#### Scenario: Upgrade with no new changes is a no-op
+#### Scenario: Upgrade with no new changes is a no-op (apart from the backup)
 
 - GIVEN the local branch is up to date with upstream
 - AND containers are running with the current images
 - AND there are no pending migrations
 - WHEN the operator runs `make upgrade`
-- THEN `git pull` SHALL report the branch is already up to date
+- THEN a pre-upgrade database backup SHALL still be written to `backups/`
+- AND `git pull` SHALL report the branch is already up to date
 - AND the build SHALL reuse cached layers
 - AND containers SHALL not be recreated
 - AND the migration step SHALL report no migrations to apply
 - AND the upgrade SHALL complete without error
+
+#### Scenario: Upgrade halts on backup failure
+
+- GIVEN the `db` container cannot be reached (for example, Docker is not running)
+- WHEN the operator runs `make upgrade`
+- THEN `make backup` SHALL fail
+- AND subsequent steps (pull, build, up, migrate) SHALL NOT run
+- AND the operator SHALL see the backup error message
+
+#### Scenario: Upgrade skips backup on explicit opt-out
+
+- GIVEN the operator has already taken a backup by hand and wants to skip the automatic one
+- WHEN the operator runs `SKIP_BACKUP=1 make upgrade`
+- THEN step 1 SHALL emit a warning that the backup was skipped
+- AND the remaining steps SHALL run normally
 
 #### Scenario: Upgrade halts on git pull failure
 
@@ -54,7 +72,7 @@ If any step fails, the target MUST stop immediately and surface the failing comm
 
 - GIVEN the pulled code contains a change that breaks the image build
 - WHEN the operator runs `make upgrade`
-- THEN `git pull` SHALL succeed
+- THEN the backup and `git pull` SHALL succeed
 - AND the build step SHALL fail with the build error
 - AND subsequent steps (up, migrate) SHALL NOT run
 
@@ -64,6 +82,7 @@ If any step fails, the target MUST stop immediately and surface the failing comm
 - WHEN the operator runs `make upgrade`
 - THEN earlier steps SHALL have succeeded
 - AND the migration step SHALL fail with the Django migration error
+- AND the operator SHALL be able to `make restore` from the backup written in step 1
 
 ### Requirement: Upgrade Help Entry
 

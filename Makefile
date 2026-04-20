@@ -1,4 +1,4 @@
-.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend test-frontend test-frontend-debug lint clean rebuild create-admin
+.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend test-frontend test-frontend-debug lint clean rebuild create-admin env env-check init upgrade backup restore
 
 # Default target
 help:
@@ -44,7 +44,10 @@ help:
 	@echo "  make format         - Format code"
 	@echo ""
 	@echo "Maintenance:"
-	@echo "  make upgrade        - Pull latest code, rebuild images, restart stack, run migrations"
+	@echo "  make env            - Create .env interactively from .env.example (idempotent)"
+	@echo "  make backup         - Write a full gzipped pg_dump to backups/nursery-<timestamp>.sql.gz"
+	@echo "  make restore        - Restore the database from the latest backup (or BACKUP_FILE=...)"
+	@echo "  make upgrade        - Backup, pull, rebuild, restart, migrate (SKIP_BACKUP=1 to skip step 1)"
 
 # Docker Management
 build:
@@ -196,6 +199,16 @@ env-check:
 		$(MAKE) env; \
 	fi
 
+# Database backup / restore
+# `make backup` writes a timestamped, gzipped pg_dump to backups/.
+# `make restore` restores the latest backup (or BACKUP_FILE=...).
+# Both scripts start the db container if it isn't already running.
+backup:
+	@bash scripts/backup-db.sh
+
+restore:
+	@bash scripts/restore-db.sh $(if $(BACKUP_FILE),$(BACKUP_FILE),)
+
 # Maintenance
 upgrade:
 	@echo "=== Upgrading Happy Pet Nursery ==="
@@ -203,12 +216,18 @@ upgrade:
 		echo "[upgrade] WARNING: .env is missing. Traefik Host rules will match nothing and the stack will 404."; \
 		echo "[upgrade]          Run 'make env' to generate one. Continuing anyway."; \
 	fi
-	@echo "[1/4] Pulling latest code..."
+	@if [ "$${SKIP_BACKUP:-}" = "1" ]; then \
+		echo "[1/5] WARNING: SKIP_BACKUP=1 set — skipping pre-upgrade database backup."; \
+	else \
+		echo "[1/5] Backing up database..."; \
+		$(MAKE) backup; \
+	fi
+	@echo "[2/5] Pulling latest code..."
 	git pull
-	@echo "[2/4] Rebuilding images..."
+	@echo "[3/5] Rebuilding images..."
 	$(MAKE) build
-	@echo "[3/4] Restarting services..."
+	@echo "[4/5] Restarting services..."
 	$(MAKE) up
-	@echo "[4/4] Running migrations..."
+	@echo "[5/5] Running migrations..."
 	$(MAKE) migrate
 	@echo "=== Upgrade complete ==="
