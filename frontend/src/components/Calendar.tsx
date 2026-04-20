@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, AlertTriangle, CalendarDays, CalendarRange }
 import { api, Schedule } from '@/lib/api';
 import ScheduleDetailsPopup from './ScheduleDetailsPopup';
 import { useTranslation } from '@/lib/translations';
+import { getDateLocale } from '@/lib/dateLocale';
 
 interface CalendarProps {
   onDateSelect: (date: Date) => void;
@@ -43,7 +44,8 @@ interface WeekBarSegment {
 const MAX_VISIBLE_BARS = 3;
 
 export default function Calendar({ onDateSelect, selectedDate, calendarView = 'month', onViewChange }: CalendarProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const dateLocale = getDateLocale(language);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(false);
@@ -193,7 +195,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
         <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 text-center sm:text-left">
-          {format(currentMonth, 'MMMM yyyy')}
+          {format(currentMonth, 'MMMM yyyy', { locale: dateLocale })}
         </h2>
         <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
           {onViewChange && (

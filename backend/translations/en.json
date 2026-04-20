@@ -314,7 +314,53 @@
     "dailyBookingLimitLabel": "Maximum bookings per day",
     "dailyBookingLimitPlaceholder": "0 = unlimited",
     "dailyBookingLimitSaved": "Daily booking limit saved",
-    "unlimited": "Unlimited"
+    "unlimited": "Unlimited",
+    "systemLogo": "System Logo",
+    "systemLogoInfo": "Upload a custom logo to display on the login page and navigation bar. Accepted formats: JPEG, PNG, GIF, WEBP. Max size: 5 MB."
+  },
+  "admin": {
+    "title": "User Management",
+    "description": "Manage users, roles, and access control",
+    "searchPlaceholder": "Search users...",
+    "addUser": "Add User",
+    "noUsers": "No users found",
+    "createModalTitle": "Create New User",
+    "createButton": "Create User",
+    "editModalTitle": "Edit User",
+    "saveChanges": "Save Changes",
+    "deleteModalTitle": "Delete User",
+    "deleteConfirmation": "Are you sure you want to delete {name}? This action cannot be undone.",
+    "editUserTooltip": "Edit user",
+    "deleteUserTooltip": "Delete user",
+    "stats": {
+      "total": "Total Users",
+      "admins": "Admins",
+      "active": "Active"
+    },
+    "table": {
+      "user": "User",
+      "role": "Role",
+      "status": "Status",
+      "created": "Created",
+      "actions": "Actions"
+    },
+    "fields": {
+      "email": "Email",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "role": "Role",
+      "password": "Password",
+      "passwordConfirm": "Confirm Password",
+      "isActive": "Active user"
+    },
+    "roleOptions": {
+      "user": "User",
+      "admin": "Admin"
+    },
+    "statusOptions": {
+      "active": "Active",
+      "inactive": "Inactive"
+    }
   },
   "public": {
     "welcome": "Welcome to Happy Pet Nursery",

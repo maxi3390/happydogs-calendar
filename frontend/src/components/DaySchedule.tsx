@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { Clock, AlertTriangle, Edit2, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { api, Schedule } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import { getDateLocale } from '@/lib/dateLocale';
 import { Button } from '@/components/ui/Button';
 
 interface DayScheduleProps {
@@ -28,7 +29,8 @@ const statusIcons: Record<string, React.ReactNode> = {
 };
 
 export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: DayScheduleProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const dateLocale = getDateLocale(language);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);

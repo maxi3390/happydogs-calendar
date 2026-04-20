@@ -414,7 +414,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                     </Button>
                   </div>
                 </div>
-                <div className="border border-border rounded-lg max-h-48 overflow-y-auto">
+                <div className="border border-border rounded-lg max-h-48 overflow-y-auto styled-scroll">
                   {filteredPets.length === 0 ? (
                     <div className="p-4 text-center text-muted-foreground">
                       {pets.length === 0 ? t('multiPet.loadingPets') : t('multiPet.noPetsFound')}

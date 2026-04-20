@@ -148,7 +148,7 @@ export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAnd
 
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
-      <div className="bg-card text-card-foreground rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-card text-card-foreground rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto styled-scroll">
         <div className="flex items-center justify-between p-6 border-b border-border">
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
             {pet ? t('pet.editPet') : t('pet.addPet')}

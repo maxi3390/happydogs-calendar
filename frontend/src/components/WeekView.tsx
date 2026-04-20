@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, AlertTriangle, CalendarDays, CalendarRange }
 import { api, Schedule } from '@/lib/api';
 import ScheduleDetailsPopup from './ScheduleDetailsPopup';
 import { useTranslation } from '@/lib/translations';
+import { getDateLocale } from '@/lib/dateLocale';
 
 interface WeekViewProps {
   selectedDate: Date;
@@ -41,7 +42,8 @@ interface BarLayout {
 }
 
 export default function WeekView({ selectedDate, onDateSelect, calendarView = 'week', onViewChange }: WeekViewProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const dateLocale = getDateLocale(language);
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(selectedDate));
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(false);
@@ -201,7 +203,7 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
                     }`}
                     onClick={() => onDateSelect(day)}
                   >
-                    <p className="text-xs text-muted-foreground uppercase">{format(day, 'EEE')}</p>
+                    <p className="text-xs text-muted-foreground uppercase">{format(day, 'EEE', { locale: dateLocale })}</p>
                     <p className={`text-lg font-bold ${
                       isToday ? 'text-primary' : 'text-gray-800 dark:text-gray-200'
                     }`}>
