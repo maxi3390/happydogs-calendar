@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/lib/translations';
+import { getDateLocale } from '@/lib/dateLocale';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
 
@@ -19,7 +20,8 @@ interface DayAvailability {
 }
 
 export default function PublicCalendar({ selectedDate, onDateSelect }: PublicCalendarProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const dateLocale = getDateLocale(language);
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(selectedDate));
   const [availability, setAvailability] = useState<Record<string, DayAvailability>>({});
   const [loading, setLoading] = useState(false);
@@ -127,7 +129,7 @@ export default function PublicCalendar({ selectedDate, onDateSelect }: PublicCal
           <ChevronLeft className="w-5 h-5 text-muted-foreground" />
         </button>
         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-          {format(currentMonth, 'MMMM yyyy')}
+          {format(currentMonth, 'MMMM yyyy', { locale: dateLocale })}
         </h3>
         <button
           onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}

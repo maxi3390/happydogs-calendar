@@ -314,7 +314,53 @@
     "dailyBookingLimitLabel": "Reservas máximas por día",
     "dailyBookingLimitPlaceholder": "0 = ilimitado",
     "dailyBookingLimitSaved": "Límite diario de reservas guardado",
-    "unlimited": "Ilimitado"
+    "unlimited": "Ilimitado",
+    "systemLogo": "Logo del Sistema",
+    "systemLogoInfo": "Sube un logo personalizado para mostrar en la página de inicio de sesión y en la barra de navegación. Formatos aceptados: JPEG, PNG, GIF, WEBP. Tamaño máximo: 5 MB."
+  },
+  "admin": {
+    "title": "Gestión de Usuarios",
+    "description": "Gestiona usuarios, roles y control de acceso",
+    "searchPlaceholder": "Buscar usuarios...",
+    "addUser": "Agregar Usuario",
+    "noUsers": "No se encontraron usuarios",
+    "createModalTitle": "Crear Nuevo Usuario",
+    "createButton": "Crear Usuario",
+    "editModalTitle": "Editar Usuario",
+    "saveChanges": "Guardar Cambios",
+    "deleteModalTitle": "Eliminar Usuario",
+    "deleteConfirmation": "¿Estás seguro de eliminar a {name}? Esta acción no se puede deshacer.",
+    "editUserTooltip": "Editar usuario",
+    "deleteUserTooltip": "Eliminar usuario",
+    "stats": {
+      "total": "Total de Usuarios",
+      "admins": "Administradores",
+      "active": "Activos"
+    },
+    "table": {
+      "user": "Usuario",
+      "role": "Rol",
+      "status": "Estado",
+      "created": "Creado",
+      "actions": "Acciones"
+    },
+    "fields": {
+      "email": "Correo Electrónico",
+      "firstName": "Nombre",
+      "lastName": "Apellido",
+      "role": "Rol",
+      "password": "Contraseña",
+      "passwordConfirm": "Confirmar Contraseña",
+      "isActive": "Usuario activo"
+    },
+    "roleOptions": {
+      "user": "Usuario",
+      "admin": "Administrador"
+    },
+    "statusOptions": {
+      "active": "Activo",
+      "inactive": "Inactivo"
+    }
   },
   "public": {
     "welcome": "Bienvenido a Guardería Happy Dogs",

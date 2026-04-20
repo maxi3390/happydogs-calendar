@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Calendar from '@/components/Calendar';
 import ScheduleForm from '@/components/ScheduleForm';
 import DaySchedule from '@/components/DaySchedule';
@@ -18,12 +19,27 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 export default function Home() {
   const { t } = useTranslation();
   const { isAuthenticated, isAdmin, user, isLoading } = useAuth();
+  const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Schedule | undefined>();
   const [refreshSchedules, setRefreshSchedules] = useState(0);
   const [calendarView, setCalendarView] = useState<'month' | 'week'>('month');
   const [showMultiScheduleForm, setShowMultiScheduleForm] = useState(false);
+
+  // The global "New Schedule" nav shortcut routes to /?new=1 from other
+  // pages. Detect it here (via window.location so we don't need a
+  // Suspense boundary the way useSearchParams does), auto-open the
+  // modal, and scrub the query param so reloading doesn't re-open it.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('new') === '1') {
+      setShowScheduleForm(true);
+      router.replace('/');
+    }
+  }, [isAuthenticated, router]);
 
   const handleScheduleSave = () => {
     setShowScheduleForm(false);

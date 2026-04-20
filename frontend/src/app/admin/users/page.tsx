@@ -145,10 +145,10 @@ function UsersAdminPage() {
             </div>
             <div>
               <h1 className="text-3xl font-extrabold text-foreground">
-                User Management
+                {t('admin.title')}
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Manage users, roles, and access control
+                {t('admin.description')}
               </p>
             </div>
           </div>
@@ -198,7 +198,7 @@ function UsersAdminPage() {
           <div className="bg-card rounded-3xl shadow-sm border border-border/50 p-6 hover:shadow-md transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Active</p>
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('admin.stats.active')}</p>
                 <p className="text-3xl font-bold text-foreground mt-2">
                   {users.filter(u => u.is_active).length}
                 </p>
@@ -324,7 +324,7 @@ function UsersAdminPage() {
           {filteredUsers.length === 0 && (
             <div className="text-center py-12">
               <UserIcon className="w-12 h-12 text-gray-300 dark:text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No users found</p>
+              <p className="text-muted-foreground">{t('admin.noUsers')}</p>
             </div>
           )}
         </div>
@@ -332,9 +332,9 @@ function UsersAdminPage() {
         {/* Create Modal */}
         {isCreateModalOpen && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-card text-card-foreground rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-card text-card-foreground rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto styled-scroll">
               <div className="p-6 border-b border-border flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-foreground">Create New User</h2>
+                <h2 className="text-xl font-semibold text-foreground">{t('admin.createModalTitle')}</h2>
                 <Button
                   onClick={() => setIsCreateModalOpen(false)}
                   variant="ghost"
@@ -347,7 +347,7 @@ function UsersAdminPage() {
               <form onSubmit={handleCreate} className="p-6 space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Email
+                    {t('admin.fields.email')}
                   </label>
                   <input
                     type="email"
@@ -360,7 +360,7 @@ function UsersAdminPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      First Name
+                      {t('admin.fields.firstName')}
                     </label>
                     <input
                       type="text"
@@ -372,7 +372,7 @@ function UsersAdminPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Last Name
+                      {t('admin.fields.lastName')}
                     </label>
                     <input
                       type="text"
@@ -385,20 +385,20 @@ function UsersAdminPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Role
+                    {t('admin.fields.role')}
                   </label>
                   <select
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'user' })}
                     className="w-full px-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-gray-700 text-foreground focus:ring-2 focus:ring-ring"
                   >
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
+                    <option value="user">{t('admin.roleOptions.user')}</option>
+                    <option value="admin">{t('admin.roleOptions.admin')}</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Password
+                    {t('admin.fields.password')}
                   </label>
                   <input
                     type="password"
@@ -410,7 +410,7 @@ function UsersAdminPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Confirm Password
+                    {t('admin.fields.passwordConfirm')}
                   </label>
                   <input
                     type="password"
@@ -427,14 +427,14 @@ function UsersAdminPage() {
                     variant="outline"
                     className="flex-1"
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                   <Button
                     type="submit"
                     variant="primary"
                     className="flex-1"
                   >
-                    Create User
+                    {t('admin.createButton')}
                   </Button>
                 </div>
               </form>
@@ -445,9 +445,9 @@ function UsersAdminPage() {
         {/* Edit Modal */}
         {isEditModalOpen && selectedUser && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-card text-card-foreground rounded-xl shadow-xl max-w-md w-full">
+            <div className="bg-card text-card-foreground rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto styled-scroll">
               <div className="p-6 border-b border-border flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-foreground">Edit User</h2>
+                <h2 className="text-xl font-semibold text-foreground">{t('admin.editModalTitle')}</h2>
                 <Button
                   onClick={() => setIsEditModalOpen(false)}
                   variant="ghost"
@@ -461,7 +461,7 @@ function UsersAdminPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      First Name
+                      {t('admin.fields.firstName')}
                     </label>
                     <input
                       type="text"
@@ -473,7 +473,7 @@ function UsersAdminPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Last Name
+                      {t('admin.fields.lastName')}
                     </label>
                     <input
                       type="text"
@@ -486,15 +486,15 @@ function UsersAdminPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Role
+                    {t('admin.fields.role')}
                   </label>
                   <select
                     value={editFormData.role}
                     onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value as 'admin' | 'user' })}
                     className="w-full px-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-gray-700 text-foreground focus:ring-2 focus:ring-ring"
                   >
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
+                    <option value="user">{t('admin.roleOptions.user')}</option>
+                    <option value="admin">{t('admin.roleOptions.admin')}</option>
                   </select>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-muted/50 dark:bg-gray-700/50 rounded-lg">
@@ -506,7 +506,7 @@ function UsersAdminPage() {
                     className="w-4 h-4 text-primary border-border rounded focus:ring-ring"
                   />
                   <label htmlFor="is_active" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Active user
+                    {t('admin.fields.isActive')}
                   </label>
                 </div>
                 <div className="flex gap-3 pt-4">
@@ -516,14 +516,14 @@ function UsersAdminPage() {
                     variant="outline"
                     className="flex-1"
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                   <Button
                     type="submit"
                     variant="primary"
                     className="flex-1"
                   >
-                    Save Changes
+                    {t('admin.saveChanges')}
                   </Button>
                 </div>
               </form>
@@ -540,11 +540,10 @@ function UsersAdminPage() {
                   <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
                 </div>
                 <h2 className="text-xl font-semibold text-foreground mb-2">
-                  Delete User
+                  {t('admin.deleteModalTitle')}
                 </h2>
                 <p className="text-muted-foreground mb-6">
-                  Are you sure you want to delete <strong className="text-foreground">{selectedUser.full_name}</strong>?
-                  This action cannot be undone.
+                  {t('admin.deleteConfirmation', { name: selectedUser.full_name })}
                 </p>
                 <div className="flex gap-3">
                   <Button
@@ -552,14 +551,14 @@ function UsersAdminPage() {
                     variant="outline"
                     className="flex-1"
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                   <Button
                     onClick={handleDelete}
                     variant="danger"
                     className="flex-1"
                   >
-                    Delete
+                    {t('common.delete')}
                   </Button>
                 </div>
               </div>
@@ -573,3 +572,4 @@ function UsersAdminPage() {
 }
 
 export default withAdmin(UsersAdminPage);
+ withAdmin(UsersAdminPage);

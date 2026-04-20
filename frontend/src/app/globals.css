@@ -61,3 +61,34 @@
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 }
+
+@layer utilities {
+  /*
+   * Thin, theme-aware scrollbar utility. Apply alongside `overflow-y-auto`
+   * (or any overflow mode) on scroll containers where the browser default
+   * would clash with the rounded, themed look of the rest of the UI.
+   *
+   * Firefox picks up `scrollbar-width` / `scrollbar-color`; Chromium and
+   * WebKit-based browsers use the `::-webkit-scrollbar*` rules. Colors
+   * reference the same theme tokens as the rest of the palette, so dark
+   * mode and future palette changes propagate automatically.
+   */
+  .styled-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  .styled-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .styled-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .styled-scroll::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 4px;
+  }
+  .styled-scroll::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
+}
