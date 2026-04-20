@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Plus } from 'lucide-react';
 import { api, Pet, PetFormData, OwnerListItem, Vaccination, VaccinationType } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import { useToast } from '@/components/ui/Toast';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import DocumentUpload from '@/components/DocumentUpload';
 import MedicalNotesSection from '@/components/MedicalNotesSection';
@@ -11,16 +12,37 @@ import { Button } from '@/components/ui/Button';
 
 interface PetFormProps {
   pet?: Pet;
+  lockedOwnerId?: number;
   onClose: () => void;
   onSave: () => void;
+  onSaveAndAnother?: (pet: Pet) => void;
 }
 
 const SPECIES_VALUES = ['dog', 'cat', 'bird', 'rabbit', 'other'];
 const TEMPERAMENT_VALUES = ['calm', 'playful', 'aggressive', 'anxious', 'friendly'];
 const SIZE_VALUES = ['small', 'medium', 'large'];
 const SEX_VALUES = ['male', 'female'];
-export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
+
+const defaultFormData = (ownerId: number | null): PetFormData => ({
+  name: '',
+  species: 'dog',
+  breed: '',
+  age: 1,
+  temperament: 'friendly',
+  dominance_level: 5,
+  size: 'medium',
+  neutered: false,
+  sex: 'male',
+  birth_date: null,
+  weight: null,
+  special_notes: '',
+  owner: ownerId,
+});
+
+export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAndAnother }: PetFormProps) {
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [owners, setOwners] = useState<OwnerListItem[]>([]);
@@ -43,14 +65,17 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
     birth_date: pet?.birth_date || null,
     weight: pet?.weight ?? null,
     special_notes: pet?.special_notes || '',
-    owner: pet?.owner || null,
+    owner: pet?.owner ?? lockedOwnerId ?? null,
   });
+
+  const isEditing = Boolean(pet);
+  const isOwnerLocked = !isEditing && typeof lockedOwnerId === 'number';
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [ownersData, vaxTypesData] = await Promise.all([
-          api.owners.dropdown(),
+          isOwnerLocked ? Promise.resolve<OwnerListItem[]>([]) : api.owners.dropdown(),
           api.vaccinationTypes.list(),
         ]);
         setOwners(ownersData);
@@ -60,10 +85,31 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
       }
     };
     fetchData();
-  }, []);
+  }, [isOwnerLocked]);
 
   const enabledVaxTypes = vaxTypes.filter(v => v.enabled);
-  const isOwnerSelected = Boolean(formData.owner);
+  const isOwnerSelected = isOwnerLocked || Boolean(formData.owner);
+
+  const submitPet = async (): Promise<Pet> => {
+    const validVaccinations = vaccinations.filter(v => v.date);
+    const submitData = { ...formData, vaccinations: validVaccinations };
+    if (pet) {
+      return api.pets.update(pet.id, submitData);
+    }
+    if (pendingProfilePicture) {
+      return api.pets.createWithAvatar(submitData, pendingProfilePicture);
+    }
+    return api.pets.create(submitData);
+  };
+
+  const resetForNextPet = () => {
+    setFormData(defaultFormData(lockedOwnerId ?? null));
+    setVaccinations([]);
+    setPendingProfilePicture(null);
+    setProfilePictureUrl(null);
+    setError(null);
+    nameInputRef.current?.focus();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,16 +117,28 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
     setError(null);
 
     try {
-      const validVaccinations = vaccinations.filter(v => v.date);
-      const submitData = { ...formData, vaccinations: validVaccinations };
-      if (pet) {
-        await api.pets.update(pet.id, submitData);
-      } else if (pendingProfilePicture) {
-        await api.pets.createWithAvatar(submitData, pendingProfilePicture);
-      } else {
-        await api.pets.create(submitData);
+      const saved = await submitPet();
+      if (!isEditing) {
+        toast(t('pet.addedSuccessfully', { name: saved.name }), { variant: 'success' });
       }
       onSave();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('errors.saveFailed'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveAndAddAnother = async () => {
+    if (isEditing) return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const saved = await submitPet();
+      toast(t('pet.addedSuccessfully', { name: saved.name }), { variant: 'success' });
+      onSaveAndAnother?.(saved);
+      resetForNextPet();
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.saveFailed'));
     } finally {
@@ -148,27 +206,29 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('pet.owner')} *
-            </label>
-            <select
-              required
-              value={formData.owner || ''}
-              onChange={e => setFormData({ ...formData, owner: e.target.value ? Number(e.target.value) : null })}
-              className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
-            >
-              <option value="">{t('pet.noOwner')}</option>
-              {owners.map(owner => (
-                <option key={owner.id} value={owner.id}>
-                  {owner.full_name} ({owner.id_number})
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-muted-foreground mt-1">
-              {t('pet.assignOwnerHint')}
-            </p>
-          </div>
+          {!isOwnerLocked && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('pet.owner')} *
+              </label>
+              <select
+                required
+                value={formData.owner || ''}
+                onChange={e => setFormData({ ...formData, owner: e.target.value ? Number(e.target.value) : null })}
+                className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
+              >
+                <option value="">{t('pet.noOwner')}</option>
+                {owners.map(owner => (
+                  <option key={owner.id} value={owner.id}>
+                    {owner.full_name} ({owner.id_number})
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                {t('pet.assignOwnerHint')}
+              </p>
+            </div>
+          )}
 
           <fieldset disabled={!isOwnerSelected} className="space-y-6">
 
@@ -180,6 +240,7 @@ export default function PetForm({ pet, onClose, onSave }: PetFormProps) {
               <input
                 type="text"
                 required
+                ref={nameInputRef}
                 value={formData.name}
                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"

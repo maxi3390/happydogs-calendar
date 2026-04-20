@@ -87,11 +87,13 @@ const ES_TRANSLATIONS = {
     dominance: 'Nivel de Dominancia',
     vaccinations: 'Vacunas',
     addVaccination: 'Agregar Vacuna',
+    saveAndAddAnother: 'Guardar y Agregar Otra',
+    addedSuccessfully: '{name} agregada con éxito',
     speciesOptions: { dog: 'Perro', cat: 'Gato' },
     temperamentOptions: { calm: 'Tranquilo', playful: 'Juguetón', aggressive: 'Agresivo' },
     sexOptions: { male: 'Macho', female: 'Hembra' },
   },
-  owner: { title: 'Dueños' },
+  owner: { title: 'Dueños', addOwner: 'Agregar Dueño', addPet: 'Agregar Mascota' },
   settings: {
     title: 'Configuración',
     incompatibilities: 'Incompatibilidades de Mascotas',
@@ -203,4 +205,59 @@ export async function setupAuthAndLanguage(
   await setupAuth(page, { admin: opts?.admin });
   await setLanguage(page, opts?.lang || 'en');
   await page.reload({ waitUntil: 'networkidle' });
+}
+
+/**
+ * Create an owner directly through the REST API using the currently authenticated
+ * session. Returns the created owner so tests can assert on its id/name.
+ */
+export async function createOwnerViaApi(
+  page: Page,
+  overrides: Partial<{
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+    id_number: string;
+  }> = {},
+) {
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+  const tokensRaw = await page.evaluate(() => localStorage.getItem('auth_tokens'));
+  if (!tokensRaw) {
+    throw new Error('No auth tokens in localStorage; call setupAuthAndLanguage first');
+  }
+  const { access } = JSON.parse(tokensRaw);
+  const unique = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+  const body = {
+    first_name: overrides.first_name ?? 'OwnerFirst',
+    last_name: overrides.last_name ?? `Owner_${unique}`,
+    email: overrides.email ?? `owner_${unique}@example.com`,
+    phone: overrides.phone ?? '+1-555-0100',
+    id_number: overrides.id_number ?? `ID_${unique}`,
+  };
+
+  const res = await page.request.post(`${apiBase}/owners/`, {
+    headers: { Authorization: `Bearer ${access}` },
+    data: body,
+  });
+  if (!res.ok()) {
+    throw new Error(`Failed to create owner: ${res.status()} ${await res.text()}`);
+  }
+  return res.json() as Promise<{ id: number; first_name: string; last_name: string }>;
+}
+
+/**
+ * Navigate to /owners, expand the given owner's card, and open the "Add Pet"
+ * pet form modal. Returns the page locator for the form.
+ */
+export async function openAddPetFormForOwner(page: Page, owner: { first_name: string; last_name: string }) {
+  await page.goto('/owners', { waitUntil: 'networkidle' });
+  const ownerCard = page
+    .locator('div[class*="bg-card"]')
+    .filter({ hasText: `${owner.first_name} ${owner.last_name}` })
+    .first();
+  await ownerCard.click();
+  await page.getByRole('button', { name: /add pet|agregar mascota/i }).first().click();
+  return page.locator('.fixed.inset-0 form').first();
 }

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Search, User, Mail, Phone, PawPrint, Edit2, Trash2, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 import { api, Owner, OwnerWithPets } from '@/lib/api';
 import OwnerForm from '@/components/OwnerForm';
+import PetForm from '@/components/PetForm';
 import ScheduleForm from '@/components/ScheduleForm';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/Button';
@@ -22,6 +23,7 @@ function OwnersPage() {
   const [ownerDetails, setOwnerDetails] = useState<Record<number, OwnerWithPets>>({});
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [schedulePetIds, setSchedulePetIds] = useState<number[]>([]);
+  const [petFormOwnerId, setPetFormOwnerId] = useState<number | null>(null);
 
   const fetchOwners = async () => {
     try {
@@ -47,12 +49,16 @@ function OwnersPage() {
     setExpandedOwner(ownerId);
 
     if (!ownerDetails[ownerId]) {
-      try {
-        const details = await api.owners.get(ownerId);
-        setOwnerDetails(prev => ({ ...prev, [ownerId]: details }));
-      } catch (error) {
-        console.error('Failed to fetch owner details:', error);
-      }
+      await refreshOwnerDetails(ownerId);
+    }
+  };
+
+  const refreshOwnerDetails = async (ownerId: number) => {
+    try {
+      const details = await api.owners.get(ownerId);
+      setOwnerDetails(prev => ({ ...prev, [ownerId]: details }));
+    } catch (error) {
+      console.error('Failed to fetch owner details:', error);
     }
   };
 
@@ -263,16 +269,26 @@ function OwnersPage() {
                       <h4 className="font-medium text-gray-800 dark:text-gray-200">
                         {t('common.pets')} ({ownerDetails[owner.id].pets.length})
                       </h4>
-                      {ownerDetails[owner.id].pets.length > 0 && (
+                      <div className="flex items-center gap-2">
                         <Button
-                          onClick={() => handleScheduleOwnerPets(ownerDetails[owner.id])}
-                          variant="primary"
+                          onClick={() => setPetFormOwnerId(owner.id)}
+                          variant="secondary"
                           size="sm"
                         >
-                          <Calendar className="w-4 h-4" />
-                          {t('owner.scheduleAllPets')}
+                          <Plus className="w-4 h-4" />
+                          {t('owner.addPet')}
                         </Button>
-                      )}
+                        {ownerDetails[owner.id].pets.length > 0 && (
+                          <Button
+                            onClick={() => handleScheduleOwnerPets(ownerDetails[owner.id])}
+                            variant="primary"
+                            size="sm"
+                          >
+                            <Calendar className="w-4 h-4" />
+                            {t('owner.scheduleAllPets')}
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     {ownerDetails[owner.id].pets.length === 0 ? (
                       <p className="text-sm text-muted-foreground italic">{t('owner.noPets')}</p>
@@ -337,6 +353,27 @@ function OwnersPage() {
           onSave={() => {
             setShowScheduleForm(false);
             setSchedulePetIds([]);
+          }}
+        />
+      )}
+
+      {petFormOwnerId !== null && (
+        <PetForm
+          lockedOwnerId={petFormOwnerId}
+          onClose={() => setPetFormOwnerId(null)}
+          onSave={() => {
+            const id = petFormOwnerId;
+            setPetFormOwnerId(null);
+            if (id !== null) {
+              refreshOwnerDetails(id);
+            }
+            fetchOwners();
+          }}
+          onSaveAndAnother={() => {
+            if (petFormOwnerId !== null) {
+              refreshOwnerDetails(petFormOwnerId);
+            }
+            fetchOwners();
           }}
         />
       )}

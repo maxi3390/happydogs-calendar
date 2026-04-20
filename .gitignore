@@ -15,6 +15,7 @@ out/
 build/
 dist/
 *.egg-info/
+*.tsbuildinfo
 
 # Database
 *.sqlite3

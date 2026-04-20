@@ -156,12 +156,15 @@
     "uploadPhoto": "Subir Foto",
     "removePhoto": "Eliminar Foto",
     "changePhoto": "Cambiar Foto",
-    "traits": "Características"
+    "traits": "Características",
+    "saveAndAddAnother": "Guardar y Agregar Otra",
+    "addedSuccessfully": "{name} agregada con éxito"
   },
   "owner": {
     "title": "Dueños",
     "description": "Gestiona los dueños de las mascotas y sus datos de contacto",
     "addOwner": "Agregar Dueño",
+    "addPet": "Agregar Mascota",
     "editOwner": "Editar Dueño",
     "noOwners": "Aún no hay dueños",
     "addFirst": "¡Agrega tu primer dueño para comenzar!",
