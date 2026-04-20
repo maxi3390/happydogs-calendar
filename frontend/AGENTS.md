@@ -47,10 +47,17 @@ make test-frontend                       # all Playwright E2E tests must pass
 2. Create openspec/changes/<slug>/       # proposal, design, specs, tasks
 3. Implement frontend changes            # pages, components, domain APIs, types
 4. Write/update Playwright tests         # tests must pass
-5. Update docs                           # CONTEXT.md, docs/, AGENTS.md if needed
+5. Update docs                           # docs/docs/, AGENTS.md if needed
 6. Commit with conventional messages     # one or more commits
 7. npm run build && make test-frontend   # final verification
 ```
+
+### Commit message rules
+
+- Use the Conventional Commits format: `type(scope): subject` on the first line.
+- Keep the subject under ~72 characters and use the imperative mood ("add", "fix", "rename").
+- Body paragraphs explain *why* (rationale, tradeoffs), not *what* (the diff shows that).
+- **Do NOT add tool attribution or co-author trailers to commit messages.** No `Generated with ...`, no `Co-Authored-By: <tool>`, no signature lines. Commits should read as if written by a human engineer on the team.
 
 ## Verification Commands
 
@@ -78,8 +85,9 @@ cd frontend && npm run build
 
 | File | Purpose |
 |------|---------|
-| `frontend/CONTEXT.md` | Full frontend architecture reference (pages, components, domain APIs, auth, i18n) |
-| `docs/docs/frontend/intro.md` | Public-facing frontend documentation |
+| `AGENTS.md` (repo root) | Repo-wide conventions, tech stack, services, commit rules |
+| `docs/docs/frontend/intro.md` | Public-facing frontend architecture reference (directory tree, pages, components, domain APIs, auth, i18n) |
+| `openspec/specs/frontend/` | Behavioural source of truth (spec.md + design.md per capability) |
 
 ---
 

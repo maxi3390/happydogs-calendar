@@ -46,10 +46,17 @@ make lint                                # no lint errors
 2. Create openspec/changes/<slug>/       # proposal, design, specs, tasks
 3. Implement backend changes             # models, views, serializers, urls
 4. Write tests                           # tests must pass
-5. Update docs                           # CONTEXT.md, docs/, AGENTS.md if needed
+5. Update docs                           # docs/docs/, AGENTS.md if needed
 6. Commit with conventional messages     # one or more commits
 7. make test-backend && make lint        # final verification
 ```
+
+### Commit message rules
+
+- Use the Conventional Commits format: `type(scope): subject` on the first line.
+- Keep the subject under ~72 characters and use the imperative mood ("add", "fix", "rename").
+- Body paragraphs explain *why* (rationale, tradeoffs), not *what* (the diff shows that).
+- **Do NOT add tool attribution or co-author trailers to commit messages.** No `Generated with ...`, no `Co-Authored-By: <tool>`, no signature lines. Commits should read as if written by a human engineer on the team.
 
 ## Verification Commands
 
@@ -76,8 +83,9 @@ make makemigrations
 
 | File | Purpose |
 |------|---------|
-| `backend/CONTEXT.md` | Full backend architecture reference (models, endpoints, auth, settings) |
-| `docs/docs/backend/intro.md` | Public-facing backend documentation |
+| `AGENTS.md` (repo root) | Repo-wide conventions, tech stack, services, commit rules |
+| `docs/docs/backend/intro.md` | Public-facing backend architecture reference (directory tree, all models, endpoints, permissions) |
+| `openspec/specs/backend/` | Behavioural source of truth (spec.md + design.md per capability) |
 
 ---
 

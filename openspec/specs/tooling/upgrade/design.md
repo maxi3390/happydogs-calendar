@@ -66,4 +66,4 @@ Operator: `make upgrade`
 | File | Purpose |
 |------|---------|
 | `Makefile` | Defines the `upgrade` target and lists it in `.PHONY` and `make help` |
-| `CONTEXT.md` (root) | Documents `make upgrade` in the Makefile commands table |
+| `AGENTS.md` (repo root) | Documents `make upgrade` in the Makefile commands table |
