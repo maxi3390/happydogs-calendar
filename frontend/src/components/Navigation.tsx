@@ -3,7 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { PawPrint, Users, CalendarDays, Settings, Menu, X, LogIn, LogOut, Shield, User, ChevronDown } from 'lucide-react';
+import {
+  PawPrint, Users, CalendarDays, Settings, Menu, X, LogIn, LogOut,
+  Shield, User, ChevronDown, Code2,
+} from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useTranslation } from '@/lib/translations';
@@ -36,12 +39,27 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
     api.nurserySettings.get().then(s => setLogoUrl(s.logo_url)).catch(() => {});
   }, []);
 
+  // Close overlays on Escape for keyboard accessibility.
+  useEffect(() => {
+    if (!mobileMenuOpen && !profileMenuOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (mobileMenuOpen) setMobileMenuOpen(false);
+      if (profileMenuOpen) setProfileMenuOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [mobileMenuOpen, profileMenuOpen]);
+
   const isActive = (path: string) => {
     if (path === '/') return pathname === '/';
     return pathname.startsWith(path);
   };
 
-  const navLinkClass = (path: string, baseColor: string, activeColor: string) => {
+  const ariaCurrent = (path: string): 'page' | undefined =>
+    isActive(path) ? 'page' : undefined;
+
+  const navLinkClass = (path: string, activeColor: string) => {
     const active = isActive(path);
     if (active) {
       return `flex items-center gap-2 px-3 lg:px-4 py-2 ${activeColor} text-white rounded-xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.2)] text-sm transform transition-all duration-300 hover:-translate-y-0.5`;
@@ -61,7 +79,11 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
     <header className={`sticky top-0 z-50 transition-all duration-300 w-full ${scrolled ? 'bg-background/80 backdrop-blur-xl shadow-sm border-b border-border' : 'bg-transparent border-transparent pt-2'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
         <div className="flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 sm:gap-3 group hover:opacity-90 transition-opacity">
+          <Link
+            href="/"
+            aria-current={ariaCurrent('/')}
+            className="flex items-center gap-2 sm:gap-3 group hover:opacity-90 transition-opacity"
+          >
             <div className={`p-2 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center overflow-hidden ${isActive('/') ? 'bg-primary scale-105' : 'bg-primary/90 group-hover:scale-105 group-hover:bg-primary'}`}>
               {logoUrl ? (
                 <img src={logoUrl} alt="Logo" className="w-5 h-5 sm:w-6 sm:h-6 object-contain" />
@@ -79,28 +101,63 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
           <div className="hidden md:flex items-center gap-2 lg:gap-3 bg-secondary/30 dark:bg-secondary/10 p-1.5 rounded-2xl border border-border/40 backdrop-blur-md">
             <LanguageSwitcher />
             <ThemeToggle />
-            <div className="w-px h-6 bg-border/50 mx-1" />
-            
-            <Link
-              href="/owners"
-              className={navLinkClass('/owners', 'gray', 'bg-slate-700 dark:bg-slate-600')}
-            >
-              <Users className="w-4 h-4 lg:w-4 lg:h-4" />
-              <span className="hidden lg:inline font-medium">{t('nav.owners')}</span>
-            </Link>
-            <Link
-              href="/pets"
-              className={navLinkClass('/pets', 'emerald', 'bg-primary hover:bg-primary/90 dark:bg-primary hover:bg-primary/90')}
-            >
-              <PawPrint className="w-4 h-4 lg:w-4 lg:h-4" />
-              <span className="hidden lg:inline font-medium">{t('nav.pets')}</span>
-            </Link>
+            <div className="w-px h-6 bg-border/50 mx-1" aria-hidden="true" />
+
+            {isAuthenticated && (
+              <>
+                <Link
+                  href="/"
+                  aria-current={ariaCurrent('/')}
+                  aria-label={t('nav.calendar')}
+                  title={t('nav.calendar')}
+                  className={navLinkClass('/', 'bg-primary hover:bg-primary/90')}
+                >
+                  <CalendarDays className="w-4 h-4" />
+                  <span className="hidden lg:inline font-medium">{t('nav.calendar')}</span>
+                </Link>
+                <Link
+                  href="/owners"
+                  aria-current={ariaCurrent('/owners')}
+                  aria-label={t('nav.owners')}
+                  title={t('nav.owners')}
+                  className={navLinkClass('/owners', 'bg-slate-700 dark:bg-slate-600')}
+                >
+                  <Users className="w-4 h-4" />
+                  <span className="hidden lg:inline font-medium">{t('nav.owners')}</span>
+                </Link>
+                <Link
+                  href="/pets"
+                  aria-current={ariaCurrent('/pets')}
+                  aria-label={t('nav.pets')}
+                  title={t('nav.pets')}
+                  className={navLinkClass('/pets', 'bg-primary hover:bg-primary/90 dark:bg-primary hover:bg-primary/90')}
+                >
+                  <PawPrint className="w-4 h-4" />
+                  <span className="hidden lg:inline font-medium">{t('nav.pets')}</span>
+                </Link>
+                {isAdmin && (
+                  <Link
+                    href="/admin/users"
+                    aria-current={ariaCurrent('/admin')}
+                    aria-label={t('nav.admin')}
+                    title={t('nav.admin')}
+                    className={navLinkClass('/admin', 'bg-purple-600 dark:bg-purple-500')}
+                  >
+                    <Shield className="w-4 h-4" />
+                    <span className="hidden lg:inline font-medium">{t('nav.admin')}</span>
+                  </Link>
+                )}
+              </>
+            )}
+
             {onNewSchedule && (
               <button
                 onClick={onNewSchedule}
+                aria-label={t('nav.newSchedule')}
+                title={t('nav.newSchedule')}
                 className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 text-sm font-medium ml-1"
               >
-                <CalendarDays className="w-4 h-4 lg:w-4 lg:h-4" />
+                <CalendarDays className="w-4 h-4" />
                 <span className="hidden lg:inline">{t('nav.newSchedule')}</span>
               </button>
             )}
@@ -110,6 +167,10 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
               <div className="relative ml-1">
                 <button
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                  aria-haspopup="menu"
+                  aria-expanded={profileMenuOpen}
+                  aria-label={user ? `${user.first_name} ${user.last_name}` : t('nav.settings')}
+                  title={user ? `${user.first_name} ${user.last_name}` : t('nav.settings')}
                   className="flex items-center gap-2 px-2 lg:px-3 py-1.5 bg-secondary/50 hover:bg-secondary border border-border/50 rounded-xl shadow-sm transition-all duration-300"
                 >
                   <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary">
@@ -122,7 +183,10 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
                 {profileMenuOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setProfileMenuOpen(false)} />
-                    <div className="absolute right-0 mt-2 w-56 bg-background border border-border/50 rounded-2xl shadow-lg shadow-black/5 dark:shadow-black/20 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div
+                      role="menu"
+                      className="absolute right-0 mt-2 w-56 bg-background border border-border/50 rounded-2xl shadow-lg shadow-black/5 dark:shadow-black/20 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
+                    >
                       <div className="p-3 border-b border-border/50 bg-secondary/20">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
@@ -137,6 +201,8 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
                       <div className="p-2 space-y-1">
                         <Link
                           href="/settings"
+                          role="menuitem"
+                          aria-current={ariaCurrent('/settings')}
                           onClick={() => setProfileMenuOpen(false)}
                           className="flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-secondary/80 rounded-xl transition-colors"
                         >
@@ -145,15 +211,18 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
                         </Link>
                         {isAdmin && (
                           <Link
-                            href="/admin/users"
+                            href="/ui-system"
+                            role="menuitem"
+                            aria-current={ariaCurrent('/ui-system')}
                             onClick={() => setProfileMenuOpen(false)}
                             className="flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-secondary/80 rounded-xl transition-colors"
                           >
-                            <Shield className="w-4 h-4 text-purple-500" />
-                            Admin
+                            <Code2 className="w-4 h-4 text-blue-500" />
+                            {t('nav.uiSystem')}
                           </Link>
                         )}
                         <button
+                          role="menuitem"
                           onClick={() => {
                             setProfileMenuOpen(false);
                             logout();
@@ -171,9 +240,11 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
             ) : (
               <Link
                 href="/login"
-                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-sm text-sm font-medium ml-1"
+                aria-label={t('auth.signIn')}
+                title={t('auth.signIn')}
+                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl transition-colors shadow-sm text-sm font-medium ml-1"
               >
-                <LogIn className="w-4 h-4 lg:w-4 lg:h-4" />
+                <LogIn className="w-4 h-4" />
                 <span className="hidden lg:inline">{t('auth.signIn')}</span>
               </Link>
             )}
@@ -185,6 +256,9 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
             <ThemeToggle />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-expanded={mobileMenuOpen}
+              aria-label={mobileMenuOpen ? t('common.close') : t('nav.menu')}
+              title={mobileMenuOpen ? t('common.close') : t('nav.menu')}
               className="p-1.5 text-foreground/70 hover:text-foreground hover:bg-background/80 rounded-xl transition-all"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -198,6 +272,7 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
             <div className="flex flex-col gap-3">
               <Link
                 href="/"
+                aria-current={ariaCurrent('/')}
                 onClick={() => setMobileMenuOpen(false)}
                 className={mobileNavLinkClass('/', 'bg-primary')}
               >
@@ -206,6 +281,7 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
               </Link>
               <Link
                 href="/owners"
+                aria-current={ariaCurrent('/owners')}
                 onClick={() => setMobileMenuOpen(false)}
                 className={mobileNavLinkClass('/owners', 'bg-slate-700 dark:bg-slate-600')}
               >
@@ -214,6 +290,7 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
               </Link>
               <Link
                 href="/pets"
+                aria-current={ariaCurrent('/pets')}
                 onClick={() => setMobileMenuOpen(false)}
                 className={mobileNavLinkClass('/pets', 'bg-primary hover:bg-primary/90 dark:bg-primary hover:bg-primary/90')}
               >
@@ -269,6 +346,7 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
 
                     <Link
                       href="/settings"
+                      aria-current={ariaCurrent('/settings')}
                       onClick={() => setMobileMenuOpen(false)}
                       className={mobileNavLinkClass('/settings', 'bg-amber-600 dark:bg-amber-500')}
                     >
@@ -279,11 +357,24 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
                     {isAdmin && (
                       <Link
                         href="/admin/users"
+                        aria-current={ariaCurrent('/admin')}
                         onClick={() => setMobileMenuOpen(false)}
                         className={mobileNavLinkClass('/admin', 'bg-purple-600 dark:bg-purple-500')}
                       >
                         <Shield className="w-5 h-5" />
-                        Admin
+                        {t('nav.admin')}
+                      </Link>
+                    )}
+
+                    {isAdmin && (
+                      <Link
+                        href="/ui-system"
+                        aria-current={ariaCurrent('/ui-system')}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={mobileNavLinkClass('/ui-system', 'bg-blue-600 dark:bg-blue-500')}
+                      >
+                        <Code2 className="w-5 h-5" />
+                        {t('nav.uiSystem')}
                       </Link>
                     )}
 

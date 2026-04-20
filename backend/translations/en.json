@@ -12,7 +12,10 @@
     "addPet": "Add Pet",
     "back": "Back",
     "settings": "Settings",
-    "calendar": "Calendar"
+    "calendar": "Calendar",
+    "admin": "Admin",
+    "uiSystem": "UI System",
+    "menu": "Menu"
   },
   "calendar": {
     "month": "Month",

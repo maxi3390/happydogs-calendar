@@ -62,7 +62,16 @@ const EN_TRANSLATIONS = {
 
 const ES_TRANSLATIONS = {
   app: { name: 'Guardería Happy Dogs', tagline: 'Sistema de Gestión de Horarios' },
-  nav: { owners: 'Dueños', pets: 'Mascotas', settings: 'Configuración', calendar: 'Calendario' },
+  nav: {
+    owners: 'Dueños',
+    pets: 'Mascotas',
+    settings: 'Configuración',
+    calendar: 'Calendario',
+    admin: 'Administración',
+    uiSystem: 'Sistema de UI',
+    menu: 'Menú',
+    newSchedule: 'Nuevo Horario',
+  },
   calendar: { month: 'Mes', week: 'Semana', today: 'Hoy', thisWeek: 'Esta Semana', weekOf: 'Semana de' },
   schedule: {
     title: 'Horario',

@@ -12,7 +12,10 @@
     "addPet": "Agregar Mascota",
     "back": "Volver",
     "settings": "Configuración",
-    "calendar": "Calendario"
+    "calendar": "Calendario",
+    "admin": "Administración",
+    "uiSystem": "Sistema de UI",
+    "menu": "Menú"
   },
   "calendar": {
     "month": "Mes",
