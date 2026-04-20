@@ -42,6 +42,9 @@ help:
 	@echo "Development:"
 	@echo "  make lint           - Run linters"
 	@echo "  make format         - Format code"
+	@echo ""
+	@echo "Maintenance:"
+	@echo "  make upgrade        - Pull latest code, rebuild images, restart stack, run migrations"
 
 # Docker Management
 build:
@@ -177,3 +180,16 @@ init: build up migrate create-admin
 	@echo "  Backend API: http://localhost:8000/api"
 	@echo ""
 	@echo "Default admin: $(ADMIN_EMAIL) / $(ADMIN_PASSWORD)"
+
+# Maintenance
+upgrade:
+	@echo "=== Upgrading Happy Pet Nursery ==="
+	@echo "[1/4] Pulling latest code..."
+	git pull
+	@echo "[2/4] Rebuilding images..."
+	$(MAKE) build
+	@echo "[3/4] Restarting services..."
+	$(MAKE) up
+	@echo "[4/4] Running migrations..."
+	$(MAKE) migrate
+	@echo "=== Upgrade complete ==="

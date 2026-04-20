@@ -89,6 +89,11 @@ Run `make help` to print all targets. Key ones:
 | `make format` | `black` + `isort` on backend                     |
 | `make init`   | `build` → `up` → `migrate` → `create-admin` (first-time setup for new devs) |
 
+### Maintenance
+| Command        | What it does                                                              |
+|----------------|---------------------------------------------------------------------------|
+| `make upgrade` | `git pull` → `build` → `up` → `migrate` (update a running deployment)     |
+
 ---
 
 ## Quick-Start (first run)
