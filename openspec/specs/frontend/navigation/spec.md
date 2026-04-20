@@ -38,43 +38,37 @@ Users SHALL NOT need to open a menu or click the logo in order to reach any of t
 
 ---
 
-### Requirement: Admin Destinations Are Top-Level For Admins
-
-Users with the `admin` role SHALL see a top-level Admin link in the desktop header. Non-admin users SHALL NOT see this link in the primary nav.
-
-#### Scenario: Admin link visible for admin users
-
-- GIVEN an authenticated user whose role is `admin`
-- WHEN the desktop viewport renders the header
-- THEN a top-level Admin link pointing to `/admin/users` SHALL be visible in the primary nav cluster
-
-#### Scenario: Admin link hidden for non-admin users
-
-- GIVEN an authenticated user whose role is not `admin`
-- WHEN the desktop viewport renders the header
-- THEN no Admin link SHALL be visible in the primary nav cluster
-- AND the profile dropdown SHALL NOT expose an Admin entry
-
----
-
 ### Requirement: Profile Dropdown Exposes User-Scoped Destinations
 
 On desktop, the profile dropdown SHALL expose user-scoped destinations and actions. The dropdown is opened from the authenticated user's profile button and SHALL contain:
 
 - A user info header (name, email, role indicator)
 - Settings (`/settings`)
+- For admin users, Admin (`/admin/users`) with a `Shield` icon
 - For admin users, UI System (`/ui-system`) with a dev-tool icon
 - Sign Out
 
-For non-admin users, the UI System entry SHALL NOT be displayed.
+For non-admin users, neither the Admin entry nor the UI System entry SHALL be displayed.
 
-The profile dropdown SHALL NOT duplicate the Calendar, Owners, Pets, or Admin (for admins) top-level links.
+The profile dropdown SHALL NOT duplicate the Calendar, Owners, or Pets top-level links.
 
 #### Scenario: Settings available in profile dropdown
 
 - GIVEN an authenticated user on desktop
 - WHEN the user opens the profile dropdown
 - THEN the dropdown SHALL contain a Settings link pointing to `/settings`
+
+#### Scenario: Admin available for admins in profile dropdown
+
+- GIVEN an authenticated admin user on desktop
+- WHEN the user opens the profile dropdown
+- THEN the dropdown SHALL contain an Admin link pointing to `/admin/users`
+
+#### Scenario: Admin hidden for non-admin users
+
+- GIVEN a non-admin authenticated user on desktop
+- WHEN the user opens the profile dropdown
+- THEN no Admin entry SHALL be present in the dropdown
 
 #### Scenario: UI System available for admins in profile dropdown
 
