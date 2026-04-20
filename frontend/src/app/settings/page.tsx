@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, AlertTriangle, Plus, Trash2, Save, Info, Syringe, ToggleLeft, ToggleRight, CalendarClock } from 'lucide-react';
+import { Settings, AlertTriangle, Plus, Trash2, Save, Info, Syringe, ToggleLeft, ToggleRight, CalendarClock, Image as ImageIcon } from 'lucide-react';
 import Navigation from '@/components/Navigation';
+import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import { useTranslation } from '@/lib/translations';
 import { api, Pet, VaccinationType } from '@/lib/api';
 import { withAuth } from '@/lib/withAuth';
@@ -31,6 +32,7 @@ function SettingsPage() {
   const [dailyLimit, setDailyLimit] = useState<number>(0);
   const [dailyLimitSaving, setDailyLimitSaving] = useState(false);
   const [dailyLimitSaved, setDailyLimitSaved] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -46,6 +48,7 @@ function SettingsPage() {
       setPets(petsData);
       setVaccinationTypes(vaxTypesData);
       setDailyLimit(settingsData.daily_booking_limit);
+      setLogoUrl(settingsData.logo_url);
 
       // Fetch incompatibilities from localStorage (or could be from API)
       const stored = localStorage.getItem('pet_incompatibilities');
@@ -191,7 +194,7 @@ function SettingsPage() {
         <div className="bg-card rounded-3xl shadow-sm border border-border/50 overflow-hidden mb-8 hover:shadow-md transition-all">
           <div className="p-4 border-b border-border bg-background">
             <div className="flex items-center gap-2 text-white">
-              <Image className="w-5 h-5" />
+              <ImageIcon className="w-5 h-5" />
               <h3 className="font-semibold">{t('settings.systemLogo') || 'System Logo'}</h3>
             </div>
           </div>

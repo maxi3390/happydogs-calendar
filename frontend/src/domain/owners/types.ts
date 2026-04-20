@@ -7,7 +7,7 @@ export interface Owner {
   id_number: string;
   street: string;
   city: string;
-  locality: string;
+  state: string;
   province: string;
   country: string;
   birth_date: string | null;
