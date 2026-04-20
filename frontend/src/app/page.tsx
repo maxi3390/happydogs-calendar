@@ -198,10 +198,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <Navigation
-        onNewSchedule={() => {
-          setEditingSchedule(undefined);
-          setShowScheduleForm(true);
-        }}
         onMultiPetSchedule={() => setShowMultiScheduleForm(true)}
       />
 
@@ -249,6 +245,10 @@ export default function Home() {
                 date={selectedDate}
                 onEditSchedule={handleEditSchedule}
                 refreshTrigger={refreshSchedules}
+                onNewSchedule={() => {
+                  setEditingSchedule(undefined);
+                  setShowScheduleForm(true);
+                }}
               />
             </div>
           </div>

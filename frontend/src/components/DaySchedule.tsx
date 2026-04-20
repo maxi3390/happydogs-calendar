@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Clock, AlertTriangle, Edit2, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { Clock, AlertTriangle, Edit2, Trash2, CheckCircle, XCircle, Plus } from 'lucide-react';
 import { api, Schedule } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 import { getDateLocale } from '@/lib/dateLocale';
@@ -12,6 +12,7 @@ interface DayScheduleProps {
   date: Date;
   onEditSchedule: (schedule: Schedule) => void;
   refreshTrigger: number;
+  onNewSchedule?: () => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -28,7 +29,7 @@ const statusIcons: Record<string, React.ReactNode> = {
   cancelled: <XCircle className="w-4 h-4" />,
 };
 
-export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: DayScheduleProps) {
+export default function DaySchedule({ date, onEditSchedule, refreshTrigger, onNewSchedule }: DayScheduleProps) {
   const { t, language } = useTranslation();
   const dateLocale = getDateLocale(language);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -94,13 +95,29 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: Da
 
   return (
     <div className="bg-card text-card-foreground rounded-xl shadow-lg overflow-hidden">
-      <div className="p-4 border-b border-indigo-400 dark:border-indigo-600 bg-background">
-        <h3 className="font-semibold text-white">
-          {format(date, 'EEEE, MMMM d, yyyy')}
-        </h3>
-        <p className="text-indigo-100 text-sm">
-          {schedules.length} {schedules.length === 1 ? t('schedule.title') : t('schedule.title')}
-        </p>
+      <div className="p-4 border-b border-border bg-background">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-foreground">
+              {format(date, 'EEEE, MMMM d, yyyy', { locale: dateLocale })}
+            </h3>
+            <p className="text-muted-foreground text-sm">
+              {schedules.length} {t('schedule.title')}
+            </p>
+          </div>
+          {onNewSchedule && (
+            <Button
+              onClick={onNewSchedule}
+              variant="primary"
+              size="sm"
+              aria-label={t('nav.newSchedule')}
+              title={t('nav.newSchedule')}
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">{t('nav.newSchedule')}</span>
+            </Button>
+          )}
+        </div>
       </div>
 
       {schedules.length === 0 ? (
@@ -109,7 +126,7 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger }: Da
           <p className="text-muted-foreground">{t('schedule.noSchedules')}</p>
         </div>
       ) : (
-        <div className="divide-y divide-gray-100 dark:divide-slate-700 max-h-[400px] overflow-y-auto">
+        <div className="divide-y divide-gray-100 dark:divide-slate-700">
           {schedules.map(schedule => (
             <div
               key={schedule.id}
