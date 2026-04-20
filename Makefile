@@ -173,7 +173,7 @@ status:
 	docker compose ps
 
 # Quick start for new developers
-init: build up migrate create-admin
+init: env-check build up migrate create-admin
 	@echo ""
 	@echo "Setup complete! The application is now running at:"
 	@echo "  Frontend: http://localhost:3000"
@@ -181,9 +181,28 @@ init: build up migrate create-admin
 	@echo ""
 	@echo "Default admin: $(ADMIN_EMAIL) / $(ADMIN_PASSWORD)"
 
+# Env bootstrap
+# `make env` creates .env from .env.example via the guided wizard. Safe
+# to run multiple times: it refuses to overwrite an existing .env.
+env:
+	@bash scripts/setup-env.sh
+
+# env-check is a private prerequisite used by init: it only runs the
+# wizard when .env is missing, so repeat runs of `make init` are no-ops
+# on that step.
+env-check:
+	@if [ ! -f .env ]; then \
+		echo "[env] .env missing — running 'make env' first."; \
+		$(MAKE) env; \
+	fi
+
 # Maintenance
 upgrade:
 	@echo "=== Upgrading Happy Pet Nursery ==="
+	@if [ ! -f .env ]; then \
+		echo "[upgrade] WARNING: .env is missing. Traefik Host rules will match nothing and the stack will 404."; \
+		echo "[upgrade]          Run 'make env' to generate one. Continuing anyway."; \
+	fi
 	@echo "[1/4] Pulling latest code..."
 	git pull
 	@echo "[2/4] Rebuilding images..."

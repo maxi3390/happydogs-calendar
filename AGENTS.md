@@ -99,7 +99,8 @@ Run `make help` inside the repo for the full catalogue. Most-used targets:
 
 | Command                 | What it does                                                              |
 |-------------------------|---------------------------------------------------------------------------|
-| `make init`             | First-time setup: `build` → `up` → `migrate` → `create-admin`             |
+| `make env`              | Create `.env` interactively from `.env.example` (idempotent; never overwrites) |
+| `make init`             | First-time setup: `env-check` → `build` → `up` → `migrate` → `create-admin` |
 | `make up` / `make down` | Start / stop all services                                                 |
 | `make migrate`          | Run pending Django migrations                                             |
 | `make test`             | Run all tests (`test-backend` + `test-frontend`)                          |
@@ -107,6 +108,24 @@ Run `make help` inside the repo for the full catalogue. Most-used targets:
 | `make test-frontend`    | Playwright E2E tests (headless Chrome)                                    |
 | `make lint`             | `flake8` on backend, `next lint` on frontend                              |
 | `make upgrade`          | `git pull` → `build` → `up` → `migrate` (update a running deployment)     |
+
+---
+
+## Environment variables
+
+The stack expects a `.env` file at the repository root with the variables below. **Without `.env`, Docker Compose expands `${DOMAIN}` and friends to the empty string, Traefik's `Host(${DOMAIN})` rules match nothing, and the entire stack returns 404 on `http://localhost/` while looking healthy in `docker compose ps`.**
+
+Generate `.env` once with `make env` (interactive, safe to re-run, never overwrites an existing file). `make init` calls `make env` automatically when `.env` is missing; `make upgrade` prints a warning but proceeds.
+
+| Variable              | Required for local dev? | Notes                                                                 |
+|-----------------------|--------------------------|-----------------------------------------------------------------------|
+| `DOMAIN`              | Yes (`localhost`)        | Host in Traefik routing rules. Use your public hostname in production. |
+| `NEXT_PUBLIC_API_URL` | Yes                      | URL the browser-side Next.js uses to reach the API (e.g. `http://localhost:8000/api`). |
+| `DOCKER_SOCKET`       | Yes (`/var/run/docker.sock`) | Path Traefik mounts to discover services. Change only on non-standard docker installs. |
+| `CF_DNS_API_TOKEN`    | No                       | Production-only. Cloudflare API token for Let's Encrypt DNS-01 challenge. Blank for local dev. |
+| `ACME_EMAIL`          | No                       | Production-only. Email for Let's Encrypt certificate notifications. Blank for local dev. |
+
+Full per-variable guidance lives as comments in `.env.example` itself; `make env` reads those comments and shows them at each prompt. The invariants are tracked in `openspec/specs/tooling/env-bootstrap/`.
 
 ---
 
