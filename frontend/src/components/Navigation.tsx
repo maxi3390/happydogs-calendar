@@ -135,18 +135,6 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
                   <PawPrint className="w-4 h-4" />
                   <span className="hidden lg:inline font-medium">{t('nav.pets')}</span>
                 </Link>
-                {isAdmin && (
-                  <Link
-                    href="/admin/users"
-                    aria-current={ariaCurrent('/admin')}
-                    aria-label={t('nav.admin')}
-                    title={t('nav.admin')}
-                    className={navLinkClass('/admin', 'bg-purple-600 dark:bg-purple-500')}
-                  >
-                    <Shield className="w-4 h-4" />
-                    <span className="hidden lg:inline font-medium">{t('nav.admin')}</span>
-                  </Link>
-                )}
               </>
             )}
 
@@ -221,6 +209,18 @@ export default function Navigation({ onNewSchedule, onMultiPetSchedule }: Naviga
                           <Settings className="w-4 h-4 text-amber-500" />
                           {t('nav.settings')}
                         </Link>
+                        {isAdmin && (
+                          <Link
+                            href="/admin/users"
+                            role="menuitem"
+                            aria-current={ariaCurrent('/admin')}
+                            onClick={() => setProfileMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-secondary/80 rounded-xl transition-colors"
+                          >
+                            <Shield className="w-4 h-4 text-purple-500" />
+                            {t('nav.admin')}
+                          </Link>
+                        )}
                         {isAdmin && (
                           <Link
                             href="/ui-system"

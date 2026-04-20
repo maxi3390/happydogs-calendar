@@ -148,7 +148,6 @@ test.describe('Public Navigation', () => {
 
     await expect(page.getByRole('banner').getByRole('link', { name: /^owners$/i })).toHaveCount(0);
     await expect(page.getByRole('banner').getByRole('link', { name: /^pets$/i })).toHaveCount(0);
-    await expect(page.getByRole('banner').getByRole('link', { name: /^admin$/i })).toHaveCount(0);
   });
 });
 
