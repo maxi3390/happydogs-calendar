@@ -129,6 +129,18 @@ Full per-variable guidance lives as comments in `.env.example` itself; `make env
 
 ---
 
+## Database backup and restore
+
+`make backup` produces a full gzipped `pg_dump` (plain SQL, compressed) named `backups/nursery-<YYYY-MM-DD-HHMMSS>.sql.gz`. The script starts the `db` container if it's not running, waits for `pg_isready`, and writes the dump. Backup files are git-ignored; the `backups/` directory is tracked via a `.gitkeep`.
+
+`make restore` restores from the most recent backup under `backups/`, or from an explicit path when the operator passes `BACKUP_FILE=path/to/file.sql.gz`. Because the restore drops and recreates the database (`DROP DATABASE ... WITH (FORCE)` then loads the gzipped SQL), it **refuses to proceed without explicit confirmation**: interactive runs require `yes` typed at the prompt, non-interactive runs require `RESTORE_I_UNDERSTAND=yes` as an environment variable.
+
+`make upgrade` runs `make backup` as its first of five steps. If the backup fails, the upgrade halts before any mutation. Use `SKIP_BACKUP=1 make upgrade` only when a pre-upgrade backup was taken out-of-band and the step would be redundant.
+
+The invariants are tracked in `openspec/specs/tooling/backup/` and (for the `make upgrade` integration) in `openspec/specs/tooling/upgrade/`.
+
+---
+
 ## Core business logic: pet compatibility
 
 The 5 compatibility rules implemented in `backend/domain/pets/models.py` via `Pet.is_compatible_with(other) → (bool, list[str])`:
