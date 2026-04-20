@@ -162,4 +162,25 @@ openspec/changes/<change-slug>/
 
 When the change is merged, move the folder to `openspec/changes/archive/YYYY-MM-DD-<slug>/` and any delta `spec.md` content merges into the live spec under `openspec/specs/<capability>/<feature>/spec.md`.
 
+The integration itself uses a merge commit — see "Merging spec changes" under the Git workflow section above, and the full rule in `openspec/specs/tooling/git-workflow/spec.md`.
+
+Existing specs live in `openspec/specs/` organised by capability (backend, frontend, tooling).
+` and `frontend/AGENTS.md` for the full per-subproject workflow (verification commands, conventions).
+
+---
+
+## OpenSpec workflow
+
+Every non-trivial change should have an OpenSpec change folder:
+
+```
+openspec/changes/<change-slug>/
+├── proposal.md        # intent, scope (in/out), approach
+├── design.md          # technical decisions with tradeoffs
+├── tasks.md           # checklist of work items
+└── specs/<capability>/<feature>/spec.md  # delta (ADDED / MODIFIED / REMOVED)
+```
+
+When the change is merged, move the folder to `openspec/changes/archive/YYYY-MM-DD-<slug>/` and any delta `spec.md` content merges into the live spec under `openspec/specs/<capability>/<feature>/spec.md`.
+
 Existing specs live in `openspec/specs/` organised by capability (backend, frontend, tooling).
