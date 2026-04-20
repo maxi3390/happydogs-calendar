@@ -156,12 +156,15 @@
     "uploadPhoto": "Upload Photo",
     "removePhoto": "Remove Photo",
     "changePhoto": "Change Photo",
-    "traits": "Traits"
+    "traits": "Traits",
+    "saveAndAddAnother": "Save & Add Another",
+    "addedSuccessfully": "{name} added successfully"
   },
   "owner": {
     "title": "Owners",
     "description": "Manage pet owners and their contact details",
     "addOwner": "Add Owner",
+    "addPet": "Add Pet",
     "editOwner": "Edit Owner",
     "noOwners": "No owners yet",
     "addFirst": "Add your first owner to get started!",
