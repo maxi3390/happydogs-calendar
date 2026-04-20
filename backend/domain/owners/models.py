@@ -1,15 +1,15 @@
 from django.db import models
+from domain.addresses.models import Address
 from domain.files.validators import validate_file_size, validate_image_type
 
 
-class Owner(models.Model):
+class Owner(Address):
     """Model representing a pet owner."""
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20)
     id_number = models.CharField(max_length=20, unique=True, null=True, blank=True, help_text="ID Number / DNI")
-    address = models.TextField(blank=True)
     birth_date = models.DateField(null=True, blank=True, help_text="Date of birth (dd/mm/yyyy)")
     emergency_contact = models.CharField(max_length=100, blank=True)
     emergency_phone = models.CharField(max_length=20, blank=True)

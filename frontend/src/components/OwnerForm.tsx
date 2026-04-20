@@ -23,7 +23,11 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
     email: '',
     phone: '',
     id_number: '',
-    address: '',
+    street: '',
+    city: '',
+    state: '',
+    province: '',
+    country: '',
     birth_date: null,
     emergency_contact: '',
     emergency_phone: '',
@@ -43,7 +47,11 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
         email: owner.email,
         phone: owner.phone,
         id_number: owner.id_number || '',
-        address: owner.address || '',
+        street: owner.street || '',
+        city: owner.city || '',
+        state: owner.state || '',
+        province: owner.province || '',
+        country: owner.country || '',
         birth_date: owner.birth_date || null,
         emergency_contact: owner.emergency_contact || '',
         emergency_phone: owner.emergency_phone || '',
@@ -190,19 +198,47 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
             onChange={e => setFormData(prev => ({ ...prev, birth_date: e.target.value || null }))}
           />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('owner.address')}
-            </label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-              <textarea
-                value={formData.address}
-                onChange={e => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                rows={2}
-                className="w-full pl-10 pr-3 py-2 border border-border rounded-lg bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
-                placeholder="123 Main St, City, State 12345"
+          <div className="border-t border-border pt-4">
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+              <MapPin className="w-4 h-4" />
+              {t('owner.addressSection') || 'Address'}
+            </h3>
+            <div className="space-y-4">
+              <Input
+                label={t('owner.street')}
+                type="text"
+                value={formData.street}
+                onChange={e => setFormData(prev => ({ ...prev, street: e.target.value }))}
+                placeholder={t('owner.streetPlaceholder') || 'e.g. Av. Cabildo 1234'}
               />
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label={t('owner.city')}
+                  type="text"
+                  value={formData.city}
+                  onChange={e => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                />
+                <Input
+                  label={t('owner.state')}
+                  type="text"
+                  value={formData.state}
+                  onChange={e => setFormData(prev => ({ ...prev, state: e.target.value }))}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label={t('owner.province')}
+                  type="text"
+                  value={formData.province}
+                  onChange={e => setFormData(prev => ({ ...prev, province: e.target.value }))}
+                />
+                <Input
+                  label={t('owner.country')}
+                  type="text"
+                  value={formData.country}
+                  onChange={e => setFormData(prev => ({ ...prev, country: e.target.value }))}
+                />
+              </div>
             </div>
           </div>
 

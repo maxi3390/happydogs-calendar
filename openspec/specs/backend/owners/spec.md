@@ -224,7 +224,7 @@ The system SHALL provide an endpoint that returns a minimal representation of al
 - Given an authenticated user requests the owner dropdown endpoint
 - When the system processes the request
 - Then the system SHALL return a list of all owners with only minimal fields (identifier, first name, last name)
-- And the response SHALL NOT include full owner details such as address, phone, or notes
+- And the response SHALL NOT include full owner details such as structured address fields, phone, or notes
 
 #### Scenario: Dropdown List When No Owners Exist
 

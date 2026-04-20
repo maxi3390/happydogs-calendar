@@ -9,9 +9,9 @@ from domain.notes.models import MedicalNote
 
 @admin.register(Owner)
 class OwnerAdmin(admin.ModelAdmin):
-    list_display = ['first_name', 'last_name', 'email', 'phone', 'pet_count']
-    list_filter = ['created_at']
-    search_fields = ['first_name', 'last_name', 'email', 'phone']
+    list_display = ['first_name', 'last_name', 'email', 'phone', 'city', 'province', 'pet_count']
+    list_filter = ['created_at', 'province', 'country']
+    search_fields = ['first_name', 'last_name', 'email', 'phone', 'street', 'city', 'state', 'province', 'country']
 
     def pet_count(self, obj):
         return obj.pets.count()

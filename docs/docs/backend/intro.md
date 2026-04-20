@@ -27,7 +27,8 @@ backend/
 │   ├── urls.py                   # Root URL config (includes pets, accounts, nursery_settings URLs + drf-spectacular)
 │   └── wsgi.py                   # WSGI entry point
 ├── domain/                       # Pure domain models (no Django app logic)
-│   ├── owners/models.py          # Owner model
+│   ├── addresses/models.py       # Reusable abstract Address mixin
+│   ├── owners/models.py          # Owner model (inherits Address)
 │   ├── pets/models.py            # Pet model + is_compatible_with()
 │   ├── schedules/models.py       # Schedule model + check_conflicts() + get_overlapping_schedules()
 │   ├── vaccinations/models.py    # VaccinationType + Vaccination models
@@ -96,9 +97,37 @@ Extends `AbstractUser`. Uses **email** as the login identifier; the `username` f
 
 ---
 
+### Address (reusable abstract model) (`domain/addresses/models.py`)
+
+An **abstract Django model** that any concrete model can inherit to add a structured postal address. Since `Meta: abstract = True`, Django creates no standalone table — the columns are contributed to each subclass's own table.
+
+| Field | Type | Spanish label | Details |
+|---|---|---|---|
+| `street` | `CharField(255)` | *Dirección* | Street address line |
+| `city` | `CharField(100)` | *Ciudad* | — |
+| `state` | `CharField(100)` | *Localidad* | — |
+| `province` | `CharField(100)` | *Provincia* | — |
+| `country` | `CharField(100)` | *País* | — |
+
+All fields are optional (`blank=True`, default empty string). Spanish labels are carried by the frontend i18n layer via `owner.street`, `owner.city`, `owner.state`, `owner.province`, `owner.country` translation keys.
+
+**Usage:**
+
+```python
+from domain.addresses.models import Address
+
+class Branch(Address, models.Model):
+    name = models.CharField(max_length=100)
+    # street, city, state, province, country are inherited
+```
+
+Currently consumed by `Owner`. Any future entity that needs an address (branches, vendors, veterinarians) can inherit without code duplication.
+
+---
+
 ### Owner (`domain/owners/models.py`)
 
-Represents a pet owner. `Meta: app_label = 'pets'`, ordered by `last_name, first_name`.
+Represents a pet owner. Inherits from the [`Address` mixin](#address-reusable-abstract-model-domainaddressesmodelspy) for structured postal address. `Meta: app_label = 'pets'`, ordered by `last_name, first_name`.
 
 | Field | Type | Details |
 |---|---|---|
@@ -107,7 +136,11 @@ Represents a pet owner. `Meta: app_label = 'pets'`, ordered by `last_name, first
 | `email` | `EmailField` | **unique** |
 | `phone` | `CharField(20)` | Required |
 | `id_number` | `CharField(20)` | **unique**, optional — DNI/national ID |
-| `address` | `TextField` | Optional |
+| `street` | `CharField(255)` | Optional — street address line (from `Address` mixin) |
+| `city` | `CharField(100)` | Optional — *ciudad* (from `Address` mixin) |
+| `state` | `CharField(100)` | Optional — *localidad* (from `Address` mixin) |
+| `province` | `CharField(100)` | Optional — *provincia* (from `Address` mixin) |
+| `country` | `CharField(100)` | Optional — *país* (from `Address` mixin) |
 | `birth_date` | `DateField` | Optional |
 | `emergency_contact` | `CharField(100)` | Optional |
 | `emergency_phone` | `CharField(20)` | Optional |

@@ -5,7 +5,11 @@ export interface Owner {
   email: string;
   phone: string;
   id_number: string;
-  address: string;
+  street: string;
+  city: string;
+  locality: string;
+  province: string;
+  country: string;
   birth_date: string | null;
   emergency_contact: string;
   emergency_phone: string;
@@ -36,7 +40,11 @@ export interface OwnerFormData {
   email: string;
   phone: string;
   id_number?: string;
-  address?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  province?: string;
+  country?: string;
   birth_date?: string | null;
   emergency_contact?: string;
   emergency_phone?: string;

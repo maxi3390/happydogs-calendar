@@ -160,3 +160,71 @@ class OwnerAPITests(APITestCase):
         response = self.client.delete(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Pet.objects.filter(owner_id=self.owner.id).count(), 0)
+
+    # ── Structured address (ciudad / localidad / provincia / país) ────
+
+    def test_create_owner_with_structured_address(self):
+        data = {
+            'first_name': 'Ana',
+            'last_name': 'Garcia',
+            'email': 'ana.garcia@example.com',
+            'phone': '+54 11 1234 5678',
+            'street': 'Av. Cabildo 1234',
+            'city': 'Ciudad Autonoma de Buenos Aires',
+            'state': 'Belgrano',
+            'province': 'Buenos Aires',
+            'country': 'Argentina',
+        }
+        response = self.client.post(self.list_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        for field in ['street', 'city', 'state', 'province', 'country']:
+            self.assertEqual(response.data[field], data[field])
+        owner = Owner.objects.get(pk=response.data['id'])
+        self.assertEqual(owner.street, 'Av. Cabildo 1234')
+        self.assertEqual(owner.city, 'Ciudad Autonoma de Buenos Aires')
+        self.assertEqual(owner.state, 'Belgrano')
+        self.assertEqual(owner.province, 'Buenos Aires')
+        self.assertEqual(owner.country, 'Argentina')
+
+    def test_create_owner_with_empty_address_fields(self):
+        """All structured address fields are optional."""
+        data = {
+            'first_name': 'NoAddress',
+            'last_name': 'Owner',
+            'email': 'noaddress@example.com',
+            'phone': '+54 11 0000 0000',
+        }
+        response = self.client.post(self.list_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        for field in ['street', 'city', 'state', 'province', 'country']:
+            self.assertEqual(response.data[field], '')
+
+    def test_patch_single_address_field(self):
+        """PATCH a single address component without touching the others."""
+        self.owner.street = 'Calle 1'
+        self.owner.city = 'Cordoba'
+        self.owner.province = 'Cordoba'
+        self.owner.save()
+        response = self.client.patch(self.detail_url, {'state': 'Nueva Cordoba'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.owner.refresh_from_db()
+        self.assertEqual(self.owner.state, 'Nueva Cordoba')
+        self.assertEqual(self.owner.street, 'Calle 1')
+        self.assertEqual(self.owner.city, 'Cordoba')
+        self.assertEqual(self.owner.province, 'Cordoba')
+
+    def test_owner_with_pets_payload_includes_address_fields(self):
+        self.owner.street = 'Street X'
+        self.owner.city = 'City Y'
+        self.owner.state = 'State Z'
+        self.owner.province = 'Province P'
+        self.owner.country = 'Country C'
+        self.owner.save()
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for field in ['street', 'city', 'state', 'province', 'country']:
+            self.assertIn(field, response.data)
+        self.assertEqual(response.data['street'], 'Street X')
+        self.assertEqual(response.data['state'], 'State Z')
+        # Legacy single-address field must not be present
+        self.assertNotIn('address', response.data)

@@ -234,11 +234,15 @@ function OwnersPage() {
 
                 {expandedOwner === owner.id && ownerDetails[owner.id] && (
                   <div className="border-t border-border/50 p-5 bg-secondary/5">
-                    {ownerDetails[owner.id].address && (
-                      <p className="text-sm text-muted-foreground mb-3">
-                        <span className="font-medium">{t('owner.address')}:</span> {ownerDetails[owner.id].address}
-                      </p>
-                    )}
+                    {(() => {
+                      const o = ownerDetails[owner.id];
+                      const parts = [o.street, o.city, o.state, o.province, o.country].filter(Boolean);
+                      return parts.length > 0 ? (
+                        <p className="text-sm text-muted-foreground mb-3">
+                          <span className="font-medium">{t('owner.addressSection') || 'Address'}:</span> {parts.join(', ')}
+                        </p>
+                      ) : null;
+                    })()}
                     {ownerDetails[owner.id].id_number && (
                       <p className="text-sm text-muted-foreground mb-3">
                         <span className="font-medium">{t('owner.idNumber')}:</span> {ownerDetails[owner.id].id_number}
