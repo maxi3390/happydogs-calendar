@@ -22,6 +22,7 @@ from pets.models import (
     Schedule,
     Vaccination,
     VaccinationType,
+    Vet,
 )
 
 User = get_user_model()
@@ -55,6 +56,64 @@ SEED_VACCINATION_TYPES: list[dict[str, Any]] = [
     {'name': 'leptospirosis', 'label': 'Leptospirosis', 'order': 5, 'enabled': True},
 ]
 
+SEED_VETS: list[dict[str, Any]] = [
+    {
+        'name': 'General Vet Clinic',
+        'phone': '+54 11 5000 0001',
+        'email': 'contact@general-vet.example',
+        'street': 'Av. Santa Fe 2800',
+        'city': 'Palermo',
+        'state': 'CABA',
+        'province': 'Buenos Aires',
+        'country': 'Argentina',
+        'notes': 'General practice — dogs, cats, rabbits. Open Mon–Sat 9am–8pm.',
+    },
+    {
+        'name': 'Exotic Animals Specialist',
+        'phone': '+54 11 5000 0002',
+        'email': 'hello@exotic-vet.example',
+        'street': 'Av. Cabildo 1500',
+        'city': 'Belgrano',
+        'state': 'CABA',
+        'province': 'Buenos Aires',
+        'country': 'Argentina',
+        'notes': 'Birds, rabbits, reptiles, small mammals. By appointment only.',
+    },
+    {
+        'name': 'Emergency Vet Hospital 24/7',
+        'phone': '+54 11 5000 0003',
+        'email': 'er@emergency-vet.example',
+        'street': 'Av. Las Heras 2200',
+        'city': 'Recoleta',
+        'state': 'CABA',
+        'province': 'Buenos Aires',
+        'country': 'Argentina',
+        'notes': '24/7 emergency clinic. Walk-ins welcome.',
+    },
+    {
+        'name': 'Feline Health Practice',
+        'phone': '+54 11 5000 0004',
+        'email': 'cats@feline-health.example',
+        'street': 'Av. Scalabrini Ortiz 3100',
+        'city': 'Palermo',
+        'state': 'CABA',
+        'province': 'Buenos Aires',
+        'country': 'Argentina',
+        'notes': 'Cats-only practice, quiet rooms designed for low stress.',
+    },
+    {
+        'name': 'Mobile Home Vet',
+        'phone': '+54 11 5000 0005',
+        'email': 'book@mobile-vet.example',
+        'street': '',
+        'city': 'Flores',
+        'state': 'CABA',
+        'province': 'Buenos Aires',
+        'country': 'Argentina',
+        'notes': 'House calls across CABA. No physical clinic.',
+    },
+]
+
 SEED_OWNERS: list[dict[str, Any]] = [
     {
         'email': 'ana.garcia@seed.example',
@@ -66,6 +125,7 @@ SEED_OWNERS: list[dict[str, Any]] = [
         'state': 'CABA',
         'province': 'Buenos Aires',
         'country': 'Argentina',
+        'primary_vet_name': 'Feline Health Practice',
     },
     {
         'email': 'luis.fernandez@seed.example',
@@ -79,6 +139,8 @@ SEED_OWNERS: list[dict[str, Any]] = [
         'country': 'Argentina',
         'emergency_contact': 'Marta Fernández',
         'emergency_phone': '+54 11 4000 0022',
+        'primary_vet_name': 'General Vet Clinic',
+        'emergency_vet_name': 'Emergency Vet Hospital 24/7',
     },
     {
         'email': 'maria.lopez@seed.example',
@@ -90,6 +152,8 @@ SEED_OWNERS: list[dict[str, Any]] = [
         'state': 'CABA',
         'province': 'Buenos Aires',
         'country': 'Argentina',
+        'primary_vet_name': 'General Vet Clinic',
+        'emergency_vet_name': 'Exotic Animals Specialist',
     },
     {
         'email': 'jose.martinez@seed.example',
@@ -102,6 +166,8 @@ SEED_OWNERS: list[dict[str, Any]] = [
         'province': 'Buenos Aires',
         'country': 'Argentina',
         'notes': 'Prefers early morning drop-offs.',
+        'primary_vet_name': 'General Vet Clinic',
+        'emergency_vet_name': 'Emergency Vet Hospital 24/7',
     },
     {
         'email': 'laura.rodriguez@seed.example',
@@ -113,6 +179,7 @@ SEED_OWNERS: list[dict[str, Any]] = [
         'state': 'CABA',
         'province': 'Buenos Aires',
         'country': 'Argentina',
+        'primary_vet_name': 'Mobile Home Vet',
     },
     {
         'email': 'pedro.sanchez@seed.example',
@@ -124,6 +191,7 @@ SEED_OWNERS: list[dict[str, Any]] = [
         'state': 'CABA',
         'province': 'Buenos Aires',
         'country': 'Argentina',
+        'primary_vet_name': 'Feline Health Practice',
     },
     {
         'email': 'carolina.ruiz@seed.example',
@@ -135,6 +203,7 @@ SEED_OWNERS: list[dict[str, Any]] = [
         'state': 'CABA',
         'province': 'Buenos Aires',
         'country': 'Argentina',
+        'primary_vet_name': 'General Vet Clinic',
     },
     {
         'email': 'diego.torres@seed.example',
@@ -146,6 +215,8 @@ SEED_OWNERS: list[dict[str, Any]] = [
         'state': 'CABA',
         'province': 'Buenos Aires',
         'country': 'Argentina',
+        'primary_vet_name': 'Exotic Animals Specialist',
+        'emergency_vet_name': 'Emergency Vet Hospital 24/7',
     },
 ]
 
@@ -182,6 +253,7 @@ SEED_PETS: list[dict[str, Any]] = [
         'name': 'Bugs', 'species': 'rabbit', 'breed': 'Lop',
         'age': 1, 'temperament': 'calm', 'dominance_level': 2,
         'size': 'small', 'sex': 'male', 'neutered': False,
+        'vet_override_name': 'Exotic Animals Specialist',
     },
     {
         'owner_email': 'jose.martinez@seed.example',
@@ -220,6 +292,7 @@ SEED_PETS: list[dict[str, Any]] = [
         'name': 'Perico', 'species': 'bird', 'breed': 'Parakeet',
         'age': 2, 'temperament': 'calm', 'dominance_level': 2,
         'size': 'small', 'sex': 'male', 'neutered': False,
+        'vet_override_name': 'General Vet Clinic',
     },
     {
         'owner_email': 'diego.torres@seed.example',
@@ -392,6 +465,7 @@ class _Tally:
 class _Summary:
     users: _Tally = field(default_factory=_Tally)
     vaccination_types: _Tally = field(default_factory=_Tally)
+    vets: _Tally = field(default_factory=_Tally)
     owners: _Tally = field(default_factory=_Tally)
     pets: _Tally = field(default_factory=_Tally)
     vaccinations: _Tally = field(default_factory=_Tally)
@@ -438,8 +512,9 @@ class Command(BaseCommand):
 
             self._seed_users(summary.users)
             self._seed_vaccination_types(summary.vaccination_types)
-            owners_by_email = self._seed_owners(summary.owners)
-            pets_by_key = self._seed_pets(summary.pets, owners_by_email)
+            vets_by_name = self._seed_vets(summary.vets)
+            owners_by_email = self._seed_owners(summary.owners, vets_by_name)
+            pets_by_key = self._seed_pets(summary.pets, owners_by_email, vets_by_name)
             self._seed_vaccinations(summary.vaccinations, pets_by_key)
             self._seed_medical_notes(summary.medical_notes, pets_by_key)
             self._seed_schedules(summary.schedules, pets_by_key)
@@ -489,6 +564,14 @@ class Command(BaseCommand):
         )
         summary.owners.deleted = _count(
             Owner.objects.filter(email__in=seed_owner_emails), 'pets.Owner',
+        )
+        # Vets are deleted AFTER the owner/pet rows so their SET_NULL FKs are
+        # cleared by the preceding owner/pet deletions rather than by the vet
+        # delete itself — keeps the per-entity `deleted` counts on the summary
+        # attributable to the matching entity rather than to the FK cascade.
+        summary.vets.deleted = _count(
+            Vet.objects.filter(name__in=[v['name'] for v in SEED_VETS]),
+            'pets.Vet',
         )
         summary.vaccination_types.deleted = _count(
             VaccinationType.objects.filter(
@@ -547,12 +630,47 @@ class Command(BaseCommand):
                     obj.save()
             tally.bump(created=created, updated=updated)
 
+    # ── Vets ───────────────────────────────────────────────────────────────
+
+    def _seed_vets(self, tally: _Tally) -> dict[str, Vet]:
+        by_name: dict[str, Vet] = {}
+        for data in SEED_VETS:
+            payload = {k: v for k, v in data.items() if k != 'name'}
+            vet, created = Vet.objects.get_or_create(
+                name=data['name'], defaults=payload,
+            )
+            updated = False
+            if not created:
+                for field_name, new_value in payload.items():
+                    if getattr(vet, field_name) != new_value:
+                        setattr(vet, field_name, new_value)
+                        updated = True
+                if updated:
+                    vet.save()
+            by_name[data['name']] = vet
+            tally.bump(created=created, updated=updated)
+        return by_name
+
     # ── Owners ─────────────────────────────────────────────────────────────
 
-    def _seed_owners(self, tally: _Tally) -> dict[str, Owner]:
+    def _seed_owners(
+        self,
+        tally: _Tally,
+        vets_by_name: dict[str, Vet],
+    ) -> dict[str, Owner]:
         by_email: dict[str, Owner] = {}
         for data in SEED_OWNERS:
-            payload = {k: v for k, v in data.items() if k != 'email'}
+            # Resolve vet FK names into FK ids before composing the payload.
+            resolved = dict(data)
+            primary_vet = vets_by_name[resolved.pop('primary_vet_name')] if resolved.get('primary_vet_name') else None
+            emergency_vet = vets_by_name[resolved.pop('emergency_vet_name')] if resolved.get('emergency_vet_name') else None
+            # Drop the *_name sentinels (if they came in as falsy) and the email lookup key.
+            resolved.pop('primary_vet_name', None)
+            resolved.pop('emergency_vet_name', None)
+            payload = {k: v for k, v in resolved.items() if k != 'email'}
+            payload['primary_vet'] = primary_vet
+            payload['emergency_vet'] = emergency_vet
+
             owner, created = Owner.objects.get_or_create(
                 email=data['email'], defaults=payload,
             )
@@ -574,11 +692,17 @@ class Command(BaseCommand):
         self,
         tally: _Tally,
         owners_by_email: dict[str, Owner],
+        vets_by_name: dict[str, Vet],
     ) -> dict[tuple[str, str], Pet]:
         by_key: dict[tuple[str, str], Pet] = {}
         for data in SEED_PETS:
             owner = owners_by_email[data['owner_email']]
-            payload = {k: v for k, v in data.items() if k not in ('owner_email', 'name')}
+            resolved = dict(data)
+            vet_override = vets_by_name[resolved.pop('vet_override_name')] if resolved.get('vet_override_name') else None
+            resolved.pop('vet_override_name', None)
+            payload = {k: v for k, v in resolved.items() if k not in ('owner_email', 'name')}
+            payload['vet_override'] = vet_override
+
             pet, created = Pet.objects.get_or_create(
                 owner=owner, name=data['name'], defaults=payload,
             )
@@ -663,6 +787,7 @@ class Command(BaseCommand):
         rows = [
             ('users', summary.users),
             ('vaccination types', summary.vaccination_types),
+            ('vets', summary.vets),
             ('owners', summary.owners),
             ('pets', summary.pets),
             ('vaccinations', summary.vaccinations),

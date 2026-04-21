@@ -17,6 +17,7 @@ from pets.models import (
     Schedule,
     Vaccination,
     VaccinationType,
+    Vet,
 )
 from pets.management.commands import seed_example_data as seed_module
 from tests.factories import create_owner, create_pet
@@ -27,6 +28,7 @@ User = get_user_model()
 EXPECTED_COUNTS = {
     'users': len(seed_module.SEED_USERS),
     'vaccination_types': len(seed_module.SEED_VACCINATION_TYPES),
+    'vets': len(seed_module.SEED_VETS),
     'owners': len(seed_module.SEED_OWNERS),
     'pets': len(seed_module.SEED_PETS),
     'vaccinations': len(seed_module._seed_vaccinations()),
@@ -40,6 +42,7 @@ def _seed_counts():
     seed_owner_emails = [o['email'] for o in seed_module.SEED_OWNERS]
     seed_user_emails = [u['email'] for u in seed_module.SEED_USERS]
     seed_vax_names = [v['name'] for v in seed_module.SEED_VACCINATION_TYPES]
+    seed_vet_names = [v['name'] for v in seed_module.SEED_VETS]
     owner_ids = list(
         Owner.objects.filter(email__in=seed_owner_emails).values_list('id', flat=True)
     )
@@ -52,6 +55,7 @@ def _seed_counts():
     return {
         'users': User.objects.filter(email__in=seed_user_emails).count(),
         'vaccination_types': VaccinationType.objects.filter(name__in=seed_vax_names).count(),
+        'vets': Vet.objects.filter(name__in=seed_vet_names).count(),
         'owners': Owner.objects.filter(email__in=seed_owner_emails).count(),
         'pets': Pet.objects.filter(id__in=pet_ids).count(),
         'vaccinations': Vaccination.objects.filter(pet_id__in=pet_ids).count(),
@@ -186,3 +190,102 @@ class SeedExampleDataProductionGuardTests(TestCase):
     def test_allows_when_flag_is_set(self):
         call_command('seed_example_data', '--allow-production', '--quiet')
         self.assertEqual(_seed_counts(), EXPECTED_COUNTS)
+
+
+@override_settings(DEBUG=True)
+class SeedExampleDataVetWiringTests(TestCase):
+    """Cover Vet rows, Owner primary/emergency vet FKs, Pet vet_override."""
+
+    def test_every_seeded_owner_has_primary_vet(self):
+        call_command('seed_example_data', '--quiet')
+
+        seeded_owners = Owner.objects.filter(
+            email__in=[o['email'] for o in seed_module.SEED_OWNERS]
+        )
+        self.assertEqual(seeded_owners.count(), len(seed_module.SEED_OWNERS))
+        for owner in seeded_owners:
+            self.assertIsNotNone(
+                owner.primary_vet_id,
+                f'owner {owner.email} has no primary_vet',
+            )
+
+    def test_at_least_four_owners_have_emergency_vet(self):
+        call_command('seed_example_data', '--quiet')
+
+        with_emergency = Owner.objects.filter(
+            email__in=[o['email'] for o in seed_module.SEED_OWNERS],
+            emergency_vet__isnull=False,
+        ).count()
+        self.assertGreaterEqual(with_emergency, 4)
+
+    def test_owner_vet_fks_match_seed_dataset(self):
+        call_command('seed_example_data', '--quiet')
+
+        for data in seed_module.SEED_OWNERS:
+            owner = Owner.objects.get(email=data['email'])
+            expected_primary = data.get('primary_vet_name')
+            if expected_primary:
+                self.assertIsNotNone(owner.primary_vet_id)
+                self.assertEqual(owner.primary_vet.name, expected_primary)
+            else:
+                self.assertIsNone(owner.primary_vet_id)
+
+            expected_emergency = data.get('emergency_vet_name')
+            if expected_emergency:
+                self.assertIsNotNone(owner.emergency_vet_id)
+                self.assertEqual(owner.emergency_vet.name, expected_emergency)
+            else:
+                self.assertIsNone(owner.emergency_vet_id)
+
+    def test_pets_with_vet_override_differ_from_owner_primary(self):
+        call_command('seed_example_data', '--quiet')
+
+        pets_with_override = Pet.objects.filter(
+            owner__email__in=[o['email'] for o in seed_module.SEED_OWNERS],
+            vet_override__isnull=False,
+        )
+        self.assertGreaterEqual(pets_with_override.count(), 2)
+        for pet in pets_with_override:
+            self.assertIsNotNone(pet.owner, 'override pets should have an owner in the seed')
+            self.assertNotEqual(
+                pet.vet_override_id, pet.owner.primary_vet_id,
+                f'override for {pet.name} matches the owner primary_vet '
+                '— intent is to demonstrate divergence',
+            )
+
+    def test_effective_vet_prefers_override_then_owner_primary(self):
+        call_command('seed_example_data', '--quiet')
+
+        bugs = Pet.objects.get(owner__email='maria.lopez@seed.example', name='Bugs')
+        self.assertEqual(bugs.effective_vet.name, 'Exotic Animals Specialist')
+
+        # A pet with no override but an owner primary_vet falls back to it.
+        rocco = Pet.objects.get(owner__email='luis.fernandez@seed.example', name='Rocco')
+        self.assertIsNone(rocco.vet_override_id)
+        self.assertEqual(rocco.effective_vet.name, 'General Vet Clinic')
+
+    def test_reset_removes_and_recreates_seeded_vets(self):
+        call_command('seed_example_data', '--quiet')
+        self.assertEqual(
+            Vet.objects.filter(name__in=[v['name'] for v in seed_module.SEED_VETS]).count(),
+            len(seed_module.SEED_VETS),
+        )
+
+        call_command('seed_example_data', '--reset', '--quiet')
+
+        self.assertEqual(
+            Vet.objects.filter(name__in=[v['name'] for v in seed_module.SEED_VETS]).count(),
+            len(seed_module.SEED_VETS),
+        )
+        # Owner FKs survive because they were re-created pointing at the fresh vets.
+        ana = Owner.objects.get(email='ana.garcia@seed.example')
+        self.assertEqual(ana.primary_vet.name, 'Feline Health Practice')
+
+    def test_reset_leaves_non_seed_vets_alone(self):
+        # Pre-existing non-seed vet created out of band.
+        foreign_vet = Vet.objects.create(name='Some Other Clinic', phone='x')
+
+        call_command('seed_example_data', '--quiet')
+        call_command('seed_example_data', '--reset', '--quiet')
+
+        self.assertTrue(Vet.objects.filter(pk=foreign_vet.pk).exists())
