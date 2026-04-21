@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/Toast';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import DocumentUpload from '@/components/DocumentUpload';
 import MedicalNotesSection from '@/components/MedicalNotesSection';
+import WeightInput from '@/components/WeightInput';
 import { Button } from '@/components/ui/Button';
 
 interface PetFormProps {
@@ -389,19 +390,11 @@ export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAnd
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('pet.weight')} ({t('common.kg')})
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="0.1"
-                value={formData.weight ?? ''}
-                onChange={e => setFormData({ ...formData, weight: e.target.value ? parseFloat(e.target.value) : null })}
-                className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
-              />
-            </div>
+            <WeightInput
+              label={`${t('pet.weight')} (${t('common.kg')})`}
+              value={formData.weight}
+              onChange={kg => setFormData({ ...formData, weight: kg })}
+            />
 
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
