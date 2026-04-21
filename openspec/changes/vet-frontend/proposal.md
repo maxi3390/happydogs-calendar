@@ -14,7 +14,7 @@ Land the frontend surface that was deliberately deferred by the `vet-model` back
 - New components: `VetList.tsx` (searchable card list) and `VetForm.tsx` (modal create/edit, including all Address fields inherited from the backend mixin).
 - Integration in `OwnerForm.tsx`: two optional dropdowns for primary and emergency vet.
 - Integration in `PetForm.tsx`: one optional dropdown for the per-pet vet override, with a hint describing the resolution order (override → owner primary → none).
-- A "Vets" entry in `Navigation.tsx` (desktop + mobile).
+- A "Vets" entry in the authenticated user's profile menu (desktop popup + mobile profile section) in `Navigation.tsx`. It does NOT live in the primary nav — vet management is a lower-frequency operation than owner / pet / calendar flows.
 - Translations for all new UI text added to both `backend/translations/en.json` and `backend/translations/es.json` under a new `vet.*` namespace, plus the missing `nav.vets` key.
 
 ### Out of scope

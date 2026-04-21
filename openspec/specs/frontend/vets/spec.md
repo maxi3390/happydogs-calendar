@@ -50,13 +50,20 @@ The system SHALL provide a dedicated `/vets` page that lists all registered vets
 
 ### Requirement: Navigation Entry
 
-The main navigation bar SHALL include a "Vets" link on both the desktop and mobile breakpoints.
+The "Vets" link SHALL live inside the authenticated user's profile menu rather than the primary navigation bar, on both the desktop and mobile breakpoints. This keeps the primary nav focused on owner / pet / calendar flows that operators reach dozens of times per day, while vet management (create, edit, delete clinics) is a lower-frequency operation colocated with settings and admin tools.
 
-#### Scenario: Visibility for authenticated staff
+#### Scenario: Desktop profile popup
 
-- GIVEN an authenticated staff user
-- WHEN the navigation bar renders
-- THEN a "Vets" link pointing to `/vets` SHALL be visible in the primary nav group and in the mobile sheet
+- GIVEN an authenticated staff user on the desktop breakpoint
+- WHEN the user opens the profile popup (by clicking the avatar button in the top-right)
+- THEN a "Vets" menu item pointing to `/vets` SHALL appear above "Settings"
+
+#### Scenario: Mobile profile section
+
+- GIVEN an authenticated staff user on the mobile breakpoint
+- WHEN the user opens the hamburger menu and scrolls to the profile section
+- THEN a "Vets" link pointing to `/vets` SHALL appear above "Settings" inside that section
+- AND SHALL NOT appear in the primary mobile navigation list (Calendar / Owners / Pets)
 
 ### Requirement: Vet Form UI
 
