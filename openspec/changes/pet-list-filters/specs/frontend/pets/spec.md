@@ -4,17 +4,30 @@
 
 ### Requirement: Pet List Search And Filters
 
-The pet list SHALL expose a toolbar that contains (1) a free-text search input at the top and (2) one multi-select filter group per canonical attribute (species, temperament, size, sex, neutered) rendered as toggleable chips below the search. The list SHALL update live as the operator types or toggles a chip.
+The pet list SHALL expose a toolbar that contains:
 
-Each filter group's selection state is a set of values:
+1. A free-text search input at the top of the toolbar card.
+2. A collapsible accordion labelled "Filters" that contains:
+   - Four multi-select filter groups for `species`, `temperament`, `size`, and `sex`, rendered as toggleable chips.
+   - A single boolean checkbox "Show only neutered pets" that filters the list to pets with `neutered === true`.
+3. A footer row with the "Registered Pets (N)" / "Showing X of Y" counter and, when applicable, a "Clear filters" link.
+
+The search input SHALL sit on its own row above the accordion and SHALL NOT be part of the collapsible region. The footer row (counter + clear link) SHALL also sit outside the accordion.
+
+Each multi-select group's selection state is a set of values:
 
 - An **empty selection** means the filter is inactive; every value matches.
 - A **non-empty selection** narrows the list to pets whose attribute matches any of the selected values (OR within a group).
 - Multiple groups with active selections are combined with AND across groups.
 
+The Neutered checkbox is a boolean filter:
+
+- **Unchecked** — neutered status is not filtered.
+- **Checked** — only pets with `neutered === true` SHALL be visible.
+
 The Species filter SHALL include the canonical five values (dog, cat, bird, rabbit, other) plus any additional values present on the currently-loaded pets, so custom species (when the `custom_pet_species` flag is on) are still filterable.
 
-The search input SHALL sit on its own row above the filter groups.
+The list SHALL update live as the operator types in the search input, toggles a chip, or flips the checkbox — regardless of whether the accordion is expanded or collapsed.
 
 #### Scenario: Searching by name
 
@@ -60,29 +73,57 @@ The search input SHALL sit on its own row above the filter groups.
 - WHEN the operator types `mia` and activates the `Cat` chip in Species
 - THEN only cats whose name / breed / owner contains `mia` SHALL be visible
 
-#### Scenario: Neutered multi-select
+#### Scenario: Neutered checkbox is a boolean filter
 
 - GIVEN pets with both neutered and non-neutered entries
-- WHEN the operator activates only the `Yes` chip in the Neutered filter
+- AND the "Show only neutered pets" checkbox is unchecked
+- THEN pets of both states SHALL be visible
+
+- WHEN the operator checks the "Show only neutered pets" checkbox
 - THEN only pets with `neutered === true` SHALL be visible
-- WHEN the operator also activates `No`
-- THEN pets of both states SHALL be visible (the filter is effectively inactive)
+
+- WHEN the operator unchecks the checkbox
+- THEN the filter SHALL return to inactive and pets of both states SHALL be visible again
+
+#### Scenario: Accordion starts collapsed
+
+- GIVEN the operator navigates to `/pets` for the first time in a session
+- THEN the Filters accordion SHALL be rendered in the collapsed state
+- AND the chip rows and the Neutered checkbox SHALL NOT be visible
+
+#### Scenario: Expanding the accordion reveals the filter groups
+
+- GIVEN the Filters accordion is collapsed
+- WHEN the operator clicks the accordion header (or the chevron)
+- THEN the accordion SHALL expand to show every chip row and the Neutered checkbox
+- AND the chevron SHALL rotate to indicate the expanded state
+
+#### Scenario: Active-filter badge on the accordion header
+
+- GIVEN two filter groups have at least one active chip and the Neutered checkbox is checked
+- THEN the accordion header SHALL display a badge showing the number of active filters (in this example, 3: two chip groups plus the Neutered checkbox)
+
+#### Scenario: Collapsing the accordion preserves filter state
+
+- GIVEN the operator has activated `Cat` in the Species filter and expanded the accordion
+- WHEN the operator collapses the accordion
+- THEN the list SHALL still be filtered to cats
+- AND the "Showing X of Y" counter SHALL remain visible in the footer row
+
+#### Scenario: Search and clear-filters remain usable while collapsed
+
+- GIVEN the accordion is collapsed and at least one filter is active
+- THEN the search input SHALL remain visible and interactive above the accordion
+- AND the "Clear filters" link SHALL remain visible in the footer row
+- WHEN the operator clicks "Clear filters"
+- THEN every chip SHALL be deactivated, the Neutered checkbox SHALL be unchecked, and the search input SHALL be emptied — without the accordion needing to be expanded first
 
 #### Scenario: Header counter reflects filters
 
 - GIVEN `N` pets loaded and zero active filters
 - THEN the list header SHALL read "Registered Pets (N)"
-- WHEN any filter is active (search or at least one chip)
+- WHEN any filter is active (search, at least one chip, or the Neutered checkbox)
 - THEN the header SHALL read "Showing X of N" where X is the filtered count
-
-#### Scenario: Clear filters link
-
-- GIVEN at least one filter is active (including a non-empty search)
-- THEN a "Clear filters" link SHALL be visible in the toolbar
-- WHEN the operator clicks it
-- THEN every chip SHALL be deactivated
-- AND the search input SHALL be emptied
-- AND the full list SHALL be visible again
 
 #### Scenario: Empty state when filters match nothing
 

@@ -179,7 +179,9 @@
       "all": "All",
       "clearAll": "Clear filters",
       "noMatches": "No pets match the current filters.",
-      "showing": "Showing {x} of {y} pets"
+      "showing": "Showing {x} of {y} pets",
+      "filtersHeader": "Filters",
+      "neuteredOnly": "Show only neutered pets"
     }
   },
   "owner": {

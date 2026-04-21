@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Edit2, Trash2, Dog, Cat, Bird, Rabbit, HelpCircle, ChevronDown,
-  FileText, Search, X,
+  FileText, Search, X, SlidersHorizontal,
 } from 'lucide-react';
 import { api, Pet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
@@ -43,7 +43,7 @@ interface PetFilters {
   temperament: string[];
   size: string[];
   sex: string[];
-  neutered: ('yes' | 'no')[];
+  neuteredOnly: boolean;   // false = no filter; true = only pets with neutered === true
 }
 
 const defaultFilters: PetFilters = {
@@ -52,7 +52,7 @@ const defaultFilters: PetFilters = {
   temperament: [],
   size: [],
   sex: [],
-  neutered: [],
+  neuteredOnly: false,
 };
 
 function hasActiveFilters(f: PetFilters): boolean {
@@ -62,8 +62,22 @@ function hasActiveFilters(f: PetFilters): boolean {
     f.temperament.length > 0 ||
     f.size.length > 0 ||
     f.sex.length > 0 ||
-    f.neutered.length > 0
+    f.neuteredOnly
   );
+}
+
+// Count of filter groups that are active — used for the accordion-header badge.
+// Search is counted too so the operator sees at a glance whether the set of
+// visible pets is filtered in any way, even when the accordion is collapsed.
+function activeFilterCount(f: PetFilters): number {
+  let n = 0;
+  if (f.searchTerm.trim() !== '') n++;
+  if (f.species.length > 0) n++;
+  if (f.temperament.length > 0) n++;
+  if (f.size.length > 0) n++;
+  if (f.sex.length > 0) n++;
+  if (f.neuteredOnly) n++;
+  return n;
 }
 
 // Generic "label + row of toggleable chips" building block used by every
@@ -124,6 +138,7 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [expandedPetId, setExpandedPetId] = useState<number | null>(null);
   const [filters, setFilters] = useState<PetFilters>(defaultFilters);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const fetchPets = async () => {
     setLoading(true);
@@ -180,15 +195,13 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
       if (filters.temperament.length && !filters.temperament.includes(pet.temperament)) return false;
       if (filters.size.length && !filters.size.includes(pet.size)) return false;
       if (filters.sex.length && !filters.sex.includes(pet.sex)) return false;
-      if (filters.neutered.length) {
-        const state: 'yes' | 'no' = pet.neutered ? 'yes' : 'no';
-        if (!filters.neutered.includes(state)) return false;
-      }
+      if (filters.neuteredOnly && !pet.neutered) return false;
       return true;
     });
   }, [pets, filters]);
 
   const showingFiltered = hasActiveFilters(filters);
+  const filterCount = activeFilterCount(filters);
   const clearFilters = () => setFilters(defaultFilters);
 
   // Toggle a value in a multi-select filter array. Centralised so each chip
@@ -225,10 +238,9 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
   return (
     <>
       {/* Search + filter toolbar — its own card, matches the owners page.
-          Layout: search input on top, then one row per filter group
-          rendered as toggleable chips (multi-select). Counter + Clear
-          link live at the bottom. */}
-      <div className="mb-8 bg-card text-card-foreground rounded-2xl p-4 shadow-sm border border-border/50 backdrop-blur-sm space-y-4">
+          Layout: search input on top, then a collapsible accordion with
+          the filter groups, then the counter / clear-filters footer. */}
+      <div className="mb-8 bg-card text-card-foreground rounded-2xl p-4 shadow-sm border border-border/50 backdrop-blur-sm space-y-3">
         <Input
           icon={<Search className="w-4 h-4" />}
           type="text"
@@ -237,42 +249,76 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
           placeholder={t('pet.filters.searchPlaceholder')}
         />
 
-        <div className="space-y-2">
-          <ChipFilterRow
-            label={t('pet.filters.species')}
-            options={speciesOptions}
-            selected={filters.species}
-            renderLabel={val => CANONICAL_SPECIES.includes(val) ? t(`pet.speciesOptions.${val}`) : val}
-            onToggle={val => setFilters(prev => ({ ...prev, species: toggleInArray(prev.species, val) }))}
-          />
-          <ChipFilterRow
-            label={t('pet.filters.temperament')}
-            options={TEMPERAMENT_VALUES}
-            selected={filters.temperament}
-            renderLabel={val => t(`pet.temperamentOptions.${val}`)}
-            onToggle={val => setFilters(prev => ({ ...prev, temperament: toggleInArray(prev.temperament, val) }))}
-          />
-          <ChipFilterRow
-            label={t('pet.filters.size')}
-            options={SIZE_VALUES}
-            selected={filters.size}
-            renderLabel={val => t(`pet.sizeOptions.${val}`)}
-            onToggle={val => setFilters(prev => ({ ...prev, size: toggleInArray(prev.size, val) }))}
-          />
-          <ChipFilterRow
-            label={t('pet.filters.sex')}
-            options={SEX_VALUES}
-            selected={filters.sex}
-            renderLabel={val => t(`pet.sexOptions.${val}`)}
-            onToggle={val => setFilters(prev => ({ ...prev, sex: toggleInArray(prev.sex, val) }))}
-          />
-          <ChipFilterRow
-            label={t('pet.filters.neutered')}
-            options={['yes', 'no'] as const}
-            selected={filters.neutered}
-            renderLabel={val => val === 'yes' ? t('common.yes') : t('common.no')}
-            onToggle={val => setFilters(prev => ({ ...prev, neutered: toggleInArray(prev.neutered, val) }))}
-          />
+        {/* Filters accordion. Starts collapsed; preserves filter state across
+            open/close. Counter + clear-filters row stays outside so the
+            operator can always see / reset without expanding. */}
+        <div className="rounded-xl border border-border/50 bg-background/40 overflow-hidden">
+          <button
+            type="button"
+            aria-expanded={filtersOpen}
+            aria-controls="pet-filters-accordion-panel"
+            onClick={() => setFiltersOpen(o => !o)}
+            className="w-full flex items-center justify-between gap-2 px-3 py-2 hover:bg-secondary/30 transition-colors"
+          >
+            <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
+              {t('pet.filters.filtersHeader')}
+              {filterCount > 0 && (
+                <span className="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold rounded-full bg-primary/15 text-primary">
+                  {filterCount}
+                </span>
+              )}
+            </span>
+            <ChevronDown
+              className={`w-4 h-4 text-muted-foreground transition-transform duration-300 ${filtersOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+
+          {filtersOpen && (
+            <div
+              id="pet-filters-accordion-panel"
+              className="border-t border-border/50 p-3 space-y-3 bg-background/20"
+            >
+              <ChipFilterRow
+                label={t('pet.filters.species')}
+                options={speciesOptions}
+                selected={filters.species}
+                renderLabel={val => CANONICAL_SPECIES.includes(val) ? t(`pet.speciesOptions.${val}`) : val}
+                onToggle={val => setFilters(prev => ({ ...prev, species: toggleInArray(prev.species, val) }))}
+              />
+              <ChipFilterRow
+                label={t('pet.filters.temperament')}
+                options={TEMPERAMENT_VALUES}
+                selected={filters.temperament}
+                renderLabel={val => t(`pet.temperamentOptions.${val}`)}
+                onToggle={val => setFilters(prev => ({ ...prev, temperament: toggleInArray(prev.temperament, val) }))}
+              />
+              <ChipFilterRow
+                label={t('pet.filters.size')}
+                options={SIZE_VALUES}
+                selected={filters.size}
+                renderLabel={val => t(`pet.sizeOptions.${val}`)}
+                onToggle={val => setFilters(prev => ({ ...prev, size: toggleInArray(prev.size, val) }))}
+              />
+              <ChipFilterRow
+                label={t('pet.filters.sex')}
+                options={SEX_VALUES}
+                selected={filters.sex}
+                renderLabel={val => t(`pet.sexOptions.${val}`)}
+                onToggle={val => setFilters(prev => ({ ...prev, sex: toggleInArray(prev.sex, val) }))}
+              />
+
+              <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filters.neuteredOnly}
+                  onChange={e => setFilters(prev => ({ ...prev, neuteredOnly: e.target.checked }))}
+                  className="w-4 h-4 text-primary border-border rounded focus:ring-ring"
+                />
+                {t('pet.filters.neuteredOnly')}
+              </label>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-between gap-3 pt-2 border-t border-border/50">

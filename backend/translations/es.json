@@ -179,7 +179,9 @@
       "all": "Todos",
       "clearAll": "Limpiar filtros",
       "noMatches": "Ninguna mascota coincide con los filtros actuales.",
-      "showing": "Mostrando {x} de {y} mascotas"
+      "showing": "Mostrando {x} de {y} mascotas",
+      "filtersHeader": "Filtros",
+      "neuteredOnly": "Mostrar solo mascotas castradas"
     }
   },
   "owner": {
