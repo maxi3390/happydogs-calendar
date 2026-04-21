@@ -397,9 +397,17 @@ The component SHALL clamp at the backend limit of `9999.99` kg (matching `Decima
 
 ### Requirement: Pet List Search And Filters
 
-The pet list SHALL expose a toolbar with (1) a free-text search input and (2) one dropdown per canonical attribute (species, temperament, size, sex, neutered). Every dropdown SHALL default to "All". The list SHALL update live as the operator types or changes a dropdown.
+The pet list SHALL expose a toolbar that contains (1) a free-text search input at the top and (2) one multi-select filter group per canonical attribute (species, temperament, size, sex, neutered) rendered as toggleable chips below the search. The list SHALL update live as the operator types or toggles a chip.
 
-The Species dropdown SHALL include the canonical five values (dog, cat, bird, rabbit, other) plus any additional values present on the currently-loaded pets, so custom species (when the `custom_pet_species` flag is on) are still filterable.
+Each filter group's selection state is a set of values:
+
+- An **empty selection** means the filter is inactive; every value matches.
+- A **non-empty selection** narrows the list to pets whose attribute matches any of the selected values (OR within a group).
+- Multiple groups with active selections are combined with AND across groups.
+
+The Species filter SHALL include the canonical five values (dog, cat, bird, rabbit, other) plus any additional values present on the currently-loaded pets, so custom species (when the `custom_pet_species` flag is on) are still filterable.
+
+The search input SHALL sit on its own row above the filter groups.
 
 #### Scenario: Searching by name
 
@@ -413,31 +421,51 @@ The Species dropdown SHALL include the canonical five values (dog, cat, bird, ra
 - WHEN the operator types `fern` in the search input
 - THEN Rocco SHALL be visible
 
-#### Scenario: Filtering by species
+#### Scenario: Single selection in a group (Species = Cat)
 
 - GIVEN a mixed list of pets
-- WHEN the operator selects `Cat` from the Species dropdown
+- WHEN the operator activates the `Cat` chip in the Species filter
 - THEN only pets with `species === 'cat'` SHALL be visible
+
+#### Scenario: Multiple selections in the same group (OR)
+
+- GIVEN a mixed list of pets
+- WHEN the operator activates both `Cat` and `Dog` chips in the Species filter
+- THEN pets with `species === 'cat'` OR `species === 'dog'` SHALL be visible
+- AND pets of any other species SHALL be hidden
+
+#### Scenario: Selections across different groups (AND)
+
+- GIVEN a mixed list of pets
+- WHEN the operator activates the `Dog` chip in Species AND the `Aggressive` chip in Temperament
+- THEN only pets with `species === 'dog'` AND `temperament === 'aggressive'` SHALL be visible
+
+#### Scenario: Deselecting every chip in a group makes the group inactive
+
+- GIVEN the operator has activated `Cat` in the Species filter
+- WHEN they deactivate the `Cat` chip
+- THEN the Species filter SHALL be inactive
+- AND pets of any species SHALL be visible again (subject to other active filters)
 
 #### Scenario: Combining search and filters
 
 - GIVEN a mixed list of pets
-- WHEN the operator types `mia` and selects `Cat` from Species
+- WHEN the operator types `mia` and activates the `Cat` chip in Species
 - THEN only cats whose name / breed / owner contains `mia` SHALL be visible
 
-#### Scenario: Neutered tri-state
+#### Scenario: Neutered multi-select
 
 - GIVEN pets with both neutered and non-neutered entries
-- WHEN the operator selects `Yes` from the Neutered dropdown
+- WHEN the operator activates only the `Yes` chip in the Neutered filter
 - THEN only pets with `neutered === true` SHALL be visible
-- WHEN the operator selects `No`
-- THEN only pets with `neutered === false` SHALL be visible
+- WHEN the operator also activates `No`
+- THEN pets of both states SHALL be visible (the filter is effectively inactive)
 
 #### Scenario: Header counter reflects filters
 
 - GIVEN `N` pets loaded and zero active filters
 - THEN the list header SHALL read "Registered Pets (N)"
-- WHEN any filter is active
+- WHEN any filter is active (search or at least one chip)
 - THEN the header SHALL read "Showing X of N" where X is the filtered count
 
 #### Scenario: Clear filters link
@@ -445,7 +473,7 @@ The Species dropdown SHALL include the canonical five values (dog, cat, bird, ra
 - GIVEN at least one filter is active (including a non-empty search)
 - THEN a "Clear filters" link SHALL be visible in the toolbar
 - WHEN the operator clicks it
-- THEN every dropdown SHALL return to "All"
+- THEN every chip SHALL be deactivated
 - AND the search input SHALL be emptied
 - AND the full list SHALL be visible again
 
@@ -460,8 +488,8 @@ The Species dropdown SHALL include the canonical five values (dog, cat, bird, ra
 
 - GIVEN the `custom_pet_species` feature flag is on
 - AND a pet exists whose `species` is a non-canonical value (e.g. `"ferret"`)
-- WHEN the operator opens the Species dropdown
-- THEN `"ferret"` SHALL appear as an option alongside the canonical five
+- WHEN the operator views the Species chips
+- THEN a `"ferret"` chip SHALL appear alongside the canonical five
 
 ### Requirement: Pet Page Header With "Add Pet" Button
 

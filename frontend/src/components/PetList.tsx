@@ -39,30 +39,81 @@ const temperamentColors: Record<string, string> = {
 
 interface PetFilters {
   searchTerm: string;
-  species: string;     // 'all' | canonical | custom
-  temperament: string; // 'all' | canonical
-  size: string;        // 'all' | canonical
-  sex: string;         // 'all' | 'male' | 'female'
-  neutered: 'all' | 'yes' | 'no';
+  species: string[];       // empty = filter inactive
+  temperament: string[];
+  size: string[];
+  sex: string[];
+  neutered: ('yes' | 'no')[];
 }
 
 const defaultFilters: PetFilters = {
   searchTerm: '',
-  species: 'all',
-  temperament: 'all',
-  size: 'all',
-  sex: 'all',
-  neutered: 'all',
+  species: [],
+  temperament: [],
+  size: [],
+  sex: [],
+  neutered: [],
 };
 
 function hasActiveFilters(f: PetFilters): boolean {
   return (
     f.searchTerm.trim() !== '' ||
-    f.species !== 'all' ||
-    f.temperament !== 'all' ||
-    f.size !== 'all' ||
-    f.sex !== 'all' ||
-    f.neutered !== 'all'
+    f.species.length > 0 ||
+    f.temperament.length > 0 ||
+    f.size.length > 0 ||
+    f.sex.length > 0 ||
+    f.neutered.length > 0
+  );
+}
+
+// Generic "label + row of toggleable chips" building block used by every
+// multi-select filter. `readonly` accept so we can pass `as const` tuples
+// (e.g. `['yes', 'no'] as const`) without widening.
+interface ChipFilterRowProps<T extends string> {
+  label: string;
+  options: readonly T[];
+  selected: T[];
+  renderLabel: (value: T) => string;
+  onToggle: (value: T) => void;
+}
+
+function ChipFilterRow<T extends string>({
+  label,
+  options,
+  selected,
+  renderLabel,
+  onToggle,
+}: ChipFilterRowProps<T>) {
+  return (
+    <div
+      role="group"
+      aria-label={label}
+      className="flex flex-col sm:flex-row sm:items-center gap-2"
+    >
+      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground sm:w-28 sm:flex-shrink-0">
+        {label}
+      </span>
+      <div className="flex flex-wrap gap-2">
+        {options.map(val => {
+          const active = selected.includes(val);
+          return (
+            <button
+              key={val}
+              type="button"
+              onClick={() => onToggle(val)}
+              aria-pressed={active}
+              className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                active
+                  ? 'bg-primary text-white border-primary'
+                  : 'bg-transparent text-foreground/70 border-border/60 hover:bg-secondary/50'
+              }`}
+            >
+              {renderLabel(val)}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -125,13 +176,13 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
         const haystack = `${pet.name} ${pet.breed ?? ''} ${ownerName}`.toLowerCase();
         if (!haystack.includes(search)) return false;
       }
-      if (filters.species !== 'all' && pet.species !== filters.species) return false;
-      if (filters.temperament !== 'all' && pet.temperament !== filters.temperament) return false;
-      if (filters.size !== 'all' && pet.size !== filters.size) return false;
-      if (filters.sex !== 'all' && pet.sex !== filters.sex) return false;
-      if (filters.neutered !== 'all') {
-        const want = filters.neutered === 'yes';
-        if (pet.neutered !== want) return false;
+      if (filters.species.length && !filters.species.includes(pet.species)) return false;
+      if (filters.temperament.length && !filters.temperament.includes(pet.temperament)) return false;
+      if (filters.size.length && !filters.size.includes(pet.size)) return false;
+      if (filters.sex.length && !filters.sex.includes(pet.sex)) return false;
+      if (filters.neutered.length) {
+        const state: 'yes' | 'no' = pet.neutered ? 'yes' : 'no';
+        if (!filters.neutered.includes(state)) return false;
       }
       return true;
     });
@@ -139,6 +190,13 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
 
   const showingFiltered = hasActiveFilters(filters);
   const clearFilters = () => setFilters(defaultFilters);
+
+  // Toggle a value in a multi-select filter array. Centralised so each chip
+  // onClick stays a one-liner and the state-update shape is identical
+  // everywhere.
+  function toggleInArray<T extends string>(arr: T[], value: T): T[] {
+    return arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value];
+  }
 
   if (loading) {
     return (
@@ -166,79 +224,58 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
 
   return (
     <>
-      {/* Search + filter toolbar — its own card, matches the owners page */}
-      <div className="mb-8 bg-card text-card-foreground rounded-2xl p-4 shadow-sm border border-border/50 backdrop-blur-sm space-y-3">
-        <div className="flex flex-col lg:flex-row gap-3">
-          <div className="flex-1">
-            <Input
-              icon={<Search className="w-4 h-4" />}
-              type="text"
-              value={filters.searchTerm}
-              onChange={e => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
-              placeholder={t('pet.filters.searchPlaceholder')}
-            />
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 lg:flex-shrink-0">
-            <select
-              value={filters.species}
-              onChange={e => setFilters(prev => ({ ...prev, species: e.target.value }))}
-              aria-label={t('pet.filters.species')}
-              className="h-10 px-3 text-sm rounded-xl border border-border/50 bg-background focus:ring-2 focus:ring-primary/50"
-            >
-              <option value="all">{t('pet.filters.species')}: {t('pet.filters.all')}</option>
-              {speciesOptions.map(val => (
-                <option key={val} value={val}>
-                  {CANONICAL_SPECIES.includes(val) ? t(`pet.speciesOptions.${val}`) : val}
-                </option>
-              ))}
-            </select>
-            <select
-              value={filters.temperament}
-              onChange={e => setFilters(prev => ({ ...prev, temperament: e.target.value }))}
-              aria-label={t('pet.filters.temperament')}
-              className="h-10 px-3 text-sm rounded-xl border border-border/50 bg-background focus:ring-2 focus:ring-primary/50"
-            >
-              <option value="all">{t('pet.filters.temperament')}: {t('pet.filters.all')}</option>
-              {TEMPERAMENT_VALUES.map(val => (
-                <option key={val} value={val}>{t(`pet.temperamentOptions.${val}`)}</option>
-              ))}
-            </select>
-            <select
-              value={filters.size}
-              onChange={e => setFilters(prev => ({ ...prev, size: e.target.value }))}
-              aria-label={t('pet.filters.size')}
-              className="h-10 px-3 text-sm rounded-xl border border-border/50 bg-background focus:ring-2 focus:ring-primary/50"
-            >
-              <option value="all">{t('pet.filters.size')}: {t('pet.filters.all')}</option>
-              {SIZE_VALUES.map(val => (
-                <option key={val} value={val}>{t(`pet.sizeOptions.${val}`)}</option>
-              ))}
-            </select>
-            <select
-              value={filters.sex}
-              onChange={e => setFilters(prev => ({ ...prev, sex: e.target.value }))}
-              aria-label={t('pet.filters.sex')}
-              className="h-10 px-3 text-sm rounded-xl border border-border/50 bg-background focus:ring-2 focus:ring-primary/50"
-            >
-              <option value="all">{t('pet.filters.sex')}: {t('pet.filters.all')}</option>
-              {SEX_VALUES.map(val => (
-                <option key={val} value={val}>{t(`pet.sexOptions.${val}`)}</option>
-              ))}
-            </select>
-            <select
-              value={filters.neutered}
-              onChange={e => setFilters(prev => ({ ...prev, neutered: e.target.value as 'all' | 'yes' | 'no' }))}
-              aria-label={t('pet.filters.neutered')}
-              className="h-10 px-3 text-sm rounded-xl border border-border/50 bg-background focus:ring-2 focus:ring-primary/50"
-            >
-              <option value="all">{t('pet.filters.neutered')}: {t('pet.filters.all')}</option>
-              <option value="yes">{t('pet.filters.neutered')}: {t('common.yes')}</option>
-              <option value="no">{t('pet.filters.neutered')}: {t('common.no')}</option>
-            </select>
-          </div>
+      {/* Search + filter toolbar — its own card, matches the owners page.
+          Layout: search input on top, then one row per filter group
+          rendered as toggleable chips (multi-select). Counter + Clear
+          link live at the bottom. */}
+      <div className="mb-8 bg-card text-card-foreground rounded-2xl p-4 shadow-sm border border-border/50 backdrop-blur-sm space-y-4">
+        <Input
+          icon={<Search className="w-4 h-4" />}
+          type="text"
+          value={filters.searchTerm}
+          onChange={e => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
+          placeholder={t('pet.filters.searchPlaceholder')}
+        />
+
+        <div className="space-y-2">
+          <ChipFilterRow
+            label={t('pet.filters.species')}
+            options={speciesOptions}
+            selected={filters.species}
+            renderLabel={val => CANONICAL_SPECIES.includes(val) ? t(`pet.speciesOptions.${val}`) : val}
+            onToggle={val => setFilters(prev => ({ ...prev, species: toggleInArray(prev.species, val) }))}
+          />
+          <ChipFilterRow
+            label={t('pet.filters.temperament')}
+            options={TEMPERAMENT_VALUES}
+            selected={filters.temperament}
+            renderLabel={val => t(`pet.temperamentOptions.${val}`)}
+            onToggle={val => setFilters(prev => ({ ...prev, temperament: toggleInArray(prev.temperament, val) }))}
+          />
+          <ChipFilterRow
+            label={t('pet.filters.size')}
+            options={SIZE_VALUES}
+            selected={filters.size}
+            renderLabel={val => t(`pet.sizeOptions.${val}`)}
+            onToggle={val => setFilters(prev => ({ ...prev, size: toggleInArray(prev.size, val) }))}
+          />
+          <ChipFilterRow
+            label={t('pet.filters.sex')}
+            options={SEX_VALUES}
+            selected={filters.sex}
+            renderLabel={val => t(`pet.sexOptions.${val}`)}
+            onToggle={val => setFilters(prev => ({ ...prev, sex: toggleInArray(prev.sex, val) }))}
+          />
+          <ChipFilterRow
+            label={t('pet.filters.neutered')}
+            options={['yes', 'no'] as const}
+            selected={filters.neutered}
+            renderLabel={val => val === 'yes' ? t('common.yes') : t('common.no')}
+            onToggle={val => setFilters(prev => ({ ...prev, neutered: toggleInArray(prev.neutered, val) }))}
+          />
         </div>
 
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3 pt-2 border-t border-border/50">
           <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">
             {showingFiltered
               ? t('pet.filters.showing', { x: filteredPets.length, y: pets.length })

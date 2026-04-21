@@ -8,13 +8,13 @@ Make the `/pets` list navigable when the nursery has more than a handful of pets
 
 ### In scope
 
-- A search input at the top of the pets page that matches (case-insensitive, substring) against the pet's `name`, `breed`, and its owner's `full_name`. Debouncing is not needed — the list is already in memory after the initial `api.pets.list()` fetch.
-- Five filter dropdowns, each with an explicit "All" value as the default:
+- A search input at the top of the pets page that matches (case-insensitive, substring) against the pet's `name`, `breed`, and its owner's `full_name`. Debouncing is not needed — the list is already in memory after the initial `api.pets.list()` fetch. The search input SHALL sit **above** the filter area, on its own row inside the toolbar card.
+- Five **multi-select** filter groups, rendered below the search as toggleable chips. An empty selection for a group means that filter is inactive; one or more selected chips narrow the list to pets matching **any** of the selected values (OR within a group, AND across groups).
   - **Species** — the canonical set (dog / cat / bird / rabbit / other) plus any additional values found on the currently-loaded pets. This keeps the filter honest even when `custom_pet_species` is on and an operator has recorded a value outside the canonical list.
   - **Temperament** — the five canonical values.
   - **Size** — small / medium / large.
   - **Sex** — male / female.
-  - **Neutered** — tri-state: all / yes / no.
+  - **Neutered** — `yes` / `no` (selecting neither is "all"; selecting both is functionally equivalent).
 - A "Clear filters" link that appears when at least one filter is active (including the search box).
 - The list header updates from `Registered Pets (N)` to `Showing X of Y` when a filter is active, so the operator always knows how many matches they're seeing.
 - A dedicated empty-state when the combined search + filters match zero pets (distinct from the "no pets registered yet" state).

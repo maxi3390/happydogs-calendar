@@ -16,17 +16,24 @@
 - [x] 2.2 Toolbar renders inside its own card at the top of the list area.
 - [x] 2.3 Build the Species dropdown options dynamically: canonical five plus any unique species values present on the loaded pets.
 
-## 3. Translations
-- [x] 3.1 Add `pet.filters.*` keys to `backend/translations/en.json` + `es.json`:
+## 3. Multi-select via chips
+- [x] 3.1 Change every filter group's state from a single string to `T[]`; empty array = filter inactive.
+- [x] 3.2 Replace the `<select>` dropdowns with a `ChipFilterRow` component — one row per group, chips are `<button type="button">` with `aria-pressed` and OR-within-group / AND-across-group semantics.
+- [x] 3.3 Update `filteredPets`, `hasActiveFilters`, and `clearFilters` to the new array-based shape.
+- [x] 3.4 Move the search input to its own row above every filter group; filter groups stack beneath it.
+
+## 4. Translations
+- [x] 4.1 Add `pet.filters.*` keys to `backend/translations/en.json` + `es.json`:
   - `searchPlaceholder`, `species`, `temperament`, `size`, `sex`, `neutered`, `all`, `clearAll`, `noMatches`, `showing`.
-- [x] 3.2 Verify both JSON files parse.
+- [x] 4.2 Verify both JSON files parse.
 
-## 4. Spec
-- [x] 4.1 Write the MODIFIED delta at `openspec/changes/pet-list-filters/specs/frontend/pets/spec.md`.
-- [x] 4.2 Append the same requirements to the baseline `openspec/specs/frontend/pets/spec.md`.
+## 5. Spec
+- [x] 5.1 Write the MODIFIED delta at `openspec/changes/pet-list-filters/specs/frontend/pets/spec.md`.
+- [x] 5.2 Append the same requirements to the baseline `openspec/specs/frontend/pets/spec.md`.
+- [x] 5.3 Update the spec to describe the multi-select chips + OR-within-group / AND-across-group semantics + search-above-filters layout.
 
-## 5. Verification
-- [x] 5.1 `tsc --noEmit` — zero errors.
-- [x] 5.2 Manual: open `/pets`, click "Add Pet" → `PetForm` opens in create mode. Type a name fragment → list narrows. Pick a Species → further narrows. Clear filters → full list returns.
-- [x] 5.3 Manual: toggle `custom_pet_species` on, record a pet with a custom species (e.g. `ferret`), verify the Species dropdown now offers that value.
-- [x] 5.4 Visual diff vs `/owners`: page header, search card, list card styling all match.
+## 6. Verification
+- [x] 6.1 `tsc --noEmit` — zero errors.
+- [x] 6.2 Manual: open `/pets`, click "Add Pet" → `PetForm` opens in create mode. Type a name fragment → list narrows. Activate `Cat` → further narrows. Activate `Dog` as well → shows cats OR dogs. Clear filters → full list.
+- [x] 6.3 Manual: toggle `custom_pet_species` on, record a pet with a custom species (e.g. `ferret`), verify a `ferret` chip appears in the Species row.
+- [x] 6.4 Visual diff vs `/owners`: page header, search card, list card styling all match.
