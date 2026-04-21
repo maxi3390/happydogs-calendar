@@ -112,6 +112,7 @@ Run `make help` inside the repo for the full catalogue. Most-used targets:
 | `make destroy-db`       | Irreversibly remove the `happy-calendar_postgres_data` volume — destructive; requires explicit confirmation |
 | `make clean`            | Stop and remove containers; the database volume is preserved              |
 | `make upgrade`          | `backup` → `git pull` → `build` → `up` → `migrate` (use `SKIP_BACKUP=1` to skip step 1) |
+| `make seed-example-data` | Populate the DB with a deterministic demo dataset (idempotent). Pass `SEED_ARGS="--reset"` to wipe the seeded rows first, or `SEED_ARGS=--allow-production` to bypass the `DEBUG=False` guard on staging/demo stacks. |
 
 ---
 

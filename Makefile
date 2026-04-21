@@ -1,4 +1,4 @@
-.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend test-frontend test-frontend-debug lint clean rebuild create-admin env env-check init upgrade backup restore volume-ensure destroy-db
+.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend test-frontend test-frontend-debug lint clean rebuild create-admin seed-example-data env env-check init upgrade backup restore volume-ensure destroy-db
 
 POSTGRES_VOLUME_NAME := happy-calendar_postgres_data
 
@@ -33,6 +33,7 @@ help:
 	@echo "  make makemigrations - Create new migrations"
 	@echo "  make createsuperuser - Create Django admin user (interactive)"
 	@echo "  make create-admin   - Create first admin user (non-interactive)"
+	@echo "  make seed-example-data - Populate DB with demo data (idempotent; SEED_ARGS=\"--reset\" to wipe first)"
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test              - Run all tests (backend + frontend)"
@@ -146,6 +147,14 @@ create-admin:
 	print(f'Admin created: {user.email}') if created else print(f'Admin already exists: {user.email}') \
 	"
 	@echo "Email: $(ADMIN_EMAIL) | Password: $(ADMIN_PASSWORD)"
+
+# Seed a deterministic demo dataset (idempotent). Forward SEED_ARGS="..."
+# to pass flags through, e.g.  SEED_ARGS=--reset make seed-example-data.
+# Full spec: openspec/specs/tooling/seed/spec.md
+SEED_ARGS ?=
+
+seed-example-data:
+	docker compose exec -T backend python manage.py seed_example_data $(SEED_ARGS)
 
 # Testing
 PLAYWRIGHT_IMAGE ?= mcr.microsoft.com/playwright:v1.58.2-noble
