@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   PawPrint, Users, CalendarDays, Settings, Menu, X, LogIn, LogOut,
-  Shield, User, ChevronDown, Code2,
+  Shield, User, ChevronDown, Code2, Stethoscope,
 } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -175,6 +175,16 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
                       </div>
                       <div className="p-2 space-y-1">
                         <Link
+                          href="/vets"
+                          role="menuitem"
+                          aria-current={ariaCurrent('/vets')}
+                          onClick={() => setProfileMenuOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-secondary/80 rounded-xl transition-colors"
+                        >
+                          <Stethoscope className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
+                          {t('nav.vets')}
+                        </Link>
+                        <Link
                           href="/settings"
                           role="menuitem"
                           aria-current={ariaCurrent('/settings')}
@@ -318,6 +328,16 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
                         <span className="text-xs text-muted-foreground">{user?.email}</span>
                       </div>
                     </div>
+
+                    <Link
+                      href="/vets"
+                      aria-current={ariaCurrent('/vets')}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={mobileNavLinkClass('/vets', 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700')}
+                    >
+                      <Stethoscope className="w-5 h-5" />
+                      {t('nav.vets')}
+                    </Link>
 
                     <Link
                       href="/settings"

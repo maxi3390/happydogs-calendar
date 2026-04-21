@@ -13,6 +13,7 @@ export type {
 } from '@/domain/schedules/types';
 export type { DocumentItem } from '@/domain/documents/types';
 export type { NurserySetting } from '@/domain/settings/types';
+export type { Vet, VetFormData, VetListItem } from '@/domain/vets/types';
 
 import { ownersApi } from '@/domain/owners/api';
 import { petsApi } from '@/domain/pets/api';
@@ -22,6 +23,7 @@ import { schedulesApi } from '@/domain/schedules/api';
 import { documentsApi } from '@/domain/documents/api';
 import { nurserySettingsApi } from '@/domain/settings/api';
 import { usersApi } from '@/domain/users/api';
+import { vetsApi } from '@/domain/vets/api';
 
 export const api = {
   owners: ownersApi,
@@ -32,4 +34,5 @@ export const api = {
   nurserySettings: nurserySettingsApi,
   documents: documentsApi,
   users: usersApi,
+  vets: vetsApi,
 };

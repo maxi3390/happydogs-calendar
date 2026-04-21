@@ -15,7 +15,8 @@
     "calendar": "Calendario",
     "admin": "Administración",
     "uiSystem": "Sistema de UI",
-    "menu": "Menú"
+    "menu": "Menú",
+    "vets": "Veterinarios"
   },
   "calendar": {
     "month": "Mes",
@@ -161,7 +162,10 @@
     "changePhoto": "Cambiar Foto",
     "traits": "Características",
     "saveAndAddAnother": "Guardar y Agregar Otra",
-    "addedSuccessfully": "{name} agregada con éxito"
+    "addedSuccessfully": "{name} agregada con éxito",
+    "vetOverride": "Veterinario Específico",
+    "noVetOverride": "Usar el veterinario de cabecera del dueño",
+    "vetOverrideHint": "Opcional. Si se configura, este veterinario se usa para esta mascota; de lo contrario se usa el de cabecera del dueño."
   },
   "owner": {
     "title": "Dueños",
@@ -205,7 +209,12 @@
     "profilePicture": "Foto de Perfil",
     "uploadPhoto": "Subir Foto",
     "removePhoto": "Eliminar Foto",
-    "changePhoto": "Cambiar Foto"
+    "changePhoto": "Cambiar Foto",
+    "veterinarySection": "Veterinario",
+    "primaryVet": "Veterinario de Cabecera",
+    "emergencyVet": "Veterinario de Emergencia",
+    "noVetSelected": "Ninguno",
+    "noVetsHint": "Registrá un veterinario en la página de Veterinarios para poder asociarlo acá."
   },
   "multiPet": {
     "title": "Horario Multi-Mascota",
@@ -265,12 +274,14 @@
     "invalidDates": "La fecha de fin no puede ser anterior a la fecha de inicio",
     "invalidTimes": "La hora de fin debe ser posterior a la hora de inicio",
     "loginFailed": "Error al iniciar sesión",
-    "registrationFailed": "Error al registrarse"
+    "registrationFailed": "Error al registrarse",
+    "vetLoadFailed": "No se pudieron cargar los veterinarios. Intentá nuevamente."
   },
   "confirmations": {
     "deletePet": "¿Estás seguro de que deseas eliminar esta mascota? Esto también eliminará todos sus horarios.",
     "deleteSchedule": "¿Estás seguro de que deseas eliminar este horario?",
-    "deleteOwner": "¿Estás seguro de que deseas eliminar este dueño?"
+    "deleteOwner": "¿Estás seguro de que deseas eliminar este dueño?",
+    "deleteVet": "¿Seguro que querés eliminar este veterinario? Los dueños y mascotas que lo referencian quedarán con el campo vacío."
   },
   "settings": {
     "title": "Configuración",
@@ -427,5 +438,29 @@
     "profile": "Perfil",
     "admin": "Administrador",
     "user": "Usuario"
+  },
+  "vet": {
+    "title": "Veterinarios",
+    "description": "Registrá y gestioná las clínicas veterinarias asociadas",
+    "addVet": "Agregar Veterinario",
+    "editVet": "Editar Veterinario",
+    "deleteVet": "Eliminar veterinario",
+    "noVets": "Todavía no hay veterinarios registrados",
+    "addFirst": "Agregá tu primer veterinario para vincularlo a dueños y mascotas.",
+    "registeredVets": "Veterinarios Registrados",
+    "name": "Nombre de la clínica",
+    "namePlaceholder": "ej. Clínica Veterinaria Happy Paws",
+    "phone": "Teléfono",
+    "email": "Email",
+    "addressSection": "Dirección",
+    "street": "Calle",
+    "city": "Ciudad",
+    "state": "Localidad",
+    "province": "Provincia",
+    "country": "País",
+    "notes": "Notas",
+    "notesPlaceholder": "Horarios, indicaciones o cualquier dato útil",
+    "searchPlaceholder": "Buscar veterinarios por nombre, ciudad o email",
+    "noMatches": "Ningún veterinario coincide con la búsqueda."
   }
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { X, Plus } from 'lucide-react';
-import { api, Pet, PetFormData, OwnerListItem, Vaccination, VaccinationType } from '@/lib/api';
+import { api, Pet, PetFormData, OwnerListItem, Vaccination, VaccinationType, Vet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 import { useToast } from '@/components/ui/Toast';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
@@ -37,6 +37,7 @@ const defaultFormData = (ownerId: number | null): PetFormData => ({
   weight: null,
   special_notes: '',
   owner: ownerId,
+  vet_override: null,
 });
 
 export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAndAnother }: PetFormProps) {
@@ -49,6 +50,7 @@ export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAnd
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(pet?.profile_picture_url || null);
   const [pendingProfilePicture, setPendingProfilePicture] = useState<File | null>(null);
   const [vaxTypes, setVaxTypes] = useState<VaccinationType[]>([]);
+  const [vets, setVets] = useState<Vet[]>([]);
   const [vaccinations, setVaccinations] = useState<Array<{ vax_type: string; date: string }>>([
     ...(pet?.vaccinations?.map(v => ({ vax_type: v.vax_type, date: v.date })) || []),
   ]);
@@ -66,6 +68,7 @@ export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAnd
     weight: pet?.weight ?? null,
     special_notes: pet?.special_notes || '',
     owner: pet?.owner ?? lockedOwnerId ?? null,
+    vet_override: pet?.vet_override ?? null,
   });
 
   const isEditing = Boolean(pet);
@@ -74,12 +77,14 @@ export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAnd
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [ownersData, vaxTypesData] = await Promise.all([
+        const [ownersData, vaxTypesData, vetsData] = await Promise.all([
           isOwnerLocked ? Promise.resolve<OwnerListItem[]>([]) : api.owners.dropdown(),
           api.vaccinationTypes.list(),
+          api.vets.list(),
         ]);
         setOwners(ownersData);
         setVaxTypes(vaxTypesData);
+        setVets(vetsData);
       } catch (err) {
         console.error('Failed to fetch form data:', err);
       }
@@ -483,6 +488,25 @@ export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAnd
               className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
               placeholder={t('pet.specialNotesPlaceholder')}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t('pet.vetOverride')}
+            </label>
+            <select
+              value={formData.vet_override ?? ''}
+              onChange={e => setFormData({ ...formData, vet_override: e.target.value ? Number(e.target.value) : null })}
+              className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
+            >
+              <option value="">{t('pet.noVetOverride')}</option>
+              {vets.map(vet => (
+                <option key={vet.id} value={vet.id}>{vet.name}</option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t('pet.vetOverrideHint')}
+            </p>
           </div>
 
           {pet && (
