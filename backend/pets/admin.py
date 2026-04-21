@@ -5,13 +5,15 @@ from domain.vaccinations.models import Vaccination
 from domain.schedules.models import Schedule
 from domain.documents.models import Document
 from domain.notes.models import MedicalNote
+from domain.vets.models import Vet
 
 
 @admin.register(Owner)
 class OwnerAdmin(admin.ModelAdmin):
-    list_display = ['first_name', 'last_name', 'email', 'phone', 'city', 'province', 'pet_count']
+    list_display = ['first_name', 'last_name', 'email', 'phone', 'city', 'province', 'pet_count', 'primary_vet', 'emergency_vet']
     list_filter = ['created_at', 'province', 'country']
     search_fields = ['first_name', 'last_name', 'email', 'phone', 'street', 'city', 'state', 'province', 'country']
+    raw_id_fields = ['primary_vet', 'emergency_vet']
 
     def pet_count(self, obj):
         return obj.pets.count()
@@ -25,10 +27,18 @@ class VaccinationInline(admin.TabularInline):
 
 @admin.register(Pet)
 class PetAdmin(admin.ModelAdmin):
-    list_display = ['name', 'species', 'sex', 'neutered', 'birth_date', 'temperament', 'dominance_level', 'size', 'owner']
+    list_display = ['name', 'species', 'sex', 'neutered', 'birth_date', 'temperament', 'dominance_level', 'size', 'owner', 'vet_override']
     list_filter = ['species', 'temperament', 'size', 'sex', 'neutered']
     search_fields = ['name', 'owner__first_name', 'owner__last_name']
     inlines = [VaccinationInline]
+    raw_id_fields = ['owner', 'vet_override']
+
+
+@admin.register(Vet)
+class VetAdmin(admin.ModelAdmin):
+    list_display = ['name', 'phone', 'email', 'city', 'province', 'country']
+    list_filter = ['province', 'country', 'created_at']
+    search_fields = ['name', 'phone', 'email', 'street', 'city', 'state', 'province', 'country']
 
 
 @admin.register(Vaccination)

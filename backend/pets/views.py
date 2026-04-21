@@ -9,7 +9,7 @@ from django.db.models import Q
 from django.conf import settings
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
-from .models import Owner, Pet, Schedule, VaccinationType, Document, MedicalNote
+from .models import Owner, Pet, Schedule, VaccinationType, Document, MedicalNote, Vet
 from nursery_settings.models import NurserySetting
 from .serializers import (
     OwnerSerializer,
@@ -24,6 +24,7 @@ from .serializers import (
     VaccinationTypeSerializer,
     DocumentSerializer,
     MedicalNoteSerializer,
+    VetSerializer,
 )
 
 
@@ -793,3 +794,46 @@ def get_available_languages(request):
         {'code': 'es', 'name': 'Spanish', 'nativeName': 'Español'}
     ]
     return Response(languages)
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List veterinarians",
+        description="Retrieve all veterinarian records that owners and pets can reference.",
+        tags=['vets']
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a veterinarian",
+        description="Fetch a single vet by id, including the inherited address fields.",
+        tags=['vets']
+    ),
+    create=extend_schema(
+        summary="Create a veterinarian",
+        description="Register a new vet clinic or practitioner.",
+        tags=['vets']
+    ),
+    update=extend_schema(
+        summary="Update a veterinarian",
+        description="Replace every field of an existing vet record.",
+        tags=['vets']
+    ),
+    partial_update=extend_schema(
+        summary="Partially update a veterinarian",
+        description="Update a subset of vet fields.",
+        tags=['vets']
+    ),
+    destroy=extend_schema(
+        summary="Delete a veterinarian",
+        description=(
+            "Remove a vet record. Owners and pets that referenced it have their "
+            "primary_vet / emergency_vet / vet_override cleared to null (on_delete=SET_NULL)."
+        ),
+        tags=['vets']
+    ),
+)
+class VetViewSet(viewsets.ModelViewSet):
+    """Standard CRUD for veterinarian records."""
+
+    queryset = Vet.objects.all()
+    serializer_class = VetSerializer
+    permission_classes = [IsAuthenticated]
