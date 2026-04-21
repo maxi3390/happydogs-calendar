@@ -142,12 +142,13 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
 
   if (loading) {
     return (
-      <div className="bg-card text-card-foreground rounded-xl shadow-lg p-6">
-        <div className="animate-pulse space-y-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-20 bg-gray-100 dark:bg-slate-700 rounded-lg" />
-          ))}
-        </div>
+      <div className="space-y-4">
+        {[1, 2, 3].map(i => (
+          <div
+            key={i}
+            className="bg-card rounded-2xl shadow-sm border border-border/50 animate-pulse h-24"
+          />
+        ))}
       </div>
     );
   }
@@ -155,18 +156,18 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
   // No pets at all — distinct from "filters match nothing". Keep the existing CTA.
   if (pets.length === 0) {
     return (
-      <div className="bg-card text-card-foreground rounded-xl shadow-lg p-8 text-center">
-        <Dog className="w-16 h-16 mx-auto text-gray-300 dark:text-muted-foreground mb-4" />
-        <h3 className="text-lg font-medium text-gray-700 dark:text-gray-200">{t('pet.noPets')}</h3>
-        <p className="text-muted-foreground mt-1">{t('pet.addFirst')}</p>
+      <div className="text-center py-12">
+        <Dog className="w-12 h-12 mx-auto text-gray-300 dark:text-muted-foreground mb-4" />
+        <p className="text-muted-foreground">{t('pet.noPets')}</p>
+        <p className="text-sm text-muted-foreground/80 mt-1">{t('pet.addFirst')}</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-card text-card-foreground rounded-xl shadow-lg overflow-hidden">
-      {/* Filters toolbar */}
-      <div className="p-4 border-b border-gray-100 dark:border-slate-700 bg-muted/50 dark:bg-slate-700/50 space-y-3">
+    <>
+      {/* Search + filter toolbar — its own card, matches the owners page */}
+      <div className="mb-8 bg-card text-card-foreground rounded-2xl p-4 shadow-sm border border-border/50 backdrop-blur-sm space-y-3">
         <div className="flex flex-col lg:flex-row gap-3">
           <div className="flex-1">
             <Input
@@ -258,7 +259,7 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
 
       {/* Empty-results state (distinct from "no pets registered yet") */}
       {filteredPets.length === 0 ? (
-        <div className="p-8 text-center">
+        <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-8 text-center">
           <p className="text-sm text-muted-foreground mb-4">{t('pet.filters.noMatches')}</p>
           <Button variant="secondary" onClick={clearFilters}>
             <X className="w-4 h-4 mr-1" />
@@ -266,69 +267,71 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
           </Button>
         </div>
       ) : (
-        <div className="divide-y divide-gray-100 dark:divide-slate-700">
+        <div className="space-y-4">
           {filteredPets.map(pet => (
             <div
               key={pet.id}
-              className="p-4 hover:bg-muted/50 dark:hover:bg-slate-700/50 transition-colors border-b border-border/10 last:border-0"
+              className="bg-card rounded-2xl shadow-sm border border-border/50 overflow-hidden hover:shadow-md transition-all group"
             >
               <div
-                className="flex items-start justify-between cursor-pointer group"
+                className="p-5 cursor-pointer hover:bg-secondary/20 transition-colors"
                 onClick={() => setExpandedPetId(expandedPetId === pet.id ? null : pet.id)}
               >
-                <div className="flex items-start gap-4 flex-1">
-                  {pet.profile_picture_url ? (
-                    <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 border border-border/50 shadow-sm relative">
-                      <img src={pet.profile_picture_url} alt={pet.name} className="w-full h-full object-cover" />
-                    </div>
-                  ) : (
-                    <div className="w-12 h-12 flex items-center justify-center bg-primary/10 text-primary rounded-xl flex-shrink-0 border border-primary/20">
-                      {speciesIcons[pet.species] || speciesIcons.other}
-                    </div>
-                  )}
-                  <div className="flex-1 mt-1">
-                    <h4 className={`font-semibold text-lg transition-colors ${expandedPetId === pet.id ? 'text-primary' : 'text-foreground group-hover:text-primary'}`}>{pet.name}</h4>
-                    <p className="text-sm text-muted-foreground font-medium">
-                      {pet.breed || pet.species} • {pet.age} {t('common.years')}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {t('pet.owner')}: {pet.owner_details?.full_name || t('pet.noOwner')}
-                    </p>
-                    {(pet.medical_notes_count ?? 0) > 0 && (
-                      <div className="mt-1">
-                        <Badge variant="secondary" className="text-xs inline-flex items-center" title={t('medicalNotes.title')}>
-                          <FileText className="w-3 h-3" />
-                        </Badge>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-4 flex-1">
+                    {pet.profile_picture_url ? (
+                      <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 border border-border/50 shadow-sm">
+                        <img src={pet.profile_picture_url} alt={pet.name} className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0 border border-primary/20 shadow-inner">
+                        {speciesIcons[pet.species] || speciesIcons.other}
                       </div>
                     )}
+                    <div className="flex-1 mt-1">
+                      <h3 className={`text-lg font-bold transition-colors ${expandedPetId === pet.id ? 'text-primary' : 'text-foreground group-hover:text-primary'}`}>{pet.name}</h3>
+                      <p className="text-sm text-muted-foreground font-medium mt-0.5">
+                        {pet.breed || pet.species} • {pet.age} {t('common.years')}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {t('pet.owner')}: {pet.owner_details?.full_name || t('pet.noOwner')}
+                      </p>
+                      {(pet.medical_notes_count ?? 0) > 0 && (
+                        <div className="mt-1">
+                          <Badge variant="secondary" className="text-xs inline-flex items-center" title={t('medicalNotes.title')}>
+                            <FileText className="w-3 h-3" />
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-1 mt-1">
-                  <Button
-                    onClick={(e) => { e.stopPropagation(); onEdit(pet); }}
-                    variant="ghost"
-                    size="icon"
-                  >
-                    <Edit2 className="w-4 h-4 text-primary" />
-                  </Button>
-                  <Button
-                    onClick={(e) => { e.stopPropagation(); handleDelete(pet.id); }}
-                    disabled={deletingId === pet.id}
-                    variant="ghost"
-                    size="icon"
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
-                  <div className={`p-2 ml-1 rounded-lg transition-colors ${expandedPetId === pet.id ? 'text-foreground bg-secondary' : 'text-muted-foreground group-hover:bg-secondary'}`}>
-                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${expandedPetId === pet.id ? 'rotate-180' : ''}`} />
+                  <div className="flex items-center gap-1 mt-1">
+                    <Button
+                      onClick={(e) => { e.stopPropagation(); onEdit(pet); }}
+                      variant="ghost"
+                      size="icon"
+                    >
+                      <Edit2 className="w-4 h-4 text-primary" />
+                    </Button>
+                    <Button
+                      onClick={(e) => { e.stopPropagation(); handleDelete(pet.id); }}
+                      disabled={deletingId === pet.id}
+                      variant="ghost"
+                      size="icon"
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                    <div className={`p-2 ml-1 rounded-xl transition-colors ${expandedPetId === pet.id ? 'text-foreground bg-secondary' : 'text-muted-foreground group-hover:bg-secondary/50'}`}>
+                      <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${expandedPetId === pet.id ? 'rotate-180' : ''}`} />
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Accordion Content */}
-              <div className={`grid transition-all duration-300 ${expandedPetId === pet.id ? 'grid-rows-[1fr] opacity-100 mt-4' : 'grid-rows-[0fr] opacity-0 mt-0 pointer-events-none'}`}>
-                <div className="overflow-hidden">
-                  <div className="pt-4 border-t border-border/50 flex flex-col sm:flex-row gap-6">
+              {expandedPetId === pet.id && (
+                <div className="border-t border-border/50 p-5 bg-secondary/5">
+                  <div className="flex flex-col sm:flex-row gap-6">
                     {/* Bigger Picture */}
                     {pet.profile_picture_url ? (
                       <div className="w-32 h-32 sm:w-48 sm:h-48 rounded-2xl overflow-hidden flex-shrink-0 border-2 border-primary/10 shadow-md">
@@ -385,11 +388,11 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           ))}
         </div>
       )}
-    </div>
+    </>
   );
 }

@@ -8,7 +8,7 @@ Make the `/pets` list navigable when the nursery has more than a handful of pets
 
 ### In scope
 
-- A search input at the top of `PetList` that matches (case-insensitive, substring) against the pet's `name`, `breed`, and its owner's `full_name`. Debouncing is not needed — the list is already in memory after the initial `api.pets.list()` fetch.
+- A search input at the top of the pets page that matches (case-insensitive, substring) against the pet's `name`, `breed`, and its owner's `full_name`. Debouncing is not needed — the list is already in memory after the initial `api.pets.list()` fetch.
 - Five filter dropdowns, each with an explicit "All" value as the default:
   - **Species** — the canonical set (dog / cat / bird / rabbit / other) plus any additional values found on the currently-loaded pets. This keeps the filter honest even when `custom_pet_species` is on and an operator has recorded a value outside the canonical list.
   - **Temperament** — the five canonical values.
@@ -18,6 +18,8 @@ Make the `/pets` list navigable when the nursery has more than a handful of pets
 - A "Clear filters" link that appears when at least one filter is active (including the search box).
 - The list header updates from `Registered Pets (N)` to `Showing X of Y` when a filter is active, so the operator always knows how many matches they're seeing.
 - A dedicated empty-state when the combined search + filters match zero pets (distinct from the "no pets registered yet" state).
+- **Layout parity with `/owners`**: the `/pets` page SHALL mirror the owners page — a header with a `Title + description` on the left and an **"Add Pet"** primary button on the right, a search card in its own `rounded-2xl` wrapper, a `max-w-7xl` container, and individual pet rows rendered as standalone `rounded-2xl` cards with `shadow-sm` / `hover:shadow-md` instead of the old single-card + divide-y list.
+- **Add Pet flow**: clicking "Add Pet" opens the `PetForm` in create mode. (Previously the flow was unreachable because the page only rendered `PetForm` when `editingPet` was set — a latent bug fixed as part of this change.)
 
 ### Out of scope
 

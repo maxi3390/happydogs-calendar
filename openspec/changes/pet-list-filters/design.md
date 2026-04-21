@@ -84,13 +84,31 @@ The second state renders inside the same list card so the filter toolbar stays i
 
 ## Layout
 
-On `lg` and wider, the toolbar lives in a single row:
+The pets page is restructured to match the owners-page idiom so staff don't have to context-switch between list screens:
+
+- `<main class="max-w-7xl mx-auto ...">` — same container as owners (previously `max-w-4xl`).
+- Page header on top: `Title + description` on the left, primary **"Add Pet"** button on the right (clicking opens `PetForm` in create mode).
+- Search + filter bar in its own card: `bg-card rounded-2xl p-4 shadow-sm border border-border/50`. The search input is `max-w-md` when filters are hidden on mobile; on `lg`+ it shares the row with the five filter dropdowns.
+- List items are individual cards — each pet is a `rounded-2xl shadow-sm border border-border/50 hover:shadow-md` block — rather than rows inside a single bordered container. This matches the owners list exactly and makes the cards stand out as the primary unit.
+- The "Clear filters" control lives inside the search card when filters are active.
+
+On `lg` and wider, the toolbar is a single row:
 
 ```
-[ search…………………………………… ]  [Species ▾] [Temperament ▾] [Size ▾] [Sex ▾] [Neutered ▾] [Clear]
+[ search… ]   [Species ▾] [Temperament ▾] [Size ▾] [Sex ▾] [Neutered ▾] [Clear]
 ```
 
-On `sm` / mobile it stacks vertically, with filters in a 2-column grid so the page doesn't grow absurdly tall on narrow screens.
+On `sm` / mobile it stacks, with filters in a 2-column grid.
+
+## Add Pet flow
+
+The existing `/pets/page.tsx` rendered `PetForm` only when `editingPet` was truthy:
+
+```tsx
+{showPetForm && editingPet && ( <PetForm .../> )}
+```
+
+— which silently swallowed the create flow. The new page changes the guard to `{showPetForm && ( ... )}` and lets `PetForm` receive `pet={editingPet}` (undefined in create mode, which the form already handles). Clicking "Add Pet" does `setEditingPet(undefined); setShowPetForm(true)`.
 
 ## Rejected alternatives
 
@@ -98,3 +116,4 @@ On `sm` / mobile it stacks vertically, with filters in a 2-column grid so the pa
 - **Move filtering to the API** — `api.pets.list()` doesn't accept query params today. Adding `?species=dog&temperament=aggressive&...` is fine when the data gets big, but premature for the current scale and forces coordinated backend/frontend work. Client-side is simpler and equally correct for < a few thousand pets.
 - **Sort controls** — out of scope; see proposal.
 - **Persist filters to the URL** — attractive for shareable links but adds routing coupling; the page already re-fetches on mount, so filters naturally reset to defaults on a fresh visit. Revisit if an operator asks for shareable filtered views.
+- **Inline the list into `app/pets/page.tsx`** (matching the owners page, which renders its list inline) — would delete the `PetList` component. Keeping `PetList` as a separate component is a small structural difference from `/owners` that buys us reusability (e.g. an owner-detail view could embed a `PetList` filtered by owner). The visual layout still matches owners — the code shape is slightly different, which is fine.

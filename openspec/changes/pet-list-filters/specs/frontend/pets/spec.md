@@ -69,3 +69,38 @@ The Species dropdown SHALL include the canonical five values (dog, cat, bird, ra
 - AND a pet exists whose `species` is a non-canonical value (e.g. `"ferret"`)
 - WHEN the operator opens the Species dropdown
 - THEN `"ferret"` SHALL appear as an option alongside the canonical five
+
+### Requirement: Pet Page Header With "Add Pet" Button
+
+The `/pets` page SHALL render a header section above the list containing (1) the page title plus a short description on the left and (2) a primary **"Add Pet"** button on the right. Clicking the button SHALL open the `PetForm` modal in create mode (no `pet` prop set).
+
+#### Scenario: Add Pet button opens the form in create mode
+
+- GIVEN the operator is on `/pets` and no form is visible
+- WHEN the operator clicks "Add Pet"
+- THEN the `PetForm` modal SHALL open
+- AND the form SHALL NOT pre-fill any fields with existing pet data
+
+#### Scenario: Edit button opens the form in edit mode
+
+- GIVEN the operator is on `/pets` with at least one pet in the list
+- WHEN the operator clicks the edit icon on a pet card
+- THEN the `PetForm` modal SHALL open with that pet's data pre-filled
+
+### Requirement: Pets Page Layout Parity With `/owners`
+
+The `/pets` page SHALL mirror the visual shape of the `/owners` page:
+
+- A `max-w-7xl` container.
+- The header section (title + description + primary button) has the same alignment and spacing as the owners header.
+- The search and filter toolbar lives in a dedicated `rounded-2xl` card below the header.
+- Each pet is rendered as its own `rounded-2xl shadow-sm border border-border/50 hover:shadow-md` card with `space-y-4` between cards, rather than rows inside a single bordered list.
+
+This is a structural requirement, not a pixel-exact one; sibling cards / toolbars may legitimately differ in their filter dropdowns and accordion contents.
+
+#### Scenario: Pet list and owner list are visually consistent
+
+- GIVEN an authenticated user
+- WHEN they navigate from `/owners` to `/pets`
+- THEN the two pages SHALL share the same header layout, the same search-card styling, and the same per-row card treatment
+- AND the pets page SHALL NOT render its list as a single bordered container with divider lines between rows
