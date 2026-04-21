@@ -168,7 +168,19 @@
     "noVetOverride": "Usar el veterinario de cabecera del dueño",
     "vetOverrideHint": "Opcional. Si se configura, este veterinario se usa para esta mascota; de lo contrario se usa el de cabecera del dueño.",
     "customSpeciesPlaceholder": "ej. hurón, iguana, hámster",
-    "customSpeciesHint": "Si se completa, este valor reemplaza la selección del menú. Dejalo vacío para usar el menú."
+    "customSpeciesHint": "Si se completa, este valor reemplaza la selección del menú. Dejalo vacío para usar el menú.",
+    "filters": {
+      "searchPlaceholder": "Buscar por nombre, raza o dueño",
+      "species": "Especie",
+      "temperament": "Temperamento",
+      "size": "Tamaño",
+      "sex": "Sexo",
+      "neutered": "Castrado",
+      "all": "Todos",
+      "clearAll": "Limpiar filtros",
+      "noMatches": "Ninguna mascota coincide con los filtros actuales.",
+      "showing": "Mostrando {x} de {y} mascotas"
+    }
   },
   "owner": {
     "title": "Dueños",
