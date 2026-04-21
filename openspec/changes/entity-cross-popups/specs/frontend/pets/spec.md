@@ -35,3 +35,12 @@ The popup SHALL fetch the owner freshly via `api.owners.get(id)` on mount, indep
 - WHEN the operator clicks the backdrop, the close button, or presses Escape
 - THEN the popup SHALL close
 - AND the underlying pet list and accordion state SHALL NOT be affected
+
+#### Scenario: Owner avatar in the pet details popup
+
+- GIVEN a pet record whose owner has a profile picture
+- WHEN the operator opens the pet details popup (from the pets list or from an owner's pet card)
+- THEN the Owner section in the popup SHALL display the owner's profile picture as a small round avatar next to the owner's full name
+- AND if the owner has no profile picture the avatar SHALL fall back to the owner's initials (first letter of first and last name) on a primary-tinted circle, matching the fallback already used on the owners list page
+
+The `owner_details` projection embedded in the pet payload SHALL therefore expose `profile_picture_url` so the popup can render the avatar without issuing a second request.

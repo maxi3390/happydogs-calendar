@@ -309,7 +309,17 @@ function OwnersPage() {
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <span className="text-xl">{speciesIcons[pet.species] || '🐾'}</span>
+                                {pet.profile_picture_url ? (
+                                  <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 border border-border/50">
+                                    <img
+                                      src={pet.profile_picture_url}
+                                      alt=""
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                ) : (
+                                  <span className="text-xl">{speciesIcons[pet.species] || '🐾'}</span>
+                                )}
                                 <div>
                                   <p className="font-medium text-gray-800 dark:text-gray-200">{pet.name}</p>
                                   <p className="text-xs text-muted-foreground capitalize">

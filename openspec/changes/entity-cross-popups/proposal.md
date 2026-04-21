@@ -14,6 +14,7 @@ Today the pet list shows the owner's name as a plain text line (`Owner: Luis Fer
 - Wiring in `/app/pets/page.tsx`: when `PetList` emits `onViewOwner`, the page opens `<OwnerDetailsPopup>`. Clicking **Edit Owner** in the popup closes the popup and opens `<OwnerForm>` (already a standalone component) for that owner.
 - Wiring in `/app/owners/page.tsx`: each pet card in the expanded owner accordion becomes clickable. Clicking it opens `<PetDetailsPopup>`. Clicking **Edit Pet** closes the popup and opens the existing `<PetForm>` in edit mode (the owners page already instantiates `PetForm` for Add Pet — extend the same instance to cover edit).
 - Translations under `pet.detailsPopup.*` and `owner.detailsPopup.*` for all new strings (section headings, close / edit labels).
+- Serializer enrichment: `OwnerListSerializer` (used as `owner_details` on pets) and `PetListSerializer` (used as `pets` on `OwnerWithPets`) both SHALL expose `profile_picture_url` so the popup and the owner-accordion pet cards can render profile-picture avatars without an extra fetch. If the entity has no picture the field is `null` and the UI falls back to initials (owner) or the species emoji (pet).
 
 ### Out of scope
 

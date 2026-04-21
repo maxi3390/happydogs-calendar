@@ -42,10 +42,19 @@ class OwnerSerializer(serializers.ModelSerializer):
 class OwnerListSerializer(serializers.ModelSerializer):
     """Simplified serializer for listing owners in dropdowns"""
     full_name = serializers.CharField(read_only=True)
+    profile_picture_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Owner
-        fields = ['id', 'first_name', 'last_name', 'full_name', 'phone', 'email', 'id_number']
+        fields = ['id', 'first_name', 'last_name', 'full_name', 'phone', 'email', 'id_number', 'profile_picture_url']
+
+    def get_profile_picture_url(self, obj):
+        if obj.profile_picture:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.profile_picture.url)
+            return obj.profile_picture.url
+        return None
 
 
 class VaccinationSerializer(serializers.ModelSerializer):
@@ -100,9 +109,19 @@ class PetSerializer(serializers.ModelSerializer):
 
 class PetListSerializer(serializers.ModelSerializer):
     """Simplified serializer for listing pets"""
+    profile_picture_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Pet
-        fields = ['id', 'name', 'species', 'temperament', 'dominance_level', 'size', 'owner']
+        fields = ['id', 'name', 'species', 'temperament', 'dominance_level', 'size', 'owner', 'profile_picture_url']
+
+    def get_profile_picture_url(self, obj):
+        if obj.profile_picture:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.profile_picture.url)
+            return obj.profile_picture.url
+        return None
 
 
 class PetWithOwnerSerializer(serializers.ModelSerializer):

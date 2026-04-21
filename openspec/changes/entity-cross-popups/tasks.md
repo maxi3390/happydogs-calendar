@@ -44,3 +44,10 @@
 - [x] 7.2 Manual: on `/pets`, expand a pet, click the owner name → popup opens with owner details. Click Edit → owner form opens. Save → pet list refreshes.
 - [x] 7.3 Manual: on `/owners`, expand an owner, click a pet card → popup opens with pet details. Click Edit → pet form opens. Save → owner details refresh.
 - [x] 7.4 Manual: ESC closes each popup. Clicking outside the card closes each popup.
+
+## 8. Profile picture avatars on the cross-entity surfaces
+- [x] 8.1 Backend: add `profile_picture_url` to `OwnerListSerializer` (used as `owner_details` on `PetSerializer`) via a `SerializerMethodField` that builds an absolute URI when a request is in context.
+- [x] 8.2 Backend: add `profile_picture_url` to `PetListSerializer` (used as `pets` on `OwnerWithPetsSerializer`) the same way.
+- [x] 8.3 Frontend types: add `profile_picture_url?: string | null` on `OwnerListItem` and on the inline pet row type of `OwnerWithPets.pets[]`.
+- [x] 8.4 `PetDetailsPopup`: in the Owner section, render a small round avatar (picture if present, else initials) next to the owner's full name.
+- [x] 8.5 `/app/owners/page.tsx`: on the expanded owner's pet cards, render the pet's `profile_picture_url` when present; otherwise keep the existing species emoji (`🐕` / `🐱` / `🐦` / `🐰` / `🐾`).

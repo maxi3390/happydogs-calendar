@@ -186,9 +186,27 @@ export default function PetDetailsPopup({ petId, onEdit, onClose }: PetDetailsPo
               {/* Owner */}
               <div className="bg-secondary/20 p-3 rounded-xl">
                 <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">{t('pet.owner')}</span>
-                <p className="text-sm text-foreground mt-0.5">
-                  {pet.owner_details?.full_name || t('pet.noOwner')}
-                </p>
+                {pet.owner_details ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    {pet.owner_details.profile_picture_url ? (
+                      <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-border/50">
+                        <img
+                          src={pet.owner_details.profile_picture_url}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0 border border-primary/20 text-xs font-bold">
+                        {pet.owner_details.first_name[0]}
+                        {pet.owner_details.last_name[0]}
+                      </div>
+                    )}
+                    <p className="text-sm text-foreground">{pet.owner_details.full_name}</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-foreground mt-0.5">{t('pet.noOwner')}</p>
+                )}
               </div>
 
               {/* Vet override (flag-gated) */}

@@ -32,6 +32,7 @@ export interface OwnerWithPets extends Owner {
     dominance_level: number;
     size: string;
     owner: number | null;
+    profile_picture_url?: string | null;
   }>;
   profile_picture_url?: string | null;
 }
@@ -64,4 +65,5 @@ export interface OwnerListItem {
   phone: string;
   email: string;
   id_number: string;
+  profile_picture_url?: string | null;
 }
