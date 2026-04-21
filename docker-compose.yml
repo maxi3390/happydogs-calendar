@@ -195,7 +195,14 @@ services:
       - proxy
 
 volumes:
+  # External named volume: declared outside this compose project so that
+  # `docker compose down -v` — and therefore `make clean` — cannot remove
+  # it. The volume is auto-created by `make up` / `make init` / etc. via
+  # the `volume-ensure` Makefile target. To remove it intentionally, run
+  # `make destroy-db` (confirmation-gated).
   postgres_data:
+    external: true
+    name: happy-calendar_postgres_data
   traefik-certs:
 
 networks:

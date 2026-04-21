@@ -100,14 +100,18 @@ Run `make help` inside the repo for the full catalogue. Most-used targets:
 | Command                 | What it does                                                              |
 |-------------------------|---------------------------------------------------------------------------|
 | `make env`              | Create `.env` interactively from `.env.example` (idempotent; never overwrites) |
-| `make init`             | First-time setup: `env-check` → `build` → `up` → `migrate` → `create-admin` |
+| `make init`             | First-time setup: `env-check` → `volume-ensure` → `build` → `up` → `migrate` → `create-admin` |
 | `make up` / `make down` | Start / stop all services                                                 |
 | `make migrate`          | Run pending Django migrations                                             |
 | `make test`             | Run all tests (`test-backend` + `test-frontend`)                          |
 | `make test-backend`     | Backend tests (SQLite in-memory)                                          |
 | `make test-frontend`    | Playwright E2E tests (headless Chrome)                                    |
 | `make lint`             | `flake8` on backend, `next lint` on frontend                              |
-| `make upgrade`          | `git pull` → `build` → `up` → `migrate` (update a running deployment)     |
+| `make backup`           | Full gzipped `pg_dump` → `backups/nursery-<timestamp>.sql.gz`             |
+| `make restore`          | Restore the DB from the latest backup (or `BACKUP_FILE=path make restore`) — destructive; requires explicit confirmation |
+| `make destroy-db`       | Irreversibly remove the `happy-calendar_postgres_data` volume — destructive; requires explicit confirmation |
+| `make clean`            | Stop and remove containers; the database volume is preserved              |
+| `make upgrade`          | `backup` → `git pull` → `build` → `up` → `migrate` (use `SKIP_BACKUP=1` to skip step 1) |
 
 ---
 
@@ -138,6 +142,24 @@ Full per-variable guidance lives as comments in `.env.example` itself; `make env
 `make upgrade` runs `make backup` as its first of five steps. If the backup fails, the upgrade halts before any mutation. Use `SKIP_BACKUP=1 make upgrade` only when a pre-upgrade backup was taken out-of-band and the step would be redundant.
 
 The invariants are tracked in `openspec/specs/tooling/backup/` and (for the `make upgrade` integration) in `openspec/specs/tooling/upgrade/`.
+
+---
+
+## Database persistence
+
+The PostgreSQL data lives in an **external** Docker volume (`happy-calendar_postgres_data`), declared with `external: true` in `docker-compose.yml`. External volumes are outside the compose project's lifecycle, so `docker compose down -v` cannot remove them. This is the primary durability guarantee.
+
+Three layers of defence for the database:
+
+1. **External volume** — survives every routine container operation (`up`, `down`, `restart`, `rebuild`, `build`, `stop`, `clean`, `upgrade`).
+2. **`make backup`** snapshots — a pre-upgrade snapshot is taken automatically by `make upgrade` (step 1 of 5); operators can run `make backup` ad hoc at any time.
+3. **`make destroy-db`** is the **only** Makefile path that removes the volume. It matches the `make restore` confirmation contract: interactive runs require typing `yes`; non-interactive runs require `RESTORE_I_UNDERSTAND=yes`.
+
+`make up`, `make init`, `make upgrade`, `make backup`, and `make restore` all depend on a private `volume-ensure` prerequisite that runs `docker volume create happy-calendar_postgres_data` (idempotent — a no-op when the volume already exists). A fresh clone therefore needs no manual setup: `make init` creates the volume transparently.
+
+`make clean` used to run `docker compose down -v --remove-orphans`, which wiped everything. It now runs `docker compose down --remove-orphans` and leaves data alone.
+
+The invariants are tracked in `openspec/specs/tooling/database-persistence/`.
 
 ---
 

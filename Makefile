@@ -1,4 +1,6 @@
-.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend test-frontend test-frontend-debug lint clean rebuild create-admin env env-check init upgrade backup restore
+.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend test-frontend test-frontend-debug lint clean rebuild create-admin env env-check init upgrade backup restore volume-ensure destroy-db
+
+POSTGRES_VOLUME_NAME := happy-calendar_postgres_data
 
 # Default target
 help:
@@ -56,7 +58,14 @@ build:
 build-no-cache:
 	docker compose build --no-cache
 
-up:
+# Auto-create the external postgres_data volume if it isn't present yet.
+# `docker volume create` is idempotent: a no-op when the volume exists,
+# otherwise it creates an empty Docker-managed volume. Wired as a
+# prerequisite of every target that starts the stack or talks to db.
+volume-ensure:
+	@docker volume create $(POSTGRES_VOLUME_NAME) >/dev/null
+
+up: volume-ensure
 	docker compose up -d
 
 stop:
@@ -69,8 +78,17 @@ restart: stop up
 
 rebuild: stop build up
 
+# `make clean` stops and removes containers but NEVER removes the
+# database volume (postgres_data is declared external in
+# docker-compose.yml, so `docker compose down -v` couldn't remove it
+# anyway — dropping -v keeps the recipe self-documenting).
 clean:
-	docker compose down -v --remove-orphans
+	docker compose down --remove-orphans
+
+# `make destroy-db` is the only Makefile target that removes the
+# database volume. Confirmation-gated via bash scripts/destroy-db.sh.
+destroy-db:
+	@POSTGRES_VOLUME_NAME=$(POSTGRES_VOLUME_NAME) bash scripts/destroy-db.sh
 
 # Logs
 logs:
@@ -203,14 +221,14 @@ env-check:
 # `make backup` writes a timestamped, gzipped pg_dump to backups/.
 # `make restore` restores the latest backup (or BACKUP_FILE=...).
 # Both scripts start the db container if it isn't already running.
-backup:
+backup: volume-ensure
 	@bash scripts/backup-db.sh
 
-restore:
+restore: volume-ensure
 	@bash scripts/restore-db.sh $(if $(BACKUP_FILE),$(BACKUP_FILE),)
 
 # Maintenance
-upgrade:
+upgrade: volume-ensure
 	@echo "=== Upgrading Happy Pet Nursery ==="
 	@if [ ! -f .env ]; then \
 		echo "[upgrade] WARNING: .env is missing. Traefik Host rules will match nothing and the stack will 404."; \
@@ -231,3 +249,4 @@ upgrade:
 	@echo "[5/5] Running migrations..."
 	$(MAKE) migrate
 	@echo "=== Upgrade complete ==="
+complete ==="
