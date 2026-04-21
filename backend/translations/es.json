@@ -16,7 +16,8 @@
     "admin": "Administración",
     "uiSystem": "Sistema de UI",
     "menu": "Menú",
-    "vets": "Veterinarios"
+    "vets": "Veterinarios",
+    "featureFlags": "Feature Flags"
   },
   "calendar": {
     "month": "Mes",
@@ -165,7 +166,9 @@
     "addedSuccessfully": "{name} agregada con éxito",
     "vetOverride": "Veterinario Específico",
     "noVetOverride": "Usar el veterinario de cabecera del dueño",
-    "vetOverrideHint": "Opcional. Si se configura, este veterinario se usa para esta mascota; de lo contrario se usa el de cabecera del dueño."
+    "vetOverrideHint": "Opcional. Si se configura, este veterinario se usa para esta mascota; de lo contrario se usa el de cabecera del dueño.",
+    "customSpeciesPlaceholder": "ej. hurón, iguana, hámster",
+    "customSpeciesHint": "Si se completa, este valor reemplaza la selección del menú. Dejalo vacío para usar el menú."
   },
   "owner": {
     "title": "Dueños",
@@ -482,5 +485,14 @@
     "importing": "Restaurando…",
     "importFailed": "Falló la importación",
     "importSuccess": "Backup restaurado. Filas: {counts}."
+  },
+  "featureFlags": {
+    "title": "Feature Flags",
+    "description": "Activá o desactivá funcionalidades específicas del producto. Los cambios se aplican inmediatamente para todos los usuarios.",
+    "lastUpdated": "Última actualización {when}",
+    "toggleEnable": "Activada",
+    "toggleDisable": "Desactivada",
+    "saveFailed": "No se pudo guardar la flag",
+    "empty": "Todavía no hay feature flags registradas."
   }
 }

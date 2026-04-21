@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { X, AlertTriangle, CheckCircle, Users } from 'lucide-react';
 import { api, Pet, PetListItem, Schedule, ScheduleFormData, BatchScheduleFormData, BatchScheduleResult, ConflictCheckResult, DailyCountResult, OwnerListItem } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import { useFeatureFlag } from '@/lib/feature-flags';
 import { Button } from '@/components/ui/Button';
 
 interface ScheduleFormBaseProps {
@@ -46,6 +47,8 @@ export default function ScheduleForm(props: ScheduleFormProps) {
   const preselectedPetIds = isMulti ? props.preselectedPetIds : undefined;
 
   const { t } = useTranslation();
+  const multidayEnabled = useFeatureFlag('multiday_schedule');
+  const compatibilityWarningsEnabled = useFeatureFlag('compatibility_warnings');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pets, setPets] = useState<Pet[]>([]);
@@ -285,7 +288,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
               </div>
             </div>
 
-            {batchResult.warnings && batchResult.warnings.length > 0 && (
+            {compatibilityWarningsEnabled && batchResult.warnings && batchResult.warnings.length > 0 && (
               <div className="p-4 bg-amber-50 dark:bg-amber-900/30 rounded-lg">
                 <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200 font-medium mb-2">
                   <AlertTriangle className="w-5 h-5" />
@@ -505,7 +508,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
           )}
 
           {/* Date fields (shared) */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className={multidayEnabled ? 'grid grid-cols-2 gap-4' : ''}>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {t('schedule.startDate')} *
@@ -514,23 +517,31 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                 type="date"
                 required
                 value={startDate}
-                onChange={e => setStartDate(e.target.value)}
+                onChange={e => {
+                  setStartDate(e.target.value);
+                  // When multi-day is off, the end date always mirrors the start.
+                  if (!multidayEnabled) {
+                    setEndDate(e.target.value);
+                  }
+                }}
                 className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('schedule.endDate')} *
-              </label>
-              <input
-                type="date"
-                required
-                value={endDate}
-                min={startDate}
-                onChange={e => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
-              />
-            </div>
+            {multidayEnabled && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('schedule.endDate')} *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={endDate}
+                  min={startDate}
+                  onChange={e => setEndDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
+                />
+              </div>
+            )}
           </div>
 
           {startDate !== endDate && (
@@ -605,7 +616,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
           </div>
 
           {/* Conflict result (single mode only) */}
-          {!isMulti && conflictResult && (
+          {compatibilityWarningsEnabled && !isMulti && conflictResult && (
             <div className={`p-4 rounded-lg ${
               conflictResult.has_conflicts
                 ? 'bg-amber-50 border border-amber-200'

@@ -15,6 +15,7 @@ export type { DocumentItem } from '@/domain/documents/types';
 export type { NurserySetting } from '@/domain/settings/types';
 export type { Vet, VetFormData, VetListItem } from '@/domain/vets/types';
 export type { ImportSummary, ImportFormat } from '@/domain/data-portability/types';
+export type { FeatureFlag, FeatureFlagsMap } from '@/domain/feature-flags/types';
 
 import { ownersApi } from '@/domain/owners/api';
 import { petsApi } from '@/domain/pets/api';
@@ -26,6 +27,7 @@ import { nurserySettingsApi } from '@/domain/settings/api';
 import { usersApi } from '@/domain/users/api';
 import { vetsApi } from '@/domain/vets/api';
 import { dataPortabilityApi } from '@/domain/data-portability/api';
+import { featureFlagsApi } from '@/domain/feature-flags/api';
 
 export const api = {
   owners: ownersApi,
@@ -38,4 +40,5 @@ export const api = {
   users: usersApi,
   vets: vetsApi,
   dataPortability: dataPortabilityApi,
+  featureFlags: featureFlagsApi,
 };

@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'pets',
     'nursery_settings',
     'data_portability',
+    'feature_flags',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'

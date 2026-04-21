@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { X, Plus } from 'lucide-react';
 import { api, Pet, PetFormData, OwnerListItem, Vaccination, VaccinationType, Vet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import { useFeatureFlag } from '@/lib/feature-flags';
 import { useToast } from '@/components/ui/Toast';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import DocumentUpload from '@/components/DocumentUpload';
@@ -44,6 +45,9 @@ const defaultFormData = (ownerId: number | null): PetFormData => ({
 export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAndAnother }: PetFormProps) {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const vetManagementEnabled = useFeatureFlag('vet_management');
+  const medicalNotesEnabled = useFeatureFlag('medical_notes');
+  const customSpeciesEnabled = useFeatureFlag('custom_pet_species');
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,9 +100,23 @@ export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAnd
   const enabledVaxTypes = vaxTypes.filter(v => v.enabled);
   const isOwnerSelected = isOwnerLocked || Boolean(formData.owner);
 
+  // When the custom_pet_species flag is on, an operator can type a bespoke
+  // value that overrides the dropdown at submit time. Store it outside
+  // PetFormData so it never round-trips to the server as a separate field.
+  const [customSpecies, setCustomSpecies] = useState<string>(
+    // Seed with the pet's species if it's not one of the canonical choices.
+    pet && !SPECIES_VALUES.includes(pet.species) ? pet.species : '',
+  );
+
   const submitPet = async (): Promise<Pet> => {
     const validVaccinations = vaccinations.filter(v => v.date);
-    const submitData = { ...formData, vaccinations: validVaccinations };
+    const speciesOverride = customSpeciesEnabled && customSpecies.trim();
+    const speciesValue = speciesOverride ? customSpecies.trim() : formData.species;
+    const submitData = {
+      ...formData,
+      species: speciesValue,
+      vaccinations: validVaccinations,
+    };
     if (pet) {
       return api.pets.update(pet.id, submitData);
     }
@@ -267,6 +285,20 @@ export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAnd
                   <option key={val} value={val}>{t(`pet.speciesOptions.${val}`)}</option>
                 ))}
               </select>
+              {customSpeciesEnabled && (
+                <div className="mt-2">
+                  <input
+                    type="text"
+                    value={customSpecies}
+                    onChange={e => setCustomSpecies(e.target.value)}
+                    placeholder={t('pet.customSpeciesPlaceholder')}
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100 text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t('pet.customSpeciesHint')}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div>
@@ -483,30 +515,34 @@ export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAnd
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('pet.vetOverride')}
-            </label>
-            <select
-              value={formData.vet_override ?? ''}
-              onChange={e => setFormData({ ...formData, vet_override: e.target.value ? Number(e.target.value) : null })}
-              className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
-            >
-              <option value="">{t('pet.noVetOverride')}</option>
-              {vets.map(vet => (
-                <option key={vet.id} value={vet.id}>{vet.name}</option>
-              ))}
-            </select>
-            <p className="text-xs text-muted-foreground mt-1">
-              {t('pet.vetOverrideHint')}
-            </p>
-          </div>
+          {vetManagementEnabled && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('pet.vetOverride')}
+              </label>
+              <select
+                value={formData.vet_override ?? ''}
+                onChange={e => setFormData({ ...formData, vet_override: e.target.value ? Number(e.target.value) : null })}
+                className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
+              >
+                <option value="">{t('pet.noVetOverride')}</option>
+                {vets.map(vet => (
+                  <option key={vet.id} value={vet.id}>{vet.name}</option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                {t('pet.vetOverrideHint')}
+              </p>
+            </div>
+          )}
 
           {pet && (
             <div className="border-t border-border pt-4">
-              <div className="mb-4">
-                <MedicalNotesSection petId={pet.id} />
-              </div>
+              {medicalNotesEnabled && (
+                <div className="mb-4">
+                  <MedicalNotesSection petId={pet.id} />
+                </div>
+              )}
               <DocumentUpload petId={pet.id} />
             </div>
           )}
