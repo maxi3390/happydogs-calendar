@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Search, User, Mail, Phone, PawPrint, Edit2, Trash2, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
-import { api, Owner, OwnerWithPets } from '@/lib/api';
+import { api, Owner, OwnerWithPets, Pet } from '@/lib/api';
 import OwnerForm from '@/components/OwnerForm';
 import PetForm from '@/components/PetForm';
+import PetDetailsPopup from '@/components/PetDetailsPopup';
 import ScheduleForm from '@/components/ScheduleForm';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/Button';
@@ -23,6 +24,10 @@ function OwnersPage() {
   const [ownerDetails, setOwnerDetails] = useState<Record<number, OwnerWithPets>>({});
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [schedulePetIds, setSchedulePetIds] = useState<number[]>([]);
+
+  // Cross-entity: view (and optionally edit) a pet from an owner's accordion.
+  const [petDetailsId, setPetDetailsId] = useState<number | null>(null);
+  const [editingPet, setEditingPet] = useState<Pet | undefined>();
   const [petFormOwnerId, setPetFormOwnerId] = useState<number | null>(null);
 
   const fetchOwners = async () => {
@@ -295,13 +300,26 @@ function OwnersPage() {
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {ownerDetails[owner.id].pets.map(pet => (
-                          <div
+                          <button
                             key={pet.id}
-                            className="bg-card text-card-foreground rounded-lg p-3 border border-border"
+                            type="button"
+                            onClick={() => setPetDetailsId(pet.id)}
+                            title={pet.name}
+                            className="bg-card text-card-foreground rounded-lg p-3 border border-border text-left hover:bg-secondary/30 hover:shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/50"
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <span className="text-xl">{speciesIcons[pet.species] || '🐾'}</span>
+                                {pet.profile_picture_url ? (
+                                  <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 border border-border/50">
+                                    <img
+                                      src={pet.profile_picture_url}
+                                      alt=""
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                ) : (
+                                  <span className="text-xl">{speciesIcons[pet.species] || '🐾'}</span>
+                                )}
                                 <div>
                                   <p className="font-medium text-gray-800 dark:text-gray-200">{pet.name}</p>
                                   <p className="text-xs text-muted-foreground capitalize">
@@ -309,16 +327,27 @@ function OwnersPage() {
                                   </p>
                                 </div>
                               </div>
-                              <Button
-                                onClick={() => handleScheduleSinglePet(pet.id)}
-                                variant="ghost"
-                                size="icon"
+                              <span
+                                role="button"
+                                tabIndex={0}
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  handleScheduleSinglePet(pet.id);
+                                }}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    handleScheduleSinglePet(pet.id);
+                                  }
+                                }}
                                 title={t('owner.scheduleThisPet')}
+                                className="p-2 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
                               >
                                 <Calendar className="w-4 h-4 text-primary" />
-                              </Button>
+                              </span>
                             </div>
-                          </div>
+                          </button>
                         ))}
                       </div>
                     )}
@@ -357,16 +386,22 @@ function OwnersPage() {
         />
       )}
 
-      {petFormOwnerId !== null && (
+      {(petFormOwnerId !== null || editingPet) && (
         <PetForm
-          lockedOwnerId={petFormOwnerId}
-          onClose={() => setPetFormOwnerId(null)}
-          onSave={() => {
-            const id = petFormOwnerId;
+          pet={editingPet}
+          lockedOwnerId={petFormOwnerId ?? undefined}
+          onClose={() => {
             setPetFormOwnerId(null);
-            if (id !== null) {
-              refreshOwnerDetails(id);
-            }
+            setEditingPet(undefined);
+          }}
+          onSave={() => {
+            const addOwnerId = petFormOwnerId;
+            const editedOwnerId = editingPet?.owner ?? null;
+            setPetFormOwnerId(null);
+            setEditingPet(undefined);
+            // Refresh whichever owner got its pets changed, plus the list.
+            if (addOwnerId !== null) refreshOwnerDetails(addOwnerId);
+            if (editedOwnerId !== null) refreshOwnerDetails(editedOwnerId);
             fetchOwners();
           }}
           onSaveAndAnother={() => {
@@ -374,6 +409,19 @@ function OwnersPage() {
               refreshOwnerDetails(petFormOwnerId);
             }
             fetchOwners();
+          }}
+        />
+      )}
+
+      {/* Pet details popup — read-only, opened from an owner's accordion. */}
+      {petDetailsId !== null && (
+        <PetDetailsPopup
+          petId={petDetailsId}
+          onClose={() => setPetDetailsId(null)}
+          onEdit={(pet) => {
+            setPetDetailsId(null);
+            setEditingPet(pet);
+            setPetFormOwnerId(null);
           }}
         />
       )}

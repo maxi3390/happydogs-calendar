@@ -182,6 +182,12 @@
       "showing": "Mostrando {x} de {y} mascotas",
       "filtersHeader": "Filtros",
       "neuteredOnly": "Mostrar solo mascotas castradas"
+    },
+    "detailsPopup": {
+      "title": "Detalles de la Mascota",
+      "editPet": "Editar Mascota",
+      "loading": "Cargando mascota…",
+      "loadFailed": "No se pudo cargar la mascota."
     }
   },
   "owner": {
@@ -231,7 +237,13 @@
     "primaryVet": "Veterinario de Cabecera",
     "emergencyVet": "Veterinario de Emergencia",
     "noVetSelected": "Ninguno",
-    "noVetsHint": "Registrá un veterinario en la página de Veterinarios para poder asociarlo acá."
+    "noVetsHint": "Registrá un veterinario en la página de Veterinarios para poder asociarlo acá.",
+    "detailsPopup": {
+      "title": "Detalles del Dueño",
+      "editOwner": "Editar Dueño",
+      "loading": "Cargando dueño…",
+      "loadFailed": "No se pudo cargar el dueño."
+    }
   },
   "multiPet": {
     "title": "Horario Multi-Mascota",

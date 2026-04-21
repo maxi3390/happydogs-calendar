@@ -14,6 +14,9 @@ import { Input } from '@/components/ui/Input';
 interface PetListProps {
   onEdit: (pet: Pet) => void;
   refreshTrigger: number;
+  /** Optional: when provided, the owner reference in the expanded accordion
+   *  becomes a button that opens the Owner Details popup. */
+  onViewOwner?: (ownerId: number) => void;
 }
 
 const CANONICAL_SPECIES = ['dog', 'cat', 'bird', 'rabbit', 'other'];
@@ -131,7 +134,7 @@ function ChipFilterRow<T extends string>({
   );
 }
 
-export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
+export default function PetList({ onEdit, refreshTrigger, onViewOwner }: PetListProps) {
   const { t } = useTranslation();
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
@@ -456,9 +459,20 @@ export default function PetList({ onEdit, refreshTrigger }: PetListProps) {
                         </div>
                         <div className="bg-secondary/30 p-3 rounded-xl">
                           <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">{t('pet.owner')}</span>
-                          <p className="font-semibold text-sm text-foreground mt-0.5 truncate" title={pet.owner_details?.full_name || t('pet.noOwner')}>
-                            {pet.owner_details?.full_name || t('pet.noOwner')}
-                          </p>
+                          {pet.owner && onViewOwner ? (
+                            <button
+                              type="button"
+                              onClick={e => { e.stopPropagation(); onViewOwner(pet.owner!); }}
+                              title={pet.owner_details?.full_name || t('pet.noOwner')}
+                              className="block w-full text-left font-semibold text-sm text-primary hover:underline mt-0.5 truncate focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-sm"
+                            >
+                              {pet.owner_details?.full_name || t('pet.noOwner')}
+                            </button>
+                          ) : (
+                            <p className="font-semibold text-sm text-foreground mt-0.5 truncate" title={pet.owner_details?.full_name || t('pet.noOwner')}>
+                              {pet.owner_details?.full_name || t('pet.noOwner')}
+                            </p>
+                          )}
                         </div>
                       </div>
 

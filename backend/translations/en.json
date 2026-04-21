@@ -182,6 +182,12 @@
       "showing": "Showing {x} of {y} pets",
       "filtersHeader": "Filters",
       "neuteredOnly": "Show only neutered pets"
+    },
+    "detailsPopup": {
+      "title": "Pet Details",
+      "editPet": "Edit Pet",
+      "loading": "Loading pet…",
+      "loadFailed": "Failed to load the pet."
     }
   },
   "owner": {
@@ -231,7 +237,13 @@
     "primaryVet": "Primary Vet",
     "emergencyVet": "Emergency Vet",
     "noVetSelected": "None",
-    "noVetsHint": "Register a vet on the Vets page to link it here."
+    "noVetsHint": "Register a vet on the Vets page to link it here.",
+    "detailsPopup": {
+      "title": "Owner Details",
+      "editOwner": "Edit Owner",
+      "loading": "Loading owner…",
+      "loadFailed": "Failed to load the owner."
+    }
   },
   "multiPet": {
     "title": "Multi-Pet Schedule",
