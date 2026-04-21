@@ -1,6 +1,6 @@
 from datetime import date, time, timedelta
 from django.contrib.auth import get_user_model
-from pets.models import Owner, Pet, Schedule, Vaccination, VaccinationType
+from pets.models import Owner, Pet, Schedule, Vaccination, VaccinationType, Vet
 
 User = get_user_model()
 
@@ -128,3 +128,14 @@ def create_and_auth_user(client, password='TestPass123!', **user_kwargs):
     user = create_user(password=password, **user_kwargs)
     auth_client(client, user, password)
     return user
+
+
+# ── Vet factory ────────────────────────────────────────────────────────────
+
+def create_vet(**kwargs):
+    """Create a Vet with defaulted, unique fields for tests."""
+    n = _next_id()
+    kwargs.setdefault('name', f'Clinic {n}')
+    kwargs.setdefault('phone', f'555-{n:04d}')
+    kwargs.setdefault('email', f'vet{n}@example.com')
+    return Vet.objects.create(**kwargs)

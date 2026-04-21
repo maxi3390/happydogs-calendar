@@ -56,6 +56,14 @@ class Pet(models.Model):
         validators=[validate_file_size, validate_image_type],
         help_text="Profile picture (JPEG, PNG, GIF, WEBP — max 5 MB)",
     )
+    vet_override = models.ForeignKey(
+        'pets.Vet',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='override_for_pets',
+        help_text="Overrides the owner's primary vet for this pet (e.g. specialist clinic).",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -65,6 +73,24 @@ class Pet(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.species})"
+
+    @property
+    def effective_vet(self):
+        """Return the vet responsible for this pet.
+
+        Resolution order:
+        1. ``vet_override`` if set on the pet.
+        2. The owner's ``primary_vet`` when the pet has an owner with one.
+        3. ``None`` otherwise.
+
+        Reads the underlying ``_id`` columns first so the property stays
+        query-free when the related records haven't been preloaded.
+        """
+        if self.vet_override_id is not None:
+            return self.vet_override
+        if self.owner_id is not None and self.owner is not None:
+            return self.owner.primary_vet
+        return None
 
     def is_compatible_with(self, other_pet):
         """

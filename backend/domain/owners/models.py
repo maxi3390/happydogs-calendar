@@ -22,6 +22,22 @@ class Owner(Address):
         validators=[validate_file_size, validate_image_type],
         help_text="Profile picture (JPEG, PNG, GIF, WEBP — max 5 MB)",
     )
+    primary_vet = models.ForeignKey(
+        'pets.Vet',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='primary_for_owners',
+        help_text="Owner's primary veterinarian (falls back from pets that don't set vet_override).",
+    )
+    emergency_vet = models.ForeignKey(
+        'pets.Vet',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='emergency_for_owners',
+        help_text="Owner's emergency / after-hours veterinarian.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

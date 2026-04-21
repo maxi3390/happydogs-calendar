@@ -241,3 +241,36 @@ All owner management endpoints MUST require authentication. Any request from an 
 - Given an unauthenticated visitor
 - When the visitor attempts to access any owner management endpoint (list, create, retrieve, update, delete, profile picture, or dropdown)
 - Then the system SHALL reject the request with an authentication error
+
+### Requirement: Owner Vet Relations
+
+Each `Owner` SHALL expose two nullable foreign keys pointing at the `Vet` model (defined in the `backend/vets` capability): `primary_vet` and `emergency_vet`. Both fields SHALL use `on_delete=SET_NULL`, so deleting a referenced vet clears the FK on the owner without destroying the owner record.
+
+These fields SHALL be writable on owner create and update, readable on retrieve and list, and always optional — an owner with no recorded vet(s) remains valid.
+
+#### Scenario: Creating an owner without vet references
+
+- GIVEN a request to create an owner without specifying `primary_vet` or `emergency_vet`
+- WHEN the request is processed
+- THEN the owner SHALL be created
+- AND both vet fields SHALL be `null` in the persisted record
+
+#### Scenario: Assigning primary and emergency vets at create time
+
+- GIVEN two existing vet records
+- WHEN an owner is created with `primary_vet` and `emergency_vet` referencing those two vets
+- THEN the persisted owner SHALL carry both FKs
+- AND a subsequent retrieve SHALL return them unchanged
+
+#### Scenario: Patching to change an owner's vets
+
+- GIVEN an existing owner with `primary_vet` set
+- WHEN a PATCH request clears `primary_vet` (sends `null`) and sets `emergency_vet` to a different vet
+- THEN the owner SHALL persist the new values on the subsequent retrieve
+
+#### Scenario: Deleting a referenced vet nulls owner references
+
+- GIVEN an owner whose `primary_vet` (and/or `emergency_vet`) points at a specific vet
+- WHEN that vet is deleted
+- THEN the owner SHALL still exist
+- AND the owner's references to the deleted vet SHALL be `null`

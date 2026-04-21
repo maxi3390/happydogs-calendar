@@ -1,12 +1,21 @@
 from rest_framework import serializers
 from django.db import transaction
-from .models import Owner, Pet, Schedule, Vaccination, VaccinationType, Document, MedicalNote
+from .models import Owner, Pet, Schedule, Vaccination, VaccinationType, Document, MedicalNote, Vet
 
 
 class VaccinationTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = VaccinationType
         fields = ['id', 'name', 'label', 'enabled', 'order']
+
+
+class VetSerializer(serializers.ModelSerializer):
+    """Full serializer for the Vet model, including inherited Address fields."""
+
+    class Meta:
+        model = Vet
+        fields = '__all__'
+        read_only_fields = ['created_at', 'updated_at']
 
 
 class OwnerSerializer(serializers.ModelSerializer):
@@ -116,6 +125,7 @@ class OwnerWithPetsSerializer(serializers.ModelSerializer):
         fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'id_number',
                   'street', 'city', 'state', 'province', 'country',
                   'emergency_contact', 'emergency_phone', 'notes',
+                  'primary_vet', 'emergency_vet',
                   'profile_picture_url', 'pets', 'created_at']
 
     def get_profile_picture_url(self, obj):
