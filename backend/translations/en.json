@@ -168,7 +168,21 @@
     "noVetOverride": "Use owner's primary vet",
     "vetOverrideHint": "Optional. If set, this vet is used for this pet; otherwise the owner's primary vet is used.",
     "customSpeciesPlaceholder": "e.g. ferret, iguana, hamster",
-    "customSpeciesHint": "If filled, this value overrides the dropdown selection. Leave blank to use the dropdown."
+    "customSpeciesHint": "If filled, this value overrides the dropdown selection. Leave blank to use the dropdown.",
+    "filters": {
+      "searchPlaceholder": "Search by name, breed, or owner",
+      "species": "Species",
+      "temperament": "Temperament",
+      "size": "Size",
+      "sex": "Sex",
+      "neutered": "Neutered",
+      "all": "All",
+      "clearAll": "Clear filters",
+      "noMatches": "No pets match the current filters.",
+      "showing": "Showing {x} of {y} pets",
+      "filtersHeader": "Filters",
+      "neuteredOnly": "Show only neutered pets"
+    }
   },
   "owner": {
     "title": "Owners",
