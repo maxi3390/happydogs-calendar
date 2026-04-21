@@ -6,6 +6,7 @@ import Navigation from '@/components/Navigation';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import DataBackupSection from '@/components/DataBackupSection';
 import { useTranslation } from '@/lib/translations';
+import { useFeatureFlag } from '@/lib/feature-flags';
 import { api, Pet, VaccinationType } from '@/lib/api';
 import { withAuth } from '@/lib/withAuth';
 import { Button } from '@/components/ui/Button';
@@ -21,6 +22,7 @@ interface IncompatibilityRule {
 
 function SettingsPage() {
   const { t } = useTranslation();
+  const dataBackupEnabled = useFeatureFlag('data_backup');
   const [pets, setPets] = useState<Pet[]>([]);
   const [incompatibilities, setIncompatibilities] = useState<IncompatibilityRule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -563,7 +565,7 @@ function SettingsPage() {
         </div>
 
         {/* Data Backup / Restore */}
-        <DataBackupSection />
+        {dataBackupEnabled && <DataBackupSection />}
 
         {/* System Conflict Rules Info */}
         <div className="bg-card rounded-3xl shadow-sm border border-border/50 p-6 sm:p-8 hover:shadow-md transition-all">

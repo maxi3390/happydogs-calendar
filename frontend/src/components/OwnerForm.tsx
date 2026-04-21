@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, User, Mail, Phone, MapPin, AlertCircle, CreditCard, Stethoscope } from 'lucide-react';
 import { api, Owner, OwnerFormData, Vet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import { useFeatureFlag } from '@/lib/feature-flags';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import DocumentUpload from '@/components/DocumentUpload';
 import { Button } from '@/components/ui/Button';
@@ -17,6 +18,7 @@ interface OwnerFormProps {
 
 export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
   const { t } = useTranslation();
+  const vetManagementEnabled = useFeatureFlag('vet_management');
   const [formData, setFormData] = useState<OwnerFormData>({
     first_name: '',
     last_name: '',
@@ -286,16 +288,17 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
             </div>
           </div>
 
-          <div className="border-t border-border pt-4">
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-              <Stethoscope className="w-4 h-4" />
-              {t('owner.veterinarySection')}
-            </h3>
-            {vets.length === 0 ? (
-              <p className="text-xs text-muted-foreground">
-                {t('owner.noVetsHint')}
-              </p>
-            ) : (
+          {vetManagementEnabled && (
+            <div className="border-t border-border pt-4">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                <Stethoscope className="w-4 h-4" />
+                {t('owner.veterinarySection')}
+              </h3>
+              {vets.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  {t('owner.noVetsHint')}
+                </p>
+              ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -328,8 +331,9 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
                   </select>
                 </div>
               </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

@@ -10,6 +10,7 @@ urlpatterns = [
     path('api/', include('accounts.urls')),
     path('api/', include('nursery_settings.urls')),
     path('api/', include('data_portability.urls')),
+    path('api/', include('feature_flags.urls')),
     # OpenAPI Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),

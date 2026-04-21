@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   PawPrint, Users, CalendarDays, Settings, Menu, X, LogIn, LogOut,
-  Shield, User, ChevronDown, Code2, Stethoscope,
+  Shield, User, ChevronDown, Code2, Stethoscope, Flag,
 } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useTranslation } from '@/lib/translations';
 import { useAuth } from '@/lib/auth';
+import { useFeatureFlag } from '@/lib/feature-flags';
 import { api } from '@/lib/api';
 
 interface NavigationProps {
@@ -25,6 +26,7 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
   const [scrolled, setScrolled] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const vetManagementEnabled = useFeatureFlag('vet_management');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -174,16 +176,18 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
                         </div>
                       </div>
                       <div className="p-2 space-y-1">
-                        <Link
-                          href="/vets"
-                          role="menuitem"
-                          aria-current={ariaCurrent('/vets')}
-                          onClick={() => setProfileMenuOpen(false)}
-                          className="flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-secondary/80 rounded-xl transition-colors"
-                        >
-                          <Stethoscope className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
-                          {t('nav.vets')}
-                        </Link>
+                        {vetManagementEnabled && (
+                          <Link
+                            href="/vets"
+                            role="menuitem"
+                            aria-current={ariaCurrent('/vets')}
+                            onClick={() => setProfileMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-secondary/80 rounded-xl transition-colors"
+                          >
+                            <Stethoscope className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
+                            {t('nav.vets')}
+                          </Link>
+                        )}
                         <Link
                           href="/settings"
                           role="menuitem"
@@ -194,6 +198,18 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
                           <Settings className="w-4 h-4 text-amber-500" />
                           {t('nav.settings')}
                         </Link>
+                        {isAdmin && (
+                          <Link
+                            href="/admin/feature-flags"
+                            role="menuitem"
+                            aria-current={ariaCurrent('/admin/feature-flags')}
+                            onClick={() => setProfileMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-secondary/80 rounded-xl transition-colors"
+                          >
+                            <Flag className="w-4 h-4 text-primary" />
+                            {t('nav.featureFlags')}
+                          </Link>
+                        )}
                         {isAdmin && (
                           <Link
                             href="/admin/users"
@@ -329,15 +345,17 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
                       </div>
                     </div>
 
-                    <Link
-                      href="/vets"
-                      aria-current={ariaCurrent('/vets')}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={mobileNavLinkClass('/vets', 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700')}
-                    >
-                      <Stethoscope className="w-5 h-5" />
-                      {t('nav.vets')}
-                    </Link>
+                    {vetManagementEnabled && (
+                      <Link
+                        href="/vets"
+                        aria-current={ariaCurrent('/vets')}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={mobileNavLinkClass('/vets', 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700')}
+                      >
+                        <Stethoscope className="w-5 h-5" />
+                        {t('nav.vets')}
+                      </Link>
+                    )}
 
                     <Link
                       href="/settings"
@@ -348,6 +366,18 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
                       <Settings className="w-5 h-5" />
                       {t('nav.settings')}
                     </Link>
+
+                    {isAdmin && (
+                      <Link
+                        href="/admin/feature-flags"
+                        aria-current={ariaCurrent('/admin/feature-flags')}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={mobileNavLinkClass('/admin/feature-flags', 'bg-primary dark:bg-primary')}
+                      >
+                        <Flag className="w-5 h-5" />
+                        {t('nav.featureFlags')}
+                      </Link>
+                    )}
 
                     {isAdmin && (
                       <Link

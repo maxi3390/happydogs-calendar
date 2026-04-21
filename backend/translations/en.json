@@ -16,7 +16,8 @@
     "admin": "Admin",
     "uiSystem": "UI System",
     "menu": "Menu",
-    "vets": "Vets"
+    "vets": "Vets",
+    "featureFlags": "Feature Flags"
   },
   "calendar": {
     "month": "Month",
@@ -165,7 +166,9 @@
     "addedSuccessfully": "{name} added successfully",
     "vetOverride": "Vet Override",
     "noVetOverride": "Use owner's primary vet",
-    "vetOverrideHint": "Optional. If set, this vet is used for this pet; otherwise the owner's primary vet is used."
+    "vetOverrideHint": "Optional. If set, this vet is used for this pet; otherwise the owner's primary vet is used.",
+    "customSpeciesPlaceholder": "e.g. ferret, iguana, hamster",
+    "customSpeciesHint": "If filled, this value overrides the dropdown selection. Leave blank to use the dropdown."
   },
   "owner": {
     "title": "Owners",
@@ -482,5 +485,14 @@
     "importing": "Restoring…",
     "importFailed": "Import failed",
     "importSuccess": "Backup restored. Row counts: {counts}."
+  },
+  "featureFlags": {
+    "title": "Feature Flags",
+    "description": "Toggle specific product surfaces on and off. Changes apply immediately for every user.",
+    "lastUpdated": "Last updated {when}",
+    "toggleEnable": "Enabled",
+    "toggleDisable": "Disabled",
+    "saveFailed": "Failed to save the flag",
+    "empty": "No feature flags are registered yet."
   }
 }
