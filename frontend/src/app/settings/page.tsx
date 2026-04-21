@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Settings, AlertTriangle, Plus, Trash2, Save, Info, Syringe, ToggleLeft, ToggleRight, CalendarClock, Image as ImageIcon } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
+import DataBackupSection from '@/components/DataBackupSection';
 import { useTranslation } from '@/lib/translations';
 import { api, Pet, VaccinationType } from '@/lib/api';
 import { withAuth } from '@/lib/withAuth';
@@ -560,6 +561,9 @@ function SettingsPage() {
             )}
           </div>
         </div>
+
+        {/* Data Backup / Restore */}
+        <DataBackupSection />
 
         {/* System Conflict Rules Info */}
         <div className="bg-card rounded-3xl shadow-sm border border-border/50 p-6 sm:p-8 hover:shadow-md transition-all">

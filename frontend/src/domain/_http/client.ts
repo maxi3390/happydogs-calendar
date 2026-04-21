@@ -79,3 +79,36 @@ export async function uploadFile<T>(endpoint: string, formData: FormData): Promi
 
   return res.json();
 }
+
+/**
+ * Authenticated download of a binary/text file. Returns a Blob and the
+ * filename suggested by the server (from `Content-Disposition`), so the
+ * caller can create an object URL and trigger a native download. Necessary
+ * because `<a href>` links cannot carry an Authorization header.
+ */
+export async function downloadFile(endpoint: string): Promise<{ blob: Blob; filename: string | null }> {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    method: 'GET',
+    headers,
+  });
+
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      handleAuthError();
+    }
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.detail || `Download Error: ${res.status}`);
+  }
+
+  const disposition = res.headers.get('Content-Disposition') || '';
+  const match = disposition.match(/filename="?([^";]+)"?/i);
+  const filename = match ? match[1] : null;
+
+  return { blob: await res.blob(), filename };
+}

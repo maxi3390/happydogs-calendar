@@ -462,5 +462,25 @@
     "notesPlaceholder": "Hours, directions, or anything else useful",
     "searchPlaceholder": "Search vets by name, city, or email",
     "noMatches": "No vets match your search."
+  },
+  "dataBackup": {
+    "title": "Data Backup",
+    "description": "Download a full backup of your nursery data, or restore from a previous backup. Users, uploaded documents, and profile pictures are NOT part of the backup.",
+    "exportSection": "Export",
+    "exportJson": "Export JSON",
+    "exportCsv": "Export CSV (ZIP)",
+    "exportHint": "JSON is a single file; CSV is a ZIP with one .csv per entity.",
+    "exporting": "Preparing download…",
+    "exportFailed": "Export failed",
+    "importSection": "Restore",
+    "importDescription": "Replace ALL current data with the contents of a backup file. This action cannot be undone.",
+    "pickFile": "Choose backup file",
+    "noFile": "No file selected.",
+    "confirmLabel": "Type RESTORE to enable the button",
+    "confirmHint": "This will wipe every owner, pet, vet, vaccination, medical note, and schedule, then load the backup file.",
+    "restoreButton": "Restore from file",
+    "importing": "Restoring…",
+    "importFailed": "Import failed",
+    "importSuccess": "Backup restored. Row counts: {counts}."
   }
 }

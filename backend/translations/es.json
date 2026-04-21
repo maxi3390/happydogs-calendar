@@ -462,5 +462,25 @@
     "notesPlaceholder": "Horarios, indicaciones o cualquier dato útil",
     "searchPlaceholder": "Buscar veterinarios por nombre, ciudad o email",
     "noMatches": "Ningún veterinario coincide con la búsqueda."
+  },
+  "dataBackup": {
+    "title": "Backup de Datos",
+    "description": "Descargá un backup completo de los datos de tu guardería, o restaurá desde un backup anterior. Los usuarios, documentos subidos y fotos de perfil NO se incluyen en el backup.",
+    "exportSection": "Exportar",
+    "exportJson": "Exportar JSON",
+    "exportCsv": "Exportar CSV (ZIP)",
+    "exportHint": "JSON es un único archivo; CSV es un ZIP con un .csv por entidad.",
+    "exporting": "Preparando descarga…",
+    "exportFailed": "Falló la exportación",
+    "importSection": "Restaurar",
+    "importDescription": "Reemplazar TODOS los datos actuales con el contenido de un archivo de backup. Esta acción no se puede deshacer.",
+    "pickFile": "Elegir archivo de backup",
+    "noFile": "Ningún archivo seleccionado.",
+    "confirmLabel": "Escribí RESTORE para habilitar el botón",
+    "confirmHint": "Esto borrará todos los dueños, mascotas, veterinarios, vacunas, notas médicas y turnos, y luego cargará el archivo de backup.",
+    "restoreButton": "Restaurar desde archivo",
+    "importing": "Restaurando…",
+    "importFailed": "Falló la importación",
+    "importSuccess": "Backup restaurado. Filas: {counts}."
   }
 }
