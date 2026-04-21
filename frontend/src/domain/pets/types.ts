@@ -26,6 +26,7 @@ export interface Pet {
   weight: number | null;
   special_notes: string;
   owner: number | null;
+  vet_override: number | null;
   owner_details?: OwnerListItem;
   vaccinations: Vaccination[];
   medical_notes_count?: number;
@@ -48,6 +49,7 @@ export interface PetFormData {
   weight: number | null;
   special_notes: string;
   owner?: number | null;
+  vet_override?: number | null;
   vaccinations?: Array<{ vax_type: string; date: string }>;
 }
 

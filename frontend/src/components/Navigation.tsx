@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   PawPrint, Users, CalendarDays, Settings, Menu, X, LogIn, LogOut,
-  Shield, User, ChevronDown, Code2,
+  Shield, User, ChevronDown, Code2, Stethoscope,
 } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -133,6 +133,16 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
                 >
                   <PawPrint className="w-4 h-4" />
                   <span className="hidden lg:inline font-medium">{t('nav.pets')}</span>
+                </Link>
+                <Link
+                  href="/vets"
+                  aria-current={ariaCurrent('/vets')}
+                  aria-label={t('nav.vets')}
+                  title={t('nav.vets')}
+                  className={navLinkClass('/vets', 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700')}
+                >
+                  <Stethoscope className="w-4 h-4" />
+                  <span className="hidden lg:inline font-medium">{t('nav.vets')}</span>
                 </Link>
               </>
             )}
@@ -283,6 +293,15 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
               >
                 <PawPrint className="w-5 h-5" />
                 {t('nav.pets')}
+              </Link>
+              <Link
+                href="/vets"
+                aria-current={ariaCurrent('/vets')}
+                onClick={() => setMobileMenuOpen(false)}
+                className={mobileNavLinkClass('/vets', 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700')}
+              >
+                <Stethoscope className="w-5 h-5" />
+                {t('nav.vets')}
               </Link>
 
               {onMultiPetSchedule && (

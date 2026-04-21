@@ -15,6 +15,8 @@ export interface Owner {
   emergency_phone: string;
   emergency_contact_can_pickup: boolean;
   notes: string;
+  primary_vet: number | null;
+  emergency_vet: number | null;
   pet_count?: number;
   profile_picture_url?: string | null;
   created_at: string;
@@ -50,6 +52,8 @@ export interface OwnerFormData {
   emergency_phone?: string;
   emergency_contact_can_pickup?: boolean;
   notes?: string;
+  primary_vet?: number | null;
+  emergency_vet?: number | null;
 }
 
 export interface OwnerListItem {

@@ -15,7 +15,8 @@
     "calendar": "Calendar",
     "admin": "Admin",
     "uiSystem": "UI System",
-    "menu": "Menu"
+    "menu": "Menu",
+    "vets": "Vets"
   },
   "calendar": {
     "month": "Month",
@@ -161,7 +162,10 @@
     "changePhoto": "Change Photo",
     "traits": "Traits",
     "saveAndAddAnother": "Save & Add Another",
-    "addedSuccessfully": "{name} added successfully"
+    "addedSuccessfully": "{name} added successfully",
+    "vetOverride": "Vet Override",
+    "noVetOverride": "Use owner's primary vet",
+    "vetOverrideHint": "Optional. If set, this vet is used for this pet; otherwise the owner's primary vet is used."
   },
   "owner": {
     "title": "Owners",
@@ -205,7 +209,12 @@
     "profilePicture": "Profile Picture",
     "uploadPhoto": "Upload Photo",
     "removePhoto": "Remove Photo",
-    "changePhoto": "Change Photo"
+    "changePhoto": "Change Photo",
+    "veterinarySection": "Veterinary",
+    "primaryVet": "Primary Vet",
+    "emergencyVet": "Emergency Vet",
+    "noVetSelected": "None",
+    "noVetsHint": "Register a vet on the Vets page to link it here."
   },
   "multiPet": {
     "title": "Multi-Pet Schedule",
@@ -265,12 +274,14 @@
     "invalidDates": "End date cannot be before start date",
     "invalidTimes": "End time must be after start time",
     "loginFailed": "Login failed",
-    "registrationFailed": "Registration failed"
+    "registrationFailed": "Registration failed",
+    "vetLoadFailed": "Failed to load vets. Please try again."
   },
   "confirmations": {
     "deletePet": "Are you sure you want to delete this pet? This will also delete all their schedules.",
     "deleteSchedule": "Are you sure you want to delete this schedule?",
-    "deleteOwner": "Are you sure you want to delete this owner?"
+    "deleteOwner": "Are you sure you want to delete this owner?",
+    "deleteVet": "Are you sure you want to delete this vet? Owners and pets that reference it will have their vet fields cleared."
   },
   "settings": {
     "title": "Settings",
@@ -427,5 +438,29 @@
     "profile": "Profile",
     "admin": "Admin",
     "user": "User"
+  },
+  "vet": {
+    "title": "Vets",
+    "description": "Register and manage your partner veterinary clinics",
+    "addVet": "Add Vet",
+    "editVet": "Edit Vet",
+    "deleteVet": "Delete vet",
+    "noVets": "No vets registered yet",
+    "addFirst": "Add your first vet to start linking them to owners and pets.",
+    "registeredVets": "Registered Vets",
+    "name": "Clinic name",
+    "namePlaceholder": "e.g. Happy Paws Veterinary Clinic",
+    "phone": "Phone",
+    "email": "Email",
+    "addressSection": "Address",
+    "street": "Street",
+    "city": "City",
+    "state": "State / Locality",
+    "province": "Province",
+    "country": "Country",
+    "notes": "Notes",
+    "notesPlaceholder": "Hours, directions, or anything else useful",
+    "searchPlaceholder": "Search vets by name, city, or email",
+    "noMatches": "No vets match your search."
   }
 }

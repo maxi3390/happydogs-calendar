@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, User, Mail, Phone, MapPin, AlertCircle, CreditCard } from 'lucide-react';
-import { api, Owner, OwnerFormData } from '@/lib/api';
+import { X, User, Mail, Phone, MapPin, AlertCircle, CreditCard, Stethoscope } from 'lucide-react';
+import { api, Owner, OwnerFormData, Vet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import DocumentUpload from '@/components/DocumentUpload';
@@ -33,11 +33,20 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
     emergency_phone: '',
     emergency_contact_can_pickup: false,
     notes: '',
+    primary_vet: null,
+    emergency_vet: null,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(owner?.profile_picture_url || null);
   const [pendingProfilePicture, setPendingProfilePicture] = useState<File | null>(null);
+  const [vets, setVets] = useState<Vet[]>([]);
+
+  useEffect(() => {
+    api.vets.list()
+      .then(setVets)
+      .catch(err => console.error('Failed to load vets:', err));
+  }, []);
 
   useEffect(() => {
     if (owner) {
@@ -57,6 +66,8 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
         emergency_phone: owner.emergency_phone || '',
         emergency_contact_can_pickup: owner.emergency_contact_can_pickup || false,
         notes: owner.notes || '',
+        primary_vet: owner.primary_vet ?? null,
+        emergency_vet: owner.emergency_vet ?? null,
       });
       setProfilePictureUrl(owner.profile_picture_url || null);
     }
@@ -273,6 +284,51 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
                 {t('owner.emergencyContactCanPickup')}
               </label>
             </div>
+          </div>
+
+          <div className="border-t border-border pt-4">
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+              <Stethoscope className="w-4 h-4" />
+              {t('owner.veterinarySection')}
+            </h3>
+            {vets.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                {t('owner.noVetsHint')}
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('owner.primaryVet')}
+                  </label>
+                  <select
+                    value={formData.primary_vet ?? ''}
+                    onChange={e => setFormData(prev => ({ ...prev, primary_vet: e.target.value ? Number(e.target.value) : null }))}
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
+                  >
+                    <option value="">{t('owner.noVetSelected')}</option>
+                    {vets.map(vet => (
+                      <option key={vet.id} value={vet.id}>{vet.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('owner.emergencyVet')}
+                  </label>
+                  <select
+                    value={formData.emergency_vet ?? ''}
+                    onChange={e => setFormData(prev => ({ ...prev, emergency_vet: e.target.value ? Number(e.target.value) : null }))}
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
+                  >
+                    <option value="">{t('owner.noVetSelected')}</option>
+                    {vets.map(vet => (
+                      <option key={vet.id} value={vet.id}>{vet.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
