@@ -180,10 +180,18 @@ class ScheduleCreateSerializer(serializers.ModelSerializer):
         start_date = data.get('start_date', getattr(self.instance, 'start_date', None))
         end_date = data.get('end_date', getattr(self.instance, 'end_date', None))
 
-        if start_time and end_time and start_time >= end_time:
-            raise serializers.ValidationError("End time must be after start time")
         if start_date and end_date and start_date > end_date:
             raise serializers.ValidationError("End date must be on or after start date")
+        # The time-order rule only applies to same-day bookings. On a multi-day
+        # stay `start_time` is the drop-off on `start_date` and `end_time` is
+        # the pickup on `end_date`, so they may legitimately cross midnight.
+        if (
+            start_time and end_time and start_date and end_date
+            and start_date == end_date and start_time >= end_time
+        ):
+            raise serializers.ValidationError(
+                "On a single-day schedule, end time must be after start time"
+            )
         return data
 
 
@@ -213,10 +221,14 @@ class BatchScheduleCreateSerializer(serializers.Serializer):
     notes = serializers.CharField(required=False, allow_blank=True, default='')
 
     def validate(self, data):
-        if data['start_time'] >= data['end_time']:
-            raise serializers.ValidationError("End time must be after start time")
         if data['start_date'] > data['end_date']:
             raise serializers.ValidationError("End date must be on or after start date")
+        # Single-day bookings keep the start-time < end-time rule. Multi-day
+        # bookings describe two different days so times may cross midnight.
+        if data['start_date'] == data['end_date'] and data['start_time'] >= data['end_time']:
+            raise serializers.ValidationError(
+                "On a single-day schedule, end time must be after start time"
+            )
         return data
 
 
