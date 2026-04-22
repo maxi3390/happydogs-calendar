@@ -7,6 +7,7 @@ import { api, Schedule } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 import { getDateLocale } from '@/lib/dateLocale';
 import { translateSpecies, translateTemperament } from '@/domain/pets/labels';
+import { computeStayDays } from '@/domain/schedules/stayDays';
 import { Button } from '@/components/ui/Button';
 
 interface DayScheduleProps {
@@ -128,17 +129,28 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger, onNe
         </div>
       ) : (
         <div className="divide-y divide-gray-100 dark:divide-slate-700">
-          {schedules.map(schedule => (
+          {schedules.map(schedule => {
+            const stayDays = computeStayDays(schedule.start_date, schedule.end_date, schedule.end_time);
+            const stayDaysLabel = stayDays === 1
+              ? t('schedule.dayCount.one')
+              : t('schedule.dayCount.other', { count: stayDays });
+            return (
             <div
               key={schedule.id}
               className={`p-4 ${schedule.conflicts?.length ? 'bg-amber-50 dark:bg-amber-900/20' : ''}`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="font-medium text-gray-800 dark:text-gray-100">
                       {schedule.pet_details.name}
                     </h4>
+                    <span
+                      className="text-xs bg-secondary/40 text-muted-foreground px-2 py-0.5 rounded-full border border-border/50"
+                      title={t('schedule.dayCount.other', { count: stayDays })}
+                    >
+                      {stayDaysLabel}
+                    </span>
                     {schedule.conflicts?.length > 0 && (
                       <span className="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/50 px-2 py-0.5 rounded-full">
                         <AlertTriangle className="w-3 h-3" />
@@ -207,7 +219,8 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger, onNe
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

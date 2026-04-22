@@ -91,7 +91,11 @@
     "updateSchedule": "Update Schedule",
     "petDetails": "Pet Details",
     "date": "Date",
-    "time": "Time"
+    "time": "Time",
+    "dayCount": {
+      "one": "1 day",
+      "other": "{count} days"
+    }
   },
   "pet": {
     "title": "Pets",

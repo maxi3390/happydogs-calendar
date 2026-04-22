@@ -91,7 +91,11 @@
     "updateSchedule": "Actualizar Horario",
     "petDetails": "Detalles de la Mascota",
     "date": "Fecha",
-    "time": "Hora"
+    "time": "Hora",
+    "dayCount": {
+      "one": "1 día",
+      "other": "{count} días"
+    }
   },
   "pet": {
     "title": "Mascotas",
