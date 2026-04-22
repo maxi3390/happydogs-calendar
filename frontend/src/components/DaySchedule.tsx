@@ -6,6 +6,7 @@ import { Clock, AlertTriangle, Edit2, Trash2, CheckCircle, XCircle, Plus } from 
 import { api, Schedule } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 import { getDateLocale } from '@/lib/dateLocale';
+import { translateSpecies, translateTemperament } from '@/domain/pets/labels';
 import { Button } from '@/components/ui/Button';
 
 interface DayScheduleProps {
@@ -165,7 +166,7 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger, onNe
                       <option value="cancelled">{t('schedule.statuses.cancelled')}</option>
                     </select>
                     <span className="text-xs text-muted-foreground">
-                      {schedule.pet_details.species} • {schedule.pet_details.temperament}
+                      {translateSpecies(t, schedule.pet_details.species)} • {translateTemperament(t, schedule.pet_details.temperament)}
                     </span>
                   </div>
 

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { api, Pet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import { translateSpecies } from '@/domain/pets/labels';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
@@ -377,7 +378,7 @@ export default function PetList({ onEdit, refreshTrigger, onViewOwner }: PetList
                     <div className="flex-1 mt-1">
                       <h3 className={`text-lg font-bold transition-colors ${expandedPetId === pet.id ? 'text-primary' : 'text-foreground group-hover:text-primary'}`}>{pet.name}</h3>
                       <p className="text-sm text-muted-foreground font-medium mt-0.5">
-                        {pet.breed || pet.species} • {pet.age} {t('common.years')}
+                        {pet.breed || translateSpecies(t, pet.species)} • {pet.age} {t('common.years')}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {t('pet.owner')}: {pet.owner_details?.full_name || t('pet.noOwner')}

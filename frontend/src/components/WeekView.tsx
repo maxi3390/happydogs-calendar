@@ -7,6 +7,7 @@ import { api, Schedule } from '@/lib/api';
 import ScheduleDetailsPopup from './ScheduleDetailsPopup';
 import { useTranslation } from '@/lib/translations';
 import { getDateLocale } from '@/lib/dateLocale';
+import { translateSpecies, translateTemperament } from '@/domain/pets/labels';
 
 interface WeekViewProps {
   selectedDate: Date;
@@ -233,7 +234,7 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
                       <div className="truncate">
                         <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{row.petName}</p>
                         <p className="text-[10px] text-muted-foreground truncate">
-                          {row.petDetails.species} · {row.petDetails.temperament}
+                          {translateSpecies(t, row.petDetails.species)} · {translateTemperament(t, row.petDetails.temperament)}
                         </p>
                       </div>
                     </div>

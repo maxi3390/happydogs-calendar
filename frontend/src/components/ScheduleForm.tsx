@@ -6,6 +6,7 @@ import { X, AlertTriangle, CheckCircle, Users } from 'lucide-react';
 import { api, Pet, PetListItem, Schedule, ScheduleFormData, BatchScheduleFormData, BatchScheduleResult, ConflictCheckResult, DailyCountResult, OwnerListItem } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 import { useFeatureFlag } from '@/lib/feature-flags';
+import { translateSpecies, translateTemperament } from '@/domain/pets/labels';
 import { Button } from '@/components/ui/Button';
 
 interface ScheduleFormBaseProps {
@@ -440,7 +441,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                           <div className="flex-1">
                             <div className="font-medium text-gray-800 dark:text-gray-200">{pet.name}</div>
                             <div className="text-xs text-muted-foreground">
-                              {pet.species} • {pet.temperament} • {t('common.dom')}: {pet.dominance_level}
+                              {translateSpecies(t, pet.species)} • {translateTemperament(t, pet.temperament)} • {t('common.dom')}: {pet.dominance_level}
                             </div>
                           </div>
                         </label>
@@ -488,7 +489,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                   <option value="">{t('schedule.selectPet')}...</option>
                   {pets.map(pet => (
                     <option key={pet.id} value={pet.id}>
-                      {pet.name} ({pet.species}) - {pet.temperament}, {t('common.dom')}: {pet.dominance_level}
+                      {pet.name} ({translateSpecies(t, pet.species)}) - {translateTemperament(t, pet.temperament)}, {t('common.dom')}: {pet.dominance_level}
                     </option>
                   ))}
                 </select>
@@ -498,8 +499,8 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                 <div className="p-3 bg-muted/50 dark:bg-slate-700 rounded-lg text-sm">
                   <div className="font-medium text-gray-800 dark:text-gray-100">{selectedPet.name}</div>
                   <div className="text-muted-foreground mt-1 grid grid-cols-3 gap-2">
-                    <span>{t('pet.species')}: {selectedPet.species}</span>
-                    <span>{t('pet.temperament')}: {selectedPet.temperament}</span>
+                    <span>{t('pet.species')}: {translateSpecies(t, selectedPet.species)}</span>
+                    <span>{t('pet.temperament')}: {translateTemperament(t, selectedPet.temperament)}</span>
                     <span>{t('pet.dominance')}: {selectedPet.dominance_level}/10</span>
                   </div>
                 </div>

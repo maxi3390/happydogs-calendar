@@ -5,6 +5,7 @@ import { X, Edit2, AlertCircle, Loader2, Dog, Cat, Bird, Rabbit, HelpCircle } fr
 import { api, Pet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 import { useFeatureFlag } from '@/lib/feature-flags';
+import { translateSpecies } from '@/domain/pets/labels';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 
@@ -135,7 +136,7 @@ export default function PetDetailsPopup({ petId, onEdit, onClose }: PetDetailsPo
                 <div className="flex-1 min-w-0 mt-1">
                   <h3 className="text-lg font-bold text-foreground">{pet.name}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {pet.breed || pet.species} • {pet.age} {t('common.years')}
+                    {pet.breed || translateSpecies(t, pet.species)} • {pet.age} {t('common.years')}
                   </p>
                 </div>
               </div>
