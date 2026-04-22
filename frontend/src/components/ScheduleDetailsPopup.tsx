@@ -3,7 +3,9 @@
 import { X, Clock, Calendar, User, Phone, AlertTriangle, FileText } from 'lucide-react';
 import { Schedule } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import { formatIsoDate } from '@/lib/dateLocale';
 import { translateSpecies, translateTemperament, translateSize } from '@/domain/pets/labels';
+import { computeStayDays } from '@/domain/schedules/stayDays';
 import { Button } from '@/components/ui/Button';
 
 interface ScheduleDetailsPopupProps {
@@ -19,6 +21,11 @@ export default function ScheduleDetailsPopup({ schedule, onClose }: ScheduleDeta
     completed: 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200',
     cancelled: 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200',
   };
+
+  const stayDays = computeStayDays(schedule.start_date, schedule.end_date, schedule.end_time);
+  const stayDaysLabel = stayDays === 1
+    ? t('schedule.dayCount.one')
+    : t('schedule.dayCount.other', { count: stayDays });
 
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50" onClick={onClose}>
@@ -48,9 +55,14 @@ export default function ScheduleDetailsPopup({ schedule, onClose }: ScheduleDeta
         <div className="p-4 space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">{t('schedule.status')}</span>
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[schedule.status]}`}>
-              {schedule.status.replace('_', ' ')}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[schedule.status]}`}>
+                {schedule.status.replace('_', ' ')}
+              </span>
+              <span className="px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary border border-primary/20">
+                {stayDaysLabel}
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -60,8 +72,8 @@ export default function ScheduleDetailsPopup({ schedule, onClose }: ScheduleDeta
                 <p className="text-xs text-muted-foreground">{t('schedule.date')}</p>
                 <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                   {schedule.start_date === schedule.end_date
-                    ? schedule.start_date
-                    : `${schedule.start_date} - ${schedule.end_date}`}
+                    ? formatIsoDate(schedule.start_date)
+                    : `${formatIsoDate(schedule.start_date)} - ${formatIsoDate(schedule.end_date)}`}
                 </p>
               </div>
             </div>

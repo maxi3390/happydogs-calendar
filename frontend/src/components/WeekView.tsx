@@ -130,7 +130,7 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
       <div className="p-3 sm:p-4 border-b border-border">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 text-center sm:text-left">
-            {t('calendar.weekOf')} {format(currentWeekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
+            {t('calendar.weekOf')} {format(currentWeekStart, 'dd/MM')} - {format(weekEnd, 'dd/MM/yyyy')}
           </h3>
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
             {onViewChange && (

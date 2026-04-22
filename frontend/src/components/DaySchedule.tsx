@@ -5,8 +5,9 @@ import { format } from 'date-fns';
 import { Clock, AlertTriangle, Edit2, Trash2, CheckCircle, XCircle, Plus } from 'lucide-react';
 import { api, Schedule } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
-import { getDateLocale } from '@/lib/dateLocale';
+import { getDateLocale, formatIsoDate } from '@/lib/dateLocale';
 import { translateSpecies, translateTemperament } from '@/domain/pets/labels';
+import { computeStayDays } from '@/domain/schedules/stayDays';
 import { Button } from '@/components/ui/Button';
 
 interface DayScheduleProps {
@@ -100,7 +101,7 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger, onNe
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-foreground">
-              {format(date, 'EEEE, MMMM d, yyyy', { locale: dateLocale })}
+              {format(date, 'EEEE, dd/MM/yyyy', { locale: dateLocale })}
             </h3>
             <p className="text-muted-foreground text-sm">
               {schedules.length} {t('schedule.title')}
@@ -128,17 +129,28 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger, onNe
         </div>
       ) : (
         <div className="divide-y divide-gray-100 dark:divide-slate-700">
-          {schedules.map(schedule => (
+          {schedules.map(schedule => {
+            const stayDays = computeStayDays(schedule.start_date, schedule.end_date, schedule.end_time);
+            const stayDaysLabel = stayDays === 1
+              ? t('schedule.dayCount.one')
+              : t('schedule.dayCount.other', { count: stayDays });
+            return (
             <div
               key={schedule.id}
               className={`p-4 ${schedule.conflicts?.length ? 'bg-amber-50 dark:bg-amber-900/20' : ''}`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="font-medium text-gray-800 dark:text-gray-100">
                       {schedule.pet_details.name}
                     </h4>
+                    <span
+                      className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20 font-medium"
+                      title={t('schedule.dayCount.other', { count: stayDays })}
+                    >
+                      {stayDaysLabel}
+                    </span>
                     {schedule.conflicts?.length > 0 && (
                       <span className="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/50 px-2 py-0.5 rounded-full">
                         <AlertTriangle className="w-3 h-3" />
@@ -150,7 +162,7 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger, onNe
                     {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
                     {schedule.start_date !== schedule.end_date && (
                       <span className="ml-2 text-primary">
-                        ({schedule.start_date} to {schedule.end_date})
+                        ({formatIsoDate(schedule.start_date)} - {formatIsoDate(schedule.end_date)})
                       </span>
                     )}
                   </p>
@@ -207,7 +219,8 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger, onNe
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
