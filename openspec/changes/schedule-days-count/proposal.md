@@ -20,6 +20,7 @@ Examples:
 - `2026-04-21 08:00` → `2026-04-22 13:00` ⇒ `2` days (one night + late-checkout day).
 - `2026-04-21 08:00` → `2026-04-23 10:00` ⇒ `2` days (two nights, checkout before noon).
 - `2026-04-21 08:00` → `2026-04-23 15:00` ⇒ `3` days (two nights + late-checkout day).
+- `2026-04-21 18:00` → `2026-04-23 10:00` ⇒ `2` days (cross-day times — now permitted by the `schedule-cross-day-times` change; the helper ignores `start_time`, so the same-date-range booking counts the same whether drop-off is morning or evening).
 
 ## Scope
 

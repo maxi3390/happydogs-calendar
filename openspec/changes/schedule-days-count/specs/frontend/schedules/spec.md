@@ -35,6 +35,13 @@ The day count SHALL be computed as follows:
 - WHEN the day sidebar or details popup is rendered
 - THEN the tag SHALL read `1 day` / `1 día` (noon is NOT strictly past midday, so the checkout day is not counted)
 
+#### Scenario: Multi-day stay with cross-day times (drop-off evening, pickup morning)
+
+- GIVEN a schedule from `2026-04-21` at `18:00` to `2026-04-23` at `10:00` (newly permitted since the backend no longer enforces `start_time < end_time` on multi-day schedules)
+- WHEN the day sidebar or details popup is rendered
+- THEN the tag SHALL read `2 days` / `2 días`
+- AND the helper SHALL NOT look at `start_time` — only the date diff and the checkout-day `end_time` drive the count, so a 18:00 → 10:00 stay counts the same as a 08:00 → 10:00 stay across the same dates
+
 #### Scenario: Visual treatment
 
 - The tag SHALL render as a small rounded pill (`rounded-full`) with a primary-tinted palette (e.g. `bg-primary/10 text-primary border-primary/20`) so it is visible and clearly readable, without competing with status or conflict indicators.
