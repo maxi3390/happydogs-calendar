@@ -11,6 +11,7 @@ import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useTranslation } from '@/lib/translations';
+import { translateSpecies, translateTemperament, translateSize } from '@/domain/pets/labels';
 import { withAuth } from '@/lib/withAuth';
 
 function OwnersPage() {
@@ -322,8 +323,8 @@ function OwnersPage() {
                                 )}
                                 <div>
                                   <p className="font-medium text-gray-800 dark:text-gray-200">{pet.name}</p>
-                                  <p className="text-xs text-muted-foreground capitalize">
-                                    {pet.species} • {pet.temperament} • {pet.size}
+                                  <p className="text-xs text-muted-foreground">
+                                    {translateSpecies(t, pet.species)} • {translateTemperament(t, pet.temperament)} • {translateSize(t, pet.size)}
                                   </p>
                                 </div>
                               </div>

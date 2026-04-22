@@ -3,6 +3,7 @@
 import { X, Clock, Calendar, User, Phone, AlertTriangle, FileText } from 'lucide-react';
 import { Schedule } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import { translateSpecies, translateTemperament, translateSize } from '@/domain/pets/labels';
 import { Button } from '@/components/ui/Button';
 
 interface ScheduleDetailsPopupProps {
@@ -80,15 +81,15 @@ export default function ScheduleDetailsPopup({ schedule, onClose }: ScheduleDeta
             <div className="bg-muted/50 dark:bg-slate-700/50 rounded-lg p-3 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{t('pet.species')}</span>
-                <span className="text-gray-800 dark:text-gray-200 capitalize">{schedule.pet_details.species}</span>
+                <span className="text-gray-800 dark:text-gray-200">{translateSpecies(t, schedule.pet_details.species)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{t('pet.temperament')}</span>
-                <span className="text-gray-800 dark:text-gray-200 capitalize">{schedule.pet_details.temperament}</span>
+                <span className="text-gray-800 dark:text-gray-200">{translateTemperament(t, schedule.pet_details.temperament)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{t('pet.size')}</span>
-                <span className="text-gray-800 dark:text-gray-200 capitalize">{schedule.pet_details.size}</span>
+                <span className="text-gray-800 dark:text-gray-200">{translateSize(t, schedule.pet_details.size)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{t('pet.dominance')}</span>

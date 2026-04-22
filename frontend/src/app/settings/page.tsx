@@ -8,6 +8,7 @@ import DataBackupSection from '@/components/DataBackupSection';
 import { useTranslation } from '@/lib/translations';
 import { useFeatureFlag } from '@/lib/feature-flags';
 import { api, Pet, VaccinationType } from '@/lib/api';
+import { translateTemperament } from '@/domain/pets/labels';
 import { withAuth } from '@/lib/withAuth';
 import { Button } from '@/components/ui/Button';
 
@@ -324,7 +325,7 @@ function SettingsPage() {
                       <option value="">{t('settings.selectPet')}</option>
                       {dogPets.map(pet => (
                         <option key={pet.id} value={pet.id}>
-                          {pet.name} ({pet.temperament})
+                          {pet.name} ({translateTemperament(t, pet.temperament)})
                         </option>
                       ))}
                     </select>
@@ -341,7 +342,7 @@ function SettingsPage() {
                       <option value="">{t('settings.selectPet')}</option>
                       {dogPets.filter(p => p.id !== Number(newRule.pet1_id)).map(pet => (
                         <option key={pet.id} value={pet.id}>
-                          {pet.name} ({pet.temperament})
+                          {pet.name} ({translateTemperament(t, pet.temperament)})
                         </option>
                       ))}
                     </select>
