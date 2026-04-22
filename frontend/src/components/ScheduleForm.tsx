@@ -609,7 +609,10 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                 onChange={e => setEndTime(e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
               >
-                {TIME_OPTIONS.filter(t => t > startTime).map(time => (
+                {(startDate === endDate
+                  ? TIME_OPTIONS.filter(t => t > startTime)
+                  : TIME_OPTIONS
+                ).map(time => (
                   <option key={time} value={time}>{time}</option>
                 ))}
               </select>
