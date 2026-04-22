@@ -105,6 +105,22 @@ class ScheduleValidationTests(APITestCase):
         response = self.client.post(self.list_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_multi_day_cross_day_time_allowed(self):
+        """A multi-day booking can check in in the evening and out in the morning."""
+        two_days_later = self.today + timedelta(days=2)
+        data = {
+            'pet': self.pet.id,
+            'start_date': str(self.today),
+            'end_date': str(two_days_later),
+            'start_time': '18:00',
+            'end_time': '10:00',
+            'status': 'scheduled',
+        }
+        response = self.client.post(self.list_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['start_time'], '18:00:00')
+        self.assertEqual(response.data['end_time'], '10:00:00')
+
     def test_create_schedule_returns_warnings_on_conflict(self):
         aggressive = create_pet(temperament='aggressive', dominance_level=8, size='large')
         create_schedule(pet=aggressive, start_date=self.today, end_date=self.today,
@@ -316,6 +332,19 @@ class BatchCreateTests(APITestCase):
         data = self._batch_data([self.pet1.id], start_time='17:00', end_time='09:00')
         response = self.client.post(self.url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_batch_create_multi_day_cross_day_time_allowed(self):
+        """Multi-day batch booking can cross midnight (drop-off evening, pickup morning)."""
+        two_days_later = self.today + timedelta(days=2)
+        data = self._batch_data(
+            [self.pet1.id, self.pet2.id],
+            end_date=str(two_days_later),
+            start_time='18:00',
+            end_time='10:00',
+        )
+        response = self.client.post(self.url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['created_count'], 2)
 
     def test_batch_create_empty_pet_ids(self):
         data = self._batch_data([])
