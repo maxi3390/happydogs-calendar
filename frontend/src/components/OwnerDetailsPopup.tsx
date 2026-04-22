@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { api, OwnerWithPets } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import { formatIsoDate } from '@/lib/dateLocale';
 import { useFeatureFlag } from '@/lib/feature-flags';
 import { Button } from '@/components/ui/Button';
 
@@ -145,7 +146,7 @@ export default function OwnerDetailsPopup({ ownerId, onEdit, onClose }: OwnerDet
                   {owner.birth_date && (
                     <p className="text-sm text-foreground flex items-center gap-2">
                       <User className="w-3.5 h-3.5 text-muted-foreground" />
-                      <span className="font-medium">{t('owner.birthDate')}:</span> {owner.birth_date}
+                      <span className="font-medium">{t('owner.birthDate')}:</span> {formatIsoDate(owner.birth_date)}
                     </p>
                   )}
                 </div>

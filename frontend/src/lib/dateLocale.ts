@@ -16,3 +16,15 @@ export function getDateLocale(language: Language): Locale {
       return enUS;
   }
 }
+
+/**
+ * Format a raw ISO date ("YYYY-MM-DD", optionally with a trailing time
+ * component) as "dd/mm/yyyy" for user display. Returns an empty string
+ * for null / empty input and the original value if it doesn't match the
+ * expected shape, so callers can use it defensively.
+ */
+export function formatIsoDate(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : iso;
+}

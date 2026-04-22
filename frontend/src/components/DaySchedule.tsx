@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { Clock, AlertTriangle, Edit2, Trash2, CheckCircle, XCircle, Plus } from 'lucide-react';
 import { api, Schedule } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
-import { getDateLocale } from '@/lib/dateLocale';
+import { getDateLocale, formatIsoDate } from '@/lib/dateLocale';
 import { translateSpecies, translateTemperament } from '@/domain/pets/labels';
 import { computeStayDays } from '@/domain/schedules/stayDays';
 import { Button } from '@/components/ui/Button';
@@ -101,7 +101,7 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger, onNe
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-foreground">
-              {format(date, 'EEEE, MMMM d, yyyy', { locale: dateLocale })}
+              {format(date, 'EEEE, dd/MM/yyyy', { locale: dateLocale })}
             </h3>
             <p className="text-muted-foreground text-sm">
               {schedules.length} {t('schedule.title')}
@@ -146,7 +146,7 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger, onNe
                       {schedule.pet_details.name}
                     </h4>
                     <span
-                      className="text-xs bg-secondary/40 text-muted-foreground px-2 py-0.5 rounded-full border border-border/50"
+                      className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20 font-medium"
                       title={t('schedule.dayCount.other', { count: stayDays })}
                     >
                       {stayDaysLabel}
@@ -162,7 +162,7 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger, onNe
                     {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
                     {schedule.start_date !== schedule.end_date && (
                       <span className="ml-2 text-primary">
-                        ({schedule.start_date} to {schedule.end_date})
+                        ({formatIsoDate(schedule.start_date)} - {formatIsoDate(schedule.end_date)})
                       </span>
                     )}
                   </p>

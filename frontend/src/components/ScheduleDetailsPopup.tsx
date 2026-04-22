@@ -3,6 +3,7 @@
 import { X, Clock, Calendar, User, Phone, AlertTriangle, FileText } from 'lucide-react';
 import { Schedule } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import { formatIsoDate } from '@/lib/dateLocale';
 import { translateSpecies, translateTemperament, translateSize } from '@/domain/pets/labels';
 import { computeStayDays } from '@/domain/schedules/stayDays';
 import { Button } from '@/components/ui/Button';
@@ -58,7 +59,7 @@ export default function ScheduleDetailsPopup({ schedule, onClose }: ScheduleDeta
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[schedule.status]}`}>
                 {schedule.status.replace('_', ' ')}
               </span>
-              <span className="px-3 py-1 rounded-full text-sm font-medium bg-secondary/40 text-muted-foreground border border-border/50">
+              <span className="px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary border border-primary/20">
                 {stayDaysLabel}
               </span>
             </div>
@@ -71,8 +72,8 @@ export default function ScheduleDetailsPopup({ schedule, onClose }: ScheduleDeta
                 <p className="text-xs text-muted-foreground">{t('schedule.date')}</p>
                 <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                   {schedule.start_date === schedule.end_date
-                    ? schedule.start_date
-                    : `${schedule.start_date} - ${schedule.end_date}`}
+                    ? formatIsoDate(schedule.start_date)
+                    : `${formatIsoDate(schedule.start_date)} - ${formatIsoDate(schedule.end_date)}`}
                 </p>
               </div>
             </div>
