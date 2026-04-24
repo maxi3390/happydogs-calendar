@@ -254,3 +254,109 @@ class PetVetOverrideAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
         pet.refresh_from_db()
         self.assertIsNone(pet.vet_override)
+
+
+class VetNestedDetailsSerializerTests(APITestCase):
+    """Pet / Owner serializers embed a compact VetListSerializer projection
+    (`vet_override_details`, `primary_vet_details`, `emergency_vet_details`)
+    so the pet- and owner-detail popups can show a real vet name and
+    contact info without a second round-trip. The raw FK id fields stay
+    writable — the nested blocks are read-only."""
+
+    EXPECTED_KEYS = {'id', 'name', 'phone', 'email', 'city'}
+
+    def setUp(self):
+        self.user = create_and_auth_user(self.client)
+
+    # ── Pet: vet_override_details ──────────────────────────────────────
+
+    def test_pet_retrieve_exposes_vet_override_details(self):
+        vet = create_vet(name='Specialist Clinic', phone='555-7777',
+                         email='hi@specialist.example', city='Springfield')
+        owner = create_owner()
+        pet = create_pet(owner=owner, vet_override=vet)
+
+        response = self.client.get(reverse('pet-detail', args=[pet.id]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['vet_override'], vet.id)
+        details = response.data['vet_override_details']
+        self.assertIsNotNone(details)
+        self.assertEqual(set(details.keys()), self.EXPECTED_KEYS)
+        self.assertEqual(details['id'], vet.id)
+        self.assertEqual(details['name'], 'Specialist Clinic')
+        self.assertEqual(details['phone'], '555-7777')
+        self.assertEqual(details['email'], 'hi@specialist.example')
+        self.assertEqual(details['city'], 'Springfield')
+
+    def test_pet_without_vet_override_returns_null_details(self):
+        owner = create_owner()
+        pet = create_pet(owner=owner)
+
+        response = self.client.get(reverse('pet-detail', args=[pet.id]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data['vet_override'])
+        self.assertIsNone(response.data['vet_override_details'])
+
+    def test_pet_list_also_carries_vet_override_details(self):
+        """The /api/pets/ list endpoint uses the same PetSerializer, so the
+        nested projection surfaces there too without an extra query."""
+        vet = create_vet(name='Specialist Clinic')
+        owner = create_owner()
+        create_pet(owner=owner, vet_override=vet)
+
+        response = self.client.get(reverse('pet-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        details = response.data[0]['vet_override_details']
+        self.assertIsNotNone(details)
+        self.assertEqual(details['name'], 'Specialist Clinic')
+
+    # ── Owner: primary_vet_details / emergency_vet_details ─────────────
+
+    def test_owner_retrieve_exposes_primary_and_emergency_vet_details(self):
+        primary = create_vet(name='Primary Clinic', city='Springfield')
+        emergency = create_vet(name='Nightline Vet', city='Shelbyville')
+        owner = create_owner(primary_vet=primary, emergency_vet=emergency)
+
+        response = self.client.get(reverse('owner-detail', args=[owner.id]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['primary_vet'], primary.id)
+        self.assertEqual(response.data['emergency_vet'], emergency.id)
+
+        p = response.data['primary_vet_details']
+        e = response.data['emergency_vet_details']
+        self.assertIsNotNone(p)
+        self.assertIsNotNone(e)
+        self.assertEqual(set(p.keys()), self.EXPECTED_KEYS)
+        self.assertEqual(set(e.keys()), self.EXPECTED_KEYS)
+        self.assertEqual(p['name'], 'Primary Clinic')
+        self.assertEqual(p['city'], 'Springfield')
+        self.assertEqual(e['name'], 'Nightline Vet')
+        self.assertEqual(e['city'], 'Shelbyville')
+
+    def test_owner_without_vets_returns_null_details(self):
+        owner = create_owner()
+
+        response = self.client.get(reverse('owner-detail', args=[owner.id]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data['primary_vet'])
+        self.assertIsNone(response.data['emergency_vet'])
+        self.assertIsNone(response.data['primary_vet_details'])
+        self.assertIsNone(response.data['emergency_vet_details'])
+
+    def test_owner_list_also_carries_vet_details(self):
+        """The /api/owners/ list endpoint (OwnerSerializer) exposes the
+        same projection so the primary-page view that is not yet hitting
+        detail has the vet name available for future surfaces too."""
+        primary = create_vet(name='Primary Clinic')
+        emergency = create_vet(name='Nightline Vet')
+        create_owner(primary_vet=primary, emergency_vet=emergency)
+
+        response = self.client.get(reverse('owner-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        row = response.data[0]
+        self.assertIsNotNone(row['primary_vet_details'])
+        self.assertIsNotNone(row['emergency_vet_details'])
+        self.assertEqual(row['primary_vet_details']['name'], 'Primary Clinic')
+        self.assertEqual(row['emergency_vet_details']['name'], 'Nightline Vet')

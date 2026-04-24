@@ -1,13 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { X, Edit2, AlertCircle, Loader2, Dog, Cat, Bird, Rabbit, HelpCircle } from 'lucide-react';
-import { api, Pet } from '@/lib/api';
+import { X, Edit2, AlertCircle, Loader2, Dog, Cat, Bird, Rabbit, HelpCircle, Stethoscope } from 'lucide-react';
+import { api, Pet, Vet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 import { useFeatureFlag } from '@/lib/feature-flags';
 import { translateSpecies } from '@/domain/pets/labels';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import VetDetailsPopup from '@/components/VetDetailsPopup';
+import VetForm from '@/components/VetForm';
 
 interface PetDetailsPopupProps {
   petId: number;
@@ -47,6 +49,11 @@ export default function PetDetailsPopup({ petId, onEdit, onClose }: PetDetailsPo
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  // Drill-down: show the overridden vet on top of this popup. The nested
+  // popup is owned by THIS component so the enclosing page doesn't need
+  // to know about the vet drill-down.
+  const [openVetId, setOpenVetId] = useState<number | null>(null);
+  const [editingVet, setEditingVet] = useState<Vet | undefined>();
 
   useEffect(() => {
     let cancelled = false;
@@ -65,20 +72,23 @@ export default function PetDetailsPopup({ petId, onEdit, onClose }: PetDetailsPo
     closeButtonRef.current?.focus();
   }, []);
 
-  // Escape closes the popup.
+  // Escape closes the popup — but if a nested vet popup / vet form is open,
+  // that inner surface claims the key so the user can back out one level
+  // at a time.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && openVetId === null && !editingVet) onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, openVetId, editingVet]);
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
   };
 
   return (
+    <>
     <div
       role="dialog"
       aria-modal="true"
@@ -210,16 +220,28 @@ export default function PetDetailsPopup({ petId, onEdit, onClose }: PetDetailsPo
                 )}
               </div>
 
-              {/* Vet override (flag-gated) */}
+              {/* Vet override (flag-gated). The vet name is a button that
+                  opens the nested VetDetailsPopup. On older cached payloads
+                  that lack the nested `vet_override_details` block, fall
+                  back to the legacy `#<id>` placeholder so the UI degrades
+                  silently rather than showing nothing. */}
               {vetManagementEnabled && pet.vet_override && (
                 <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl">
-                  <span className="text-[10px] text-emerald-700 dark:text-emerald-400 uppercase font-bold tracking-wider">
+                  <span className="text-[10px] text-emerald-700 dark:text-emerald-400 uppercase font-bold tracking-wider flex items-center gap-1">
+                    <Stethoscope className="w-3 h-3" />
                     {t('pet.vetOverride')}
                   </span>
-                  {/* `vet_override` on the serialized pet is just an id; we don't
-                      have the vet's name bundled. Fall back to showing the id;
-                      the full vet relation can be looked up on the Vets page. */}
-                  <p className="text-sm text-foreground mt-0.5">#{pet.vet_override}</p>
+                  {pet.vet_override_details ? (
+                    <button
+                      type="button"
+                      onClick={() => setOpenVetId(pet.vet_override_details!.id)}
+                      className="mt-0.5 inline-flex items-baseline text-sm text-foreground hover:text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary/50 rounded"
+                    >
+                      {pet.vet_override_details.name}
+                    </button>
+                  ) : (
+                    <p className="text-sm text-foreground mt-0.5">#{pet.vet_override}</p>
+                  )}
                 </div>
               )}
 
@@ -251,5 +273,29 @@ export default function PetDetailsPopup({ petId, onEdit, onClose }: PetDetailsPo
         </div>
       </div>
     </div>
+
+    {/* Nested VetDetailsPopup — rendered as a sibling so it isn't nested
+        inside the pet dialog element. Opens on top of the pet popup when
+        the operator clicks the vet override name. Edit handoff swaps the
+        vet popup for the existing VetForm without closing this pet popup
+        underneath. */}
+    {openVetId !== null && (
+      <VetDetailsPopup
+        vetId={openVetId}
+        onClose={() => setOpenVetId(null)}
+        onEdit={(vet) => {
+          setOpenVetId(null);
+          setEditingVet(vet);
+        }}
+      />
+    )}
+    {editingVet && (
+      <VetForm
+        vet={editingVet}
+        onClose={() => setEditingVet(undefined)}
+        onSave={() => setEditingVet(undefined)}
+      />
+    )}
+    </>
   );
 }

@@ -494,7 +494,12 @@
     "notes": "Notes",
     "notesPlaceholder": "Hours, directions, or anything else useful",
     "searchPlaceholder": "Search vets by name, city, or email",
-    "noMatches": "No vets match your search."
+    "noMatches": "No vets match your search.",
+    "detailsPopup": {
+      "title": "Vet Details",
+      "loading": "Loading vet…",
+      "loadFailed": "Failed to load the vet."
+    }
   },
   "dataBackup": {
     "title": "Data Backup",

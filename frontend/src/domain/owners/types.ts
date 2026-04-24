@@ -1,3 +1,5 @@
+import { VetListItem } from '../vets/types';
+
 export interface Owner {
   id: number;
   first_name: string;
@@ -17,6 +19,12 @@ export interface Owner {
   notes: string;
   primary_vet: number | null;
   emergency_vet: number | null;
+  /** Compact projections of the referenced vets (id + name + contact + city).
+   *  Populated by the backend when the corresponding FK is set; `null`
+   *  otherwise. Missing on older cached payloads — callers should degrade
+   *  gracefully (fall back to the legacy `#<id>` placeholder). */
+  primary_vet_details?: VetListItem | null;
+  emergency_vet_details?: VetListItem | null;
   pet_count?: number;
   profile_picture_url?: string | null;
   created_at: string;

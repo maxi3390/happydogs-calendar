@@ -5,11 +5,13 @@ import {
   X, Edit2, AlertCircle, Loader2, User, Mail, Phone, CreditCard, MapPin,
   Stethoscope, PawPrint,
 } from 'lucide-react';
-import { api, OwnerWithPets } from '@/lib/api';
+import { api, OwnerWithPets, Vet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 import { formatIsoDate } from '@/lib/dateLocale';
 import { useFeatureFlag } from '@/lib/feature-flags';
 import { Button } from '@/components/ui/Button';
+import VetDetailsPopup from '@/components/VetDetailsPopup';
+import VetForm from '@/components/VetForm';
 
 interface OwnerDetailsPopupProps {
   ownerId: number;
@@ -30,6 +32,11 @@ export default function OwnerDetailsPopup({ ownerId, onEdit, onClose }: OwnerDet
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  // Drill-down: the operator can click the primary or emergency vet line
+  // to open the shared VetDetailsPopup on top. We key on the vet id —
+  // whichever vet was clicked is the one we fetch.
+  const [openVetId, setOpenVetId] = useState<number | null>(null);
+  const [editingVet, setEditingVet] = useState<Vet | undefined>();
 
   useEffect(() => {
     let cancelled = false;
@@ -47,12 +54,14 @@ export default function OwnerDetailsPopup({ ownerId, onEdit, onClose }: OwnerDet
   }, []);
 
   useEffect(() => {
+    // If the nested vet popup / vet form is open, that inner surface
+    // claims Escape so the user backs out one level at a time.
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && openVetId === null && !editingVet) onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, openVetId, editingVet]);
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
@@ -61,6 +70,7 @@ export default function OwnerDetailsPopup({ ownerId, onEdit, onClose }: OwnerDet
   const address = owner ? renderAddress(owner) : null;
 
   return (
+    <>
     <div
       role="dialog"
       aria-modal="true"
@@ -181,24 +191,47 @@ export default function OwnerDetailsPopup({ ownerId, onEdit, onClose }: OwnerDet
                 </div>
               )}
 
-              {/* Veterinary (flag-gated) */}
+              {/* Veterinary (flag-gated). Each vet line becomes a button
+                  that opens the shared VetDetailsPopup. On older cached
+                  payloads that lack the nested *_details block, fall back
+                  to the legacy `#<id>` placeholder so the UI degrades
+                  silently rather than showing a broken click target. */}
               {vetManagementEnabled && (owner.primary_vet || owner.emergency_vet) && (
                 <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl space-y-1">
                   <span className="text-[10px] text-emerald-700 dark:text-emerald-400 uppercase font-bold tracking-wider flex items-center gap-1">
                     <Stethoscope className="w-3 h-3" />
                     {t('owner.veterinarySection')}
                   </span>
-                  {/* FKs come back as ids on OwnerWithPets; we show the id as a
-                      lightweight reference here. A full vet-name lookup would
-                      require preloading vet data — out of scope for this popup. */}
                   {owner.primary_vet != null && (
                     <p className="text-sm text-foreground">
-                      <span className="font-medium">{t('owner.primaryVet')}:</span> #{owner.primary_vet}
+                      <span className="font-medium">{t('owner.primaryVet')}:</span>{' '}
+                      {owner.primary_vet_details ? (
+                        <button
+                          type="button"
+                          onClick={() => setOpenVetId(owner.primary_vet_details!.id)}
+                          className="text-foreground hover:text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary/50 rounded"
+                        >
+                          {owner.primary_vet_details.name}
+                        </button>
+                      ) : (
+                        <>#{owner.primary_vet}</>
+                      )}
                     </p>
                   )}
                   {owner.emergency_vet != null && (
                     <p className="text-sm text-foreground">
-                      <span className="font-medium">{t('owner.emergencyVet')}:</span> #{owner.emergency_vet}
+                      <span className="font-medium">{t('owner.emergencyVet')}:</span>{' '}
+                      {owner.emergency_vet_details ? (
+                        <button
+                          type="button"
+                          onClick={() => setOpenVetId(owner.emergency_vet_details!.id)}
+                          className="text-foreground hover:text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary/50 rounded"
+                        >
+                          {owner.emergency_vet_details.name}
+                        </button>
+                      ) : (
+                        <>#{owner.emergency_vet}</>
+                      )}
                     </p>
                   )}
                 </div>
@@ -238,5 +271,29 @@ export default function OwnerDetailsPopup({ ownerId, onEdit, onClose }: OwnerDet
         </div>
       </div>
     </div>
+
+    {/* Nested VetDetailsPopup — rendered as a sibling so it isn't nested
+        inside the owner dialog element. Shared between the primary and
+        emergency vet lines; the state slot holds whichever vet id the
+        operator clicked. Edit handoff swaps the vet popup for the
+        existing VetForm without closing this owner popup underneath. */}
+    {openVetId !== null && (
+      <VetDetailsPopup
+        vetId={openVetId}
+        onClose={() => setOpenVetId(null)}
+        onEdit={(vet) => {
+          setOpenVetId(null);
+          setEditingVet(vet);
+        }}
+      />
+    )}
+    {editingVet && (
+      <VetForm
+        vet={editingVet}
+        onClose={() => setEditingVet(undefined)}
+        onSave={() => setEditingVet(undefined)}
+      />
+    )}
+    </>
   );
 }

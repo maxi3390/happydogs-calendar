@@ -494,7 +494,12 @@
     "notes": "Notas",
     "notesPlaceholder": "Horarios, indicaciones o cualquier dato útil",
     "searchPlaceholder": "Buscar veterinarios por nombre, ciudad o email",
-    "noMatches": "Ningún veterinario coincide con la búsqueda."
+    "noMatches": "Ningún veterinario coincide con la búsqueda.",
+    "detailsPopup": {
+      "title": "Detalles del Veterinario",
+      "loading": "Cargando veterinario…",
+      "loadFailed": "Error al cargar el veterinario."
+    }
   },
   "dataBackup": {
     "title": "Backup de Datos",

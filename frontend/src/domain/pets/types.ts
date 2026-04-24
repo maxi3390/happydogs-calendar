@@ -1,5 +1,6 @@
 import { OwnerListItem } from '../owners/types';
 import { Vaccination } from '../vaccinations/types';
+import { VetListItem } from '../vets/types';
 
 export interface PetListItem {
   id: number;
@@ -28,6 +29,10 @@ export interface Pet {
   owner: number | null;
   vet_override: number | null;
   owner_details?: OwnerListItem;
+  /** Compact projection of the overridden vet (id + name + contact + city).
+   *  Populated by the backend when `vet_override` is set; `null` otherwise.
+   *  Missing on older cached payloads — callers should degrade gracefully. */
+  vet_override_details?: VetListItem | null;
   vaccinations: Vaccination[];
   medical_notes_count?: number;
   profile_picture_url?: string | null;

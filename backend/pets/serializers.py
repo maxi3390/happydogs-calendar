@@ -18,9 +18,23 @@ class VetSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'updated_at']
 
 
+class VetListSerializer(serializers.ModelSerializer):
+    """Compact projection of a Vet used as a nested read-only block on
+    pet and owner serializers. Renders just enough identifying / contact
+    info (name + phone + email + city) for the pet- and owner-detail
+    popups to show a real label instead of a raw FK id. The `id` lets the
+    UI re-open the full VetDetailsPopup without a second round-trip."""
+
+    class Meta:
+        model = Vet
+        fields = ['id', 'name', 'phone', 'email', 'city']
+
+
 class OwnerSerializer(serializers.ModelSerializer):
     pet_count = serializers.SerializerMethodField()
     profile_picture_url = serializers.SerializerMethodField()
+    primary_vet_details = VetListSerializer(source='primary_vet', read_only=True)
+    emergency_vet_details = VetListSerializer(source='emergency_vet', read_only=True)
 
     class Meta:
         model = Owner
@@ -69,6 +83,7 @@ class PetSerializer(serializers.ModelSerializer):
     vaccinations = VaccinationSerializer(many=True, required=False)
     profile_picture_url = serializers.SerializerMethodField()
     medical_notes_count = serializers.SerializerMethodField()
+    vet_override_details = VetListSerializer(source='vet_override', read_only=True)
 
     class Meta:
         model = Pet
@@ -138,6 +153,8 @@ class OwnerWithPetsSerializer(serializers.ModelSerializer):
     """Serializer for owner with their pets"""
     pets = PetListSerializer(many=True, read_only=True)
     profile_picture_url = serializers.SerializerMethodField()
+    primary_vet_details = VetListSerializer(source='primary_vet', read_only=True)
+    emergency_vet_details = VetListSerializer(source='emergency_vet', read_only=True)
 
     class Meta:
         model = Owner
@@ -145,6 +162,7 @@ class OwnerWithPetsSerializer(serializers.ModelSerializer):
                   'street', 'city', 'state', 'province', 'country',
                   'emergency_contact', 'emergency_phone', 'notes',
                   'primary_vet', 'emergency_vet',
+                  'primary_vet_details', 'emergency_vet_details',
                   'profile_picture_url', 'pets', 'created_at']
 
     def get_profile_picture_url(self, obj):
