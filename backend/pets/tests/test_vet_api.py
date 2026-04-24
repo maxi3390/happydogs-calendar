@@ -360,3 +360,110 @@ class VetNestedDetailsSerializerTests(APITestCase):
         self.assertIsNotNone(row['emergency_vet_details'])
         self.assertEqual(row['primary_vet_details']['name'], 'Primary Clinic')
         self.assertEqual(row['emergency_vet_details']['name'], 'Nightline Vet')
+
+
+class PetEmergencyAccessSerializerTests(APITestCase):
+    """`effective_vet_details` and `emergency_vet_details` on PetSerializer
+    power the pet list accordion's emergency-access block: one vet to
+    call right now, one vet for after-hours / emergencies. The fields
+    resolve via the existing `Pet.effective_vet` property and via
+    `pet.owner.emergency_vet` respectively, so the list endpoint covers
+    both in a single round-trip."""
+
+    EXPECTED_KEYS = {'id', 'name', 'phone', 'email', 'city'}
+
+    def setUp(self):
+        self.user = create_and_auth_user(self.client)
+
+    # ── effective_vet_details ──────────────────────────────────────────
+
+    def test_effective_vet_uses_override_when_set(self):
+        override = create_vet(name='Specialist Clinic')
+        primary = create_vet(name='Family Clinic')
+        owner = create_owner(primary_vet=primary)
+        pet = create_pet(owner=owner, vet_override=override)
+
+        response = self.client.get(reverse('pet-detail', args=[pet.id]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        details = response.data['effective_vet_details']
+        self.assertIsNotNone(details)
+        self.assertEqual(set(details.keys()), self.EXPECTED_KEYS)
+        self.assertEqual(details['name'], 'Specialist Clinic')
+        # vet_override_details and effective_vet_details both point at the
+        # override here — that's fine and intentional.
+        self.assertEqual(response.data['vet_override_details']['name'], 'Specialist Clinic')
+
+    def test_effective_vet_falls_back_to_owner_primary(self):
+        primary = create_vet(name='Family Clinic')
+        owner = create_owner(primary_vet=primary)
+        pet = create_pet(owner=owner)
+
+        response = self.client.get(reverse('pet-detail', args=[pet.id]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data['vet_override_details'])
+        effective = response.data['effective_vet_details']
+        self.assertIsNotNone(effective)
+        self.assertEqual(effective['name'], 'Family Clinic')
+
+    def test_effective_vet_is_null_when_neither_resolvable(self):
+        # No override, owner has no primary vet.
+        owner = create_owner()
+        pet = create_pet(owner=owner)
+
+        response = self.client.get(reverse('pet-detail', args=[pet.id]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data['effective_vet_details'])
+
+    def test_effective_vet_is_null_when_pet_has_no_owner(self):
+        pet = create_pet(owner=None)
+
+        response = self.client.get(reverse('pet-detail', args=[pet.id]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data['effective_vet_details'])
+
+    # ── emergency_vet_details ──────────────────────────────────────────
+
+    def test_emergency_vet_comes_from_owner(self):
+        emergency = create_vet(name='Nightline Vet', phone='555-9911')
+        owner = create_owner(emergency_vet=emergency)
+        pet = create_pet(owner=owner)
+
+        response = self.client.get(reverse('pet-detail', args=[pet.id]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        details = response.data['emergency_vet_details']
+        self.assertIsNotNone(details)
+        self.assertEqual(set(details.keys()), self.EXPECTED_KEYS)
+        self.assertEqual(details['name'], 'Nightline Vet')
+        self.assertEqual(details['phone'], '555-9911')
+
+    def test_emergency_vet_is_null_when_pet_has_no_owner(self):
+        pet = create_pet(owner=None)
+
+        response = self.client.get(reverse('pet-detail', args=[pet.id]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data['emergency_vet_details'])
+
+    def test_emergency_vet_is_null_when_owner_has_no_emergency_vet(self):
+        owner = create_owner()  # no emergency_vet
+        pet = create_pet(owner=owner)
+
+        response = self.client.get(reverse('pet-detail', args=[pet.id]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data['emergency_vet_details'])
+
+    # ── list endpoint also carries both ────────────────────────────────
+
+    def test_pet_list_carries_effective_and_emergency_vet_details(self):
+        """The /api/pets/ list is what the PetList accordion paints
+        against. Both projections MUST be available there."""
+        override = create_vet(name='Specialist Clinic')
+        primary = create_vet(name='Family Clinic')
+        emergency = create_vet(name='Nightline Vet')
+        owner = create_owner(primary_vet=primary, emergency_vet=emergency)
+        create_pet(owner=owner, vet_override=override)
+
+        response = self.client.get(reverse('pet-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        row = response.data[0]
+        self.assertEqual(row['effective_vet_details']['name'], 'Specialist Clinic')
+        self.assertEqual(row['emergency_vet_details']['name'], 'Nightline Vet')

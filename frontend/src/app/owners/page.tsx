@@ -2,20 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Search, User, Mail, Phone, PawPrint, Edit2, Trash2, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
-import { api, Owner, OwnerWithPets, Pet } from '@/lib/api';
+import { api, Owner, OwnerWithPets, Pet, Vet } from '@/lib/api';
 import OwnerForm from '@/components/OwnerForm';
 import PetForm from '@/components/PetForm';
 import PetDetailsPopup from '@/components/PetDetailsPopup';
 import ScheduleForm from '@/components/ScheduleForm';
 import Navigation from '@/components/Navigation';
+import VetEmergencyBlock from '@/components/VetEmergencyBlock';
+import VetDetailsPopup from '@/components/VetDetailsPopup';
+import VetForm from '@/components/VetForm';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useTranslation } from '@/lib/translations';
+import { useFeatureFlag } from '@/lib/feature-flags';
 import { translateSpecies, translateTemperament, translateSize } from '@/domain/pets/labels';
 import { withAuth } from '@/lib/withAuth';
 
 function OwnersPage() {
   const { t } = useTranslation();
+  const vetManagementEnabled = useFeatureFlag('vet_management');
   const [owners, setOwners] = useState<Owner[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,6 +35,12 @@ function OwnersPage() {
   const [petDetailsId, setPetDetailsId] = useState<number | null>(null);
   const [editingPet, setEditingPet] = useState<Pet | undefined>();
   const [petFormOwnerId, setPetFormOwnerId] = useState<number | null>(null);
+
+  // Emergency-access vet drill-down — click a vet name from any owner's
+  // accordion to open its VetDetailsPopup. Single state pair shared
+  // across rows: only one vet surface is open at a time.
+  const [openVetId, setOpenVetId] = useState<number | null>(null);
+  const [editingVet, setEditingVet] = useState<Vet | undefined>();
 
   const fetchOwners = async () => {
     try {
@@ -271,6 +282,25 @@ function OwnersPage() {
                       </p>
                     )}
 
+                    {/* Emergency-access vet block — shows primary + emergency
+                        vets with phone numbers inline. Hidden when the flag
+                        is off or when the owner has no vet recorded. */}
+                    {vetManagementEnabled && (
+                      <div className="mb-4">
+                        <VetEmergencyBlock
+                          primary={{
+                            vet: ownerDetails[owner.id].primary_vet_details,
+                            label: t('owner.primaryVet'),
+                          }}
+                          emergency={{
+                            vet: ownerDetails[owner.id].emergency_vet_details,
+                            label: t('owner.emergencyVet'),
+                          }}
+                          onOpenVet={setOpenVetId}
+                        />
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between mt-4 mb-3">
                       <h4 className="font-medium text-gray-800 dark:text-gray-200">
                         {t('common.pets')} ({ownerDetails[owner.id].pets.length})
@@ -424,6 +454,28 @@ function OwnersPage() {
             setEditingPet(pet);
             setPetFormOwnerId(null);
           }}
+        />
+      )}
+
+      {/* Shared vet drill-down from any expanded owner row's Veterinary
+          block. Popup → Edit hands off to VetForm; both are rendered at
+          the page level so clicking the backdrop doesn't collapse the
+          owner accordion underneath. */}
+      {openVetId !== null && (
+        <VetDetailsPopup
+          vetId={openVetId}
+          onClose={() => setOpenVetId(null)}
+          onEdit={(vet) => {
+            setOpenVetId(null);
+            setEditingVet(vet);
+          }}
+        />
+      )}
+      {editingVet && (
+        <VetForm
+          vet={editingVet}
+          onClose={() => setEditingVet(undefined)}
+          onSave={() => setEditingVet(undefined)}
         />
       )}
     </div>

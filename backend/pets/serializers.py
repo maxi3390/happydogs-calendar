@@ -84,6 +84,17 @@ class PetSerializer(serializers.ModelSerializer):
     profile_picture_url = serializers.SerializerMethodField()
     medical_notes_count = serializers.SerializerMethodField()
     vet_override_details = VetListSerializer(source='vet_override', read_only=True)
+    # `effective_vet_details` surfaces the vet actually responsible for the
+    # pet (override > owner's primary > none), which is what the pet list
+    # accordion shows for quick emergency access. Kept separate from
+    # `vet_override_details` because the two mean different things: the
+    # override is "what's set on the pet", the effective vet is "who to
+    # call right now".
+    effective_vet_details = serializers.SerializerMethodField()
+    # Emergency vet comes from the pet's owner (there is no pet-level
+    # emergency vet field). Projecting it onto the pet keeps the `/pets`
+    # list a single round-trip.
+    emergency_vet_details = serializers.SerializerMethodField()
 
     class Meta:
         model = Pet
@@ -100,6 +111,20 @@ class PetSerializer(serializers.ModelSerializer):
 
     def get_medical_notes_count(self, obj):
         return obj.medical_notes.count()
+
+    def get_effective_vet_details(self, obj):
+        vet = obj.effective_vet
+        if vet is None:
+            return None
+        return VetListSerializer(vet).data
+
+    def get_emergency_vet_details(self, obj):
+        if obj.owner_id is None:
+            return None
+        vet = obj.owner.emergency_vet
+        if vet is None:
+            return None
+        return VetListSerializer(vet).data
 
     @transaction.atomic
     def create(self, validated_data):
