@@ -1,5 +1,6 @@
 import { OwnerListItem } from '../owners/types';
 import { Vaccination } from '../vaccinations/types';
+import { VetListItem } from '../vets/types';
 
 export interface PetListItem {
   id: number;
@@ -28,6 +29,19 @@ export interface Pet {
   owner: number | null;
   vet_override: number | null;
   owner_details?: OwnerListItem;
+  /** Compact projection of the overridden vet (id + name + contact + city).
+   *  Populated by the backend when `vet_override` is set; `null` otherwise.
+   *  Missing on older cached payloads — callers should degrade gracefully. */
+  vet_override_details?: VetListItem | null;
+  /** The vet actually responsible for this pet, resolved server-side via
+   *  `Pet.effective_vet`: override → owner's primary vet → `null`. The
+   *  pet list accordion renders this as the "Vet" row for quick emergency
+   *  access regardless of which field holds the value. */
+  effective_vet_details?: VetListItem | null;
+  /** The pet's emergency vet, sourced from the pet's owner's
+   *  `emergency_vet`. `null` when the pet has no owner or the owner has
+   *  no emergency vet recorded. */
+  emergency_vet_details?: VetListItem | null;
   vaccinations: Vaccination[];
   medical_notes_count?: number;
   profile_picture_url?: string | null;

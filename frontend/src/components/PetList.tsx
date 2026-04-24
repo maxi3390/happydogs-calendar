@@ -5,12 +5,16 @@ import {
   Edit2, Trash2, Dog, Cat, Bird, Rabbit, HelpCircle, ChevronDown,
   FileText, Search, X, SlidersHorizontal,
 } from 'lucide-react';
-import { api, Pet } from '@/lib/api';
+import { api, Pet, Vet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import { useFeatureFlag } from '@/lib/feature-flags';
 import { translateSpecies } from '@/domain/pets/labels';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
+import VetEmergencyBlock from '@/components/VetEmergencyBlock';
+import VetDetailsPopup from '@/components/VetDetailsPopup';
+import VetForm from '@/components/VetForm';
 
 interface PetListProps {
   onEdit: (pet: Pet) => void;
@@ -137,12 +141,19 @@ function ChipFilterRow<T extends string>({
 
 export default function PetList({ onEdit, refreshTrigger, onViewOwner }: PetListProps) {
   const { t } = useTranslation();
+  const vetManagementEnabled = useFeatureFlag('vet_management');
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [expandedPetId, setExpandedPetId] = useState<number | null>(null);
   const [filters, setFilters] = useState<PetFilters>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // Emergency-access flow: clicking a vet in the expanded accordion opens
+  // the VetDetailsPopup; its Edit button hands off to VetForm. Both are
+  // shared across all pet rows — only one vet surface can be open at a
+  // time.
+  const [openVetId, setOpenVetId] = useState<number | null>(null);
+  const [editingVet, setEditingVet] = useState<Vet | undefined>();
 
   const fetchPets = async () => {
     setLoading(true);
@@ -477,6 +488,27 @@ export default function PetList({ onEdit, refreshTrigger, onViewOwner }: PetList
                         </div>
                       </div>
 
+                      {/* Emergency-access vet block — renders the effective
+                          vet (who to call right now: override → owner's
+                          primary) and the emergency vet (owner's
+                          after-hours clinic) with phone numbers inline.
+                          Clicking either opens VetDetailsPopup. The whole
+                          block is hidden when the vet_management flag is
+                          off or when the pet has no resolvable vet. */}
+                      {vetManagementEnabled && (
+                        <VetEmergencyBlock
+                          primary={{
+                            vet: pet.effective_vet_details,
+                            label: t('pet.effectiveVet'),
+                          }}
+                          emergency={{
+                            vet: pet.emergency_vet_details,
+                            label: t('pet.emergencyVet'),
+                          }}
+                          onOpenVet={setOpenVetId}
+                        />
+                      )}
+
                       {pet.special_notes && (
                         <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl">
                           <span className="text-[10px] text-amber-600 dark:text-amber-500 uppercase font-bold tracking-wider">{t('pet.specialNotes')}</span>
@@ -490,6 +522,27 @@ export default function PetList({ onEdit, refreshTrigger, onViewOwner }: PetList
             </div>
           ))}
         </div>
+      )}
+
+      {/* Shared vet drill-down — a single popup + form pair reused across
+          every expanded pet row. openVetId tracks which vet the operator
+          clicked; the popup fetches the full record on mount. */}
+      {openVetId !== null && (
+        <VetDetailsPopup
+          vetId={openVetId}
+          onClose={() => setOpenVetId(null)}
+          onEdit={(vet) => {
+            setOpenVetId(null);
+            setEditingVet(vet);
+          }}
+        />
+      )}
+      {editingVet && (
+        <VetForm
+          vet={editingVet}
+          onClose={() => setEditingVet(undefined)}
+          onSave={() => setEditingVet(undefined)}
+        />
       )}
     </>
   );

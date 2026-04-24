@@ -171,6 +171,8 @@
     "vetOverride": "Veterinario Específico",
     "noVetOverride": "Usar el veterinario de cabecera del dueño",
     "vetOverrideHint": "Opcional. Si se configura, este veterinario se usa para esta mascota; de lo contrario se usa el de cabecera del dueño.",
+    "effectiveVet": "Veterinario",
+    "emergencyVet": "Veterinario de emergencia",
     "customSpeciesPlaceholder": "ej. hurón, iguana, hámster",
     "customSpeciesHint": "Si se completa, este valor reemplaza la selección del menú. Dejalo vacío para usar el menú.",
     "filters": {
@@ -494,7 +496,13 @@
     "notes": "Notas",
     "notesPlaceholder": "Horarios, indicaciones o cualquier dato útil",
     "searchPlaceholder": "Buscar veterinarios por nombre, ciudad o email",
-    "noMatches": "Ningún veterinario coincide con la búsqueda."
+    "noMatches": "Ningún veterinario coincide con la búsqueda.",
+    "noPhone": "Sin teléfono registrado",
+    "detailsPopup": {
+      "title": "Detalles del Veterinario",
+      "loading": "Cargando veterinario…",
+      "loadFailed": "Error al cargar el veterinario."
+    }
   },
   "dataBackup": {
     "title": "Backup de Datos",

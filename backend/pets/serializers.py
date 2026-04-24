@@ -18,9 +18,23 @@ class VetSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'updated_at']
 
 
+class VetListSerializer(serializers.ModelSerializer):
+    """Compact projection of a Vet used as a nested read-only block on
+    pet and owner serializers. Renders just enough identifying / contact
+    info (name + phone + email + city) for the pet- and owner-detail
+    popups to show a real label instead of a raw FK id. The `id` lets the
+    UI re-open the full VetDetailsPopup without a second round-trip."""
+
+    class Meta:
+        model = Vet
+        fields = ['id', 'name', 'phone', 'email', 'city']
+
+
 class OwnerSerializer(serializers.ModelSerializer):
     pet_count = serializers.SerializerMethodField()
     profile_picture_url = serializers.SerializerMethodField()
+    primary_vet_details = VetListSerializer(source='primary_vet', read_only=True)
+    emergency_vet_details = VetListSerializer(source='emergency_vet', read_only=True)
 
     class Meta:
         model = Owner
@@ -69,6 +83,18 @@ class PetSerializer(serializers.ModelSerializer):
     vaccinations = VaccinationSerializer(many=True, required=False)
     profile_picture_url = serializers.SerializerMethodField()
     medical_notes_count = serializers.SerializerMethodField()
+    vet_override_details = VetListSerializer(source='vet_override', read_only=True)
+    # `effective_vet_details` surfaces the vet actually responsible for the
+    # pet (override > owner's primary > none), which is what the pet list
+    # accordion shows for quick emergency access. Kept separate from
+    # `vet_override_details` because the two mean different things: the
+    # override is "what's set on the pet", the effective vet is "who to
+    # call right now".
+    effective_vet_details = serializers.SerializerMethodField()
+    # Emergency vet comes from the pet's owner (there is no pet-level
+    # emergency vet field). Projecting it onto the pet keeps the `/pets`
+    # list a single round-trip.
+    emergency_vet_details = serializers.SerializerMethodField()
 
     class Meta:
         model = Pet
@@ -85,6 +111,20 @@ class PetSerializer(serializers.ModelSerializer):
 
     def get_medical_notes_count(self, obj):
         return obj.medical_notes.count()
+
+    def get_effective_vet_details(self, obj):
+        vet = obj.effective_vet
+        if vet is None:
+            return None
+        return VetListSerializer(vet).data
+
+    def get_emergency_vet_details(self, obj):
+        if obj.owner_id is None:
+            return None
+        vet = obj.owner.emergency_vet
+        if vet is None:
+            return None
+        return VetListSerializer(vet).data
 
     @transaction.atomic
     def create(self, validated_data):
@@ -138,6 +178,8 @@ class OwnerWithPetsSerializer(serializers.ModelSerializer):
     """Serializer for owner with their pets"""
     pets = PetListSerializer(many=True, read_only=True)
     profile_picture_url = serializers.SerializerMethodField()
+    primary_vet_details = VetListSerializer(source='primary_vet', read_only=True)
+    emergency_vet_details = VetListSerializer(source='emergency_vet', read_only=True)
 
     class Meta:
         model = Owner
@@ -145,6 +187,7 @@ class OwnerWithPetsSerializer(serializers.ModelSerializer):
                   'street', 'city', 'state', 'province', 'country',
                   'emergency_contact', 'emergency_phone', 'notes',
                   'primary_vet', 'emergency_vet',
+                  'primary_vet_details', 'emergency_vet_details',
                   'profile_picture_url', 'pets', 'created_at']
 
     def get_profile_picture_url(self, obj):
