@@ -81,7 +81,14 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
 
   const goToPreviousWeek = () => setCurrentWeekStart(subWeeks(currentWeekStart, 1));
   const goToNextWeek = () => setCurrentWeekStart(addWeeks(currentWeekStart, 1));
-  const goToCurrentWeek = () => setCurrentWeekStart(startOfWeek(new Date()));
+  const goToCurrentWeek = () => {
+    // Mirror Calendar.tsx's Today button: snap both the displayed
+    // week AND the selected day so the day-schedule panel and the
+    // create-schedule form's pre-fill follow the user's intent.
+    const today = new Date();
+    setCurrentWeekStart(startOfWeek(today));
+    onDateSelect(today);
+  };
 
   const petRows = useMemo(() => {
     const weekStartStr = format(currentWeekStart, 'yyyy-MM-dd');

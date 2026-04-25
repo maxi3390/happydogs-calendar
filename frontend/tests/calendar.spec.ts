@@ -73,6 +73,57 @@ test.describe('Calendar', () => {
     // Day schedule panel should update to show selected date
     await expect(page.getByText(/\d+\s+schedules?/i).first()).toBeVisible();
   });
+
+  test('Today button snaps the selected day to today, not just the displayed month', async ({ page }) => {
+    // Navigate forward two months so we can click a non-today cell
+    // without the date colliding with today.
+    const calendarHeader = page.locator('.bg-card.text-card-foreground.rounded-xl.shadow-lg').first();
+    const nextMonthButton = calendarHeader.locator('button').nth(4);
+    await nextMonthButton.click();
+    await nextMonthButton.click();
+
+    // Click day "15" in the future month — the day-schedule panel
+    // should anchor on that date (heading is `EEEE, dd/MM/yyyy`).
+    await page.locator('[class*="cursor-pointer"]').filter({ hasText: /^15$/ }).first().click();
+    const panelHeading = page.getByRole('heading', { level: 3 }).first();
+    await expect(panelHeading).toContainText(/15\//);
+
+    // Click the Today button. The displayed month resets AND the
+    // panel's selected-day heading must follow.
+    await page.getByRole('button', { name: /^(today|hoy)$/i }).click();
+
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy = today.getFullYear();
+    await expect(panelHeading).toContainText(`${dd}/${mm}/${yyyy}`);
+  });
+
+  test('Today button + day-panel "+ New Schedule" pre-fills the form with today', async ({ page }) => {
+    // Drift the selected day by clicking some other date first, then
+    // click Today, then open the create-schedule form from the day
+    // panel. The form's start/end date inputs must read today's ISO
+    // date — proving the Today button reset the selected day.
+    const calendarHeader = page.locator('.bg-card.text-card-foreground.rounded-xl.shadow-lg').first();
+    const nextMonthButton = calendarHeader.locator('button').nth(4);
+    await nextMonthButton.click();
+    await page.locator('[class*="cursor-pointer"]').filter({ hasText: /^20$/ }).first().click();
+
+    await page.getByRole('button', { name: /^(today|hoy)$/i }).click();
+
+    // Open the day-panel's "+ New Schedule" button (uniquely keyed by
+    // its translated aria-label).
+    await page.getByRole('button', { name: /new schedule|nuevo horario/i }).first().click();
+
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy = today.getFullYear();
+    const isoToday = `${yyyy}-${mm}-${dd}`;
+
+    await expect(page.locator('form input[type="date"]').nth(0)).toHaveValue(isoToday);
+    await expect(page.locator('form input[type="date"]').nth(1)).toHaveValue(isoToday);
+  });
 });
 
 test.describe('Week View', () => {
