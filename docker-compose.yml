@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: nursery
       POSTGRES_PASSWORD: nursery
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U nursery -d nursery"]
       interval: 5s
