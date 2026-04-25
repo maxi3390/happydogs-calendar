@@ -80,7 +80,7 @@ graph TB
 
 - **Image**: `postgres:18-alpine`
 - **Environment**: `POSTGRES_DB=nursery`, `POSTGRES_USER=nursery`, `POSTGRES_PASSWORD=nursery`
-- **Volume**: `postgres_data` mounted to `/var/lib/postgresql/data`
+- **Volume**: `postgres_data` mounted to `/var/lib/postgresql`
 - **Healthcheck**: `pg_isready` command to verify the database is accepting connections
 - **Network**: `proxy`
 
