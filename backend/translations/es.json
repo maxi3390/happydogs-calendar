@@ -80,6 +80,11 @@
     "conflictsWarning": "Aún puedes crear este horario, pero ten en cuenta los posibles conflictos.",
     "noConflicts": "No se detectaron conflictos",
     "compatiblePets": "{count} mascotas compatibles en este horario",
+    "samePetOverlap": {
+      "title": "Esta mascota ya tiene una reserva",
+      "description": "{name} ya tiene una reserva para {start} → {end} que se superpone o queda junto a tu selección. Quizás convenga extender la reserva existente en lugar de crear una nueva.",
+      "editLink": "Editar la reserva existente"
+    },
     "dailyLimitReached": "¡Límite diario de reservas alcanzado!",
     "dailyLimitReachedDetail": "Ya hay {count} reservas para {date} (límite: {limit}). Puedes continuar, pero confirma por favor.",
     "dailyLimitWarning": "Acercándose al límite diario de reservas",

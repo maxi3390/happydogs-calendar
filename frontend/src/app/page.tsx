@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Calendar from '@/components/Calendar';
-import ScheduleForm from '@/components/ScheduleForm';
+import ScheduleForm, { DateField } from '@/components/ScheduleForm';
 import DaySchedule from '@/components/DaySchedule';
 import WeekView from '@/components/WeekView';
 import Navigation from '@/components/Navigation';
 import PublicCalendar from '@/components/PublicCalendar';
-import { Schedule } from '@/lib/api';
+import { api, Schedule } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 import { useAuth } from '@/lib/auth';
 import { LogIn, PawPrint, Shield } from 'lucide-react';
@@ -23,6 +23,7 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Schedule | undefined>();
+  const [editingFocusField, setEditingFocusField] = useState<DateField | undefined>();
   const [refreshSchedules, setRefreshSchedules] = useState(0);
   const [calendarView, setCalendarView] = useState<'month' | 'week'>('month');
   const [showMultiScheduleForm, setShowMultiScheduleForm] = useState(false);
@@ -44,6 +45,7 @@ export default function Home() {
   const handleScheduleSave = () => {
     setShowScheduleForm(false);
     setEditingSchedule(undefined);
+    setEditingFocusField(undefined);
     setRefreshSchedules(prev => prev + 1);
   };
 
@@ -54,7 +56,23 @@ export default function Home() {
 
   const handleEditSchedule = (schedule: Schedule) => {
     setEditingSchedule(schedule);
+    setEditingFocusField(undefined);
     setShowScheduleForm(true);
+  };
+
+  // Handoff from the same-pet overlap CTA: close the create modal and
+  // re-open the form in edit mode for the existing schedule, focused
+  // on the date field the operator should adjust.
+  const handleEditExistingFromOverlap = async (id: number, focus: DateField) => {
+    try {
+      const existing = await api.schedules.get(id);
+      setShowScheduleForm(false);
+      setEditingSchedule(existing);
+      setEditingFocusField(focus);
+      setShowScheduleForm(true);
+    } catch (err) {
+      console.error('Failed to fetch existing schedule:', err);
+    }
   };
 
   // Show loading state
@@ -267,13 +285,22 @@ export default function Home() {
 
       {showScheduleForm && (
         <ScheduleForm
+          // `key` resets the form's internal state when we swap from a
+          // create flow into an edit flow via the same-pet overlap
+          // CTA — both renders happen back-to-back with the modal
+          // already mounted, so without the key React would reuse the
+          // old state.
+          key={editingSchedule ? `edit-${editingSchedule.id}` : 'create'}
           schedule={editingSchedule}
           selectedDate={selectedDate}
+          focusField={editingFocusField}
           onClose={() => {
             setShowScheduleForm(false);
             setEditingSchedule(undefined);
+            setEditingFocusField(undefined);
           }}
           onSave={handleScheduleSave}
+          onEditExisting={handleEditExistingFromOverlap}
         />
       )}
 
