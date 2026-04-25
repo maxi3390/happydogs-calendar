@@ -3,7 +3,7 @@ const {themes: prismThemes} = require('prism-react-renderer');
 export default {
   title: 'Happy Calendar Documentation',
   tagline: 'Comprehensive documentation for the Happy Calendar project',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/logo.svg',
 
   // Set the production url of your site here
   url: 'https://happy-calendar-docs.example.com',
@@ -37,10 +37,9 @@ export default {
           sidebarPath: './sidebars.js',
           editUrl: 'https://github.com/maximiliano/happy-calendar/edit/main/docs/',
         },
-        blog: {
-          showReadingTime: true,
-          editUrl: 'https://github.com/maximiliano/happy-calendar/edit/main/docs/blog/',
-        },
+        // Blog disabled: there's no `blog/` content directory, so leaving
+        // the default config wired up generates empty / 404 routes.
+        blog: false,
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -51,7 +50,6 @@ export default {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      image: 'img/happy-calendar-social-card.jpg',
       navbar: {
         title: 'Happy Calendar Docs',
         logo: {
