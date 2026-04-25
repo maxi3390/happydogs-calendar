@@ -23,6 +23,8 @@ The frontend has a bell in the navigation that polls `/api/notifications/`, a `/
 | **Cron via docker-compose service** | Separate `cron` container, image reuses the backend's, entrypoint is a small Python loop | No new dependencies (no Celery, no APScheduler). Loop polls the DB for `notifications_run_time` every minute and fires the command when the wall-clock matches and we haven't already fired today. Trivial to reason about. |
 | **Email delivery via Django core mail** | `django.core.mail.send_mail()` from inside the management command | No third-party dependency. Default to the console backend in dev (`EMAIL_BACKEND='django.core.mail.backends.console.EmailBackend'`). Operators configure SMTP via env vars in production. |
 | **Owner forwarding via `mailto:` / `wa.me`** | Pure-frontend, no backend send | Keeps the system out of the "is this email deliverable to the owner?" rabbit-hole. Staff own the action; the system just pre-fills a templated message. |
+| **Owner-bound message templates** | Two scopes: `treatment_due` (vaccination + deworming) and `pet_birthday`. Each scope has 3 channel fields (`email_subject`, `email_body`, `whatsapp_text`). Stored on a new `NotificationTemplate` model. Empty fields fall back to localized translation defaults. | Operators want to control the wording owners see (their voice, their nursery's branding). Two scopes covers v1 — vaccination/deworming share a treatment-due voice; birthdays are their own thing. The internal-only kinds (arrivals, egress) don't get templates because they're never forwarded. Per-language templates were considered and rejected for v1 simplicity. |
+| **Forward-to-owner button visibility** | Render the buttons ONLY for kinds whose scope maps to a `NotificationTemplate` row | An "Email owner about today's arrival" button has no clear use case (the owner is bringing the pet themselves) — surfacing it would confuse operators. Restricting visibility to the meaningful kinds keeps the UX honest. |
 | **Telegram deferred to v2** | Not implemented in v1 | Adding a webhook endpoint or a polling worker for the bot is a non-trivial extra. Better to ship the rest first. |
 | **Cadence config: per-vaccination-type + global deworming** | `VaccinationType.due_after_days` (per type, default 365) + `NurserySetting.deworming_default_due_days` (global, default 90) | Different vaccines have different cadences (rabies vs. distemper); deworming cadences are uniform per nursery. Per-pet override is out of scope; operators can edit the pet's vaccination history if a one-off is needed. |
 | **Auto-cleanup after the event** | Notifications older than `event_date + 7 days` are auto-dismissed during each cron run | Keeps the bell from accumulating ancient noise. 7 days is enough that staff who took yesterday off don't lose context. |
@@ -94,6 +96,62 @@ class NotificationPreference(models.Model):
 ```
 
 Telegram fields will be added in the v2 follow-up.
+
+### `notifications.NotificationTemplate`
+
+```python
+class NotificationTemplate(models.Model):
+    SCOPE_CHOICES = [
+        ('treatment_due', 'Treatment due (vaccination / deworming)'),
+        ('pet_birthday', 'Pet birthday'),
+    ]
+    scope = models.CharField(max_length=40, choices=SCOPE_CHOICES, unique=True)
+    email_subject = models.TextField(blank=True)
+    email_body = models.TextField(blank=True)
+    whatsapp_text = models.TextField(blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+```
+
+One row per scope, materialised on first read via `get_or_create`. Each field defaults to empty; an empty field falls back to the matching localised translation key (`notifications.forward.<scope>.email.subject` / `.body` / `.whatsapp.text`).
+
+#### Mapping kinds → template scope
+
+| Kind | Scope | Forward buttons? |
+|------|-------|------------------|
+| `vaccination_due` | `treatment_due` | ✅ |
+| `deworming_internal_due` | `treatment_due` | ✅ |
+| `deworming_external_due` | `treatment_due` | ✅ |
+| `pet_birthday` | `pet_birthday` | ✅ |
+| `pet_arriving_today` | — | ❌ |
+| `pet_arriving_tomorrow` | — | ❌ |
+| `pet_egress_today` | — | ❌ |
+| `pet_egress_tomorrow` | — | ❌ |
+
+#### Placeholder catalog
+
+Templates are rendered server-side using Python's `str.format(**payload)`. The `payload` dict varies by scope:
+
+**`treatment_due`** placeholders:
+
+| Placeholder | Value |
+|-------------|-------|
+| `{pet_name}` | The pet's name |
+| `{owner_first_name}` | The owner's first name (empty when no owner) |
+| `{owner_full_name}` | First + last (empty when no owner) |
+| `{treatment}` | Localised treatment name: "rabies vaccination", "internal deworming", … |
+| `{due_date}` | Computed due date in `dd/mm/yyyy` |
+| `{last_date}` | Date of the last treatment in `dd/mm/yyyy` |
+
+**`pet_birthday`** placeholders:
+
+| Placeholder | Value |
+|-------------|-------|
+| `{pet_name}` | The pet's name |
+| `{owner_first_name}` | First name |
+| `{owner_full_name}` | Full name |
+| `{age_years}` | The pet's age in completed years |
+
+A missing placeholder in the operator's template is left as the literal `{name}` (no exception). A missing key in `payload` (e.g. `{age_years}` used in a `treatment_due` template) is rendered as an empty string. Defensive: don't crash on operator typos.
 
 ### `nursery_settings.NurserySetting` additions
 
@@ -231,6 +289,45 @@ This avoids: a separate scheduler library, OS cron's reload-after-config-change 
 | `POST` | `/api/notifications/dismiss_all/` | Bulk-dismiss every undismissed notification for the user. |
 | `GET` | `/api/notifications/preferences/` | Return the logged-in user's preferences (`email_enabled`). |
 | `PATCH` | `/api/notifications/preferences/` | Update preferences. |
+| `GET` | `/api/notification-templates/` | List the configured message templates (one row per scope). Materialises empty rows on first read. |
+| `PATCH` | `/api/notification-templates/{scope}/` | Update one template. Empty fields are valid and mean "use the localised default". |
+
+### Notification serializer payload (forward-rendering)
+
+Each `Notification` row in the list response SHALL include a pre-rendered `forward` block when the kind maps to a template scope:
+
+```json
+{
+  "id": 42,
+  "kind": "vaccination_due",
+  "pet": { "id": 7, "name": "Luna" },
+  "event_date": "2026-05-01",
+  "payload": { "treatment": "Annual rabies", "last_date": "2025-05-01", "due_date": "2026-05-01" },
+  "read_at": null,
+  "dismissed_at": null,
+  "forward": {
+    "email": {
+      "subject": "Reminder: Luna's annual rabies is due 01/05/2026",
+      "body": "Hi Juana, ...",
+      "to": "juana@example.com"
+    },
+    "whatsapp": {
+      "text": "Hi Juana, just a reminder that Luna's annual rabies is due on 01/05/2026.",
+      "phone": "+5491165432109"
+    }
+  }
+}
+```
+
+The backend renders each field by:
+
+1. Loading the `NotificationTemplate` row for the kind's scope (or materialising it with defaults).
+2. For each channel field (`email_subject`, `email_body`, `whatsapp_text`): use the operator's value if non-empty, otherwise the localised default from the user's preferred language translation.
+3. Substituting placeholders via `str.format_map(SafeDict(payload))` — `SafeDict` returns the literal `{key}` when a key is missing rather than raising, so an operator typo doesn't 500 the API.
+
+`forward` is `null` when the kind is internal-only (no scope mapping). The frontend uses this to decide whether to render the buttons.
+
+`forward.email.to` is `null` when the pet has no owner or the owner has no email; `forward.whatsapp.phone` is `null` analogously. The frontend hides the corresponding button when its `to` / `phone` is `null`.
 
 ## Frontend
 

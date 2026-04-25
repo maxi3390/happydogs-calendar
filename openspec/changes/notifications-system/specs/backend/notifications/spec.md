@@ -147,6 +147,64 @@ When `update_or_create` returned `created=False` (the notification already exist
 - WHEN the cron runs again the same day
 - THEN no second email SHALL be sent
 
+### Requirement: NotificationTemplate SHALL provide per-nursery message templates for owner-bound notifications
+
+The system SHALL provide a `NotificationTemplate` model with one row per scope. The supported scopes in v1 are:
+
+| Scope | Used by kinds |
+|-------|---------------|
+| `treatment_due` | `vaccination_due`, `deworming_internal_due`, `deworming_external_due` |
+| `pet_birthday` | `pet_birthday` |
+
+Each row SHALL carry three text fields: `email_subject`, `email_body`, and `whatsapp_text`. All three SHALL be blank by default. An empty field SHALL fall back to the localised default in the user's preferred language under `notifications.forward.<scope>.email.{subject,body}` / `notifications.forward.<scope>.whatsapp.text`.
+
+The `scope` field SHALL be unique. Rows SHALL be materialised on first read via `get_or_create` so a fresh deployment always exposes both scopes (with empty fields → using defaults).
+
+REST endpoints `GET /api/notification-templates/` and `PATCH /api/notification-templates/{scope}/` SHALL expose the templates. POST and DELETE SHALL be unsupported (the catalog of scopes is fixed in v1).
+
+#### Scenario: First read materialises both scopes
+
+- GIVEN a fresh database with no `NotificationTemplate` rows
+- WHEN an operator `GET /api/notification-templates/`
+- THEN the response SHALL contain exactly two rows — `treatment_due` and `pet_birthday`
+- AND every text field on each row SHALL be empty
+
+#### Scenario: Operator edits the treatment-due email body
+
+- GIVEN the operator opens the Settings → Notifications → Message templates UI
+- WHEN they type a custom email body for the `treatment_due` scope and save
+- THEN a `PATCH /api/notification-templates/treatment_due/` SHALL persist the new value
+- AND subsequent calls to `GET /api/notifications/` SHALL render the operator's text in the `forward.email.body` field of every `vaccination_due` and `deworming_*_due` row
+
+#### Scenario: Empty fields fall back to localised defaults
+
+- GIVEN the operator's `treatment_due.whatsapp_text` is empty
+- AND the logged-in user's preferred language is Spanish
+- WHEN the system renders a `vaccination_due` notification's `forward.whatsapp.text`
+- THEN the rendered text SHALL come from the Spanish `notifications.forward.treatment_due.whatsapp.text` translation
+- AND switching the user's preferred language to English SHALL change the rendered text accordingly
+
+#### Scenario: Internal-only kinds expose `forward = null`
+
+- GIVEN a `pet_arriving_today` notification
+- WHEN the row is serialised
+- THEN its `forward` field SHALL be `null`
+- AND the frontend SHALL NOT render any forward-to-owner buttons on that row
+
+#### Scenario: Missing placeholder in operator template renders the literal
+
+- GIVEN the operator's `treatment_due.email_body` contains `Hi {nonexistent_placeholder}`
+- WHEN the system renders the field for a notification
+- THEN the rendered output SHALL contain the literal text `Hi {nonexistent_placeholder}`
+- AND no exception SHALL be raised
+
+#### Scenario: Hidden buttons when contact info is absent
+
+- GIVEN a notification whose pet has an owner with `email = ""` and `phone = ""`
+- WHEN the row is serialised
+- THEN `forward.email.to` SHALL be `null` AND `forward.whatsapp.phone` SHALL be `null`
+- AND the frontend SHALL hide both forward buttons on that row
+
 ### Requirement: Daily scheduling container SHALL invoke the command at the configured time
 
 The `cron` docker-compose service SHALL run a polling loop (`run_notification_scheduler` management command) that:

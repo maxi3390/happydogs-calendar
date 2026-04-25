@@ -40,8 +40,13 @@ The `/notifications` page SHALL list each undismissed notification for the logge
 - A localised title (`notifications.kinds.<kind>.title`).
 - A localised body interpolated with the row's `payload` and `pet` fields (`notifications.kinds.<kind>.body`).
 - A **Dismiss** button that `POST`s to `/api/notifications/{id}/dismiss/` and removes the row from the list on success.
-- A **Forward by email** button (rendered only when the pet's owner has an `email`) that opens `mailto:<owner.email>?subject=...&body=...` pre-filled from `notifications.forward.email.{subject,body}` translations interpolated with the row's data.
-- A **Forward by WhatsApp** button (rendered only when the owner has a `phone`) that opens `https://wa.me/<phone>?text=...` pre-filled from the `notifications.forward.whatsapp.text` translation.
+
+A row SHALL render forward-to-owner buttons ONLY when its `forward` field is non-null (the row's kind maps to a template scope: `vaccination_due`, `deworming_internal_due`, `deworming_external_due`, `pet_birthday`):
+
+- A **Forward by email** button (rendered only when `forward.email.to` is non-null) that opens `mailto:<forward.email.to>?subject=<subject>&body=<body>` using the pre-rendered `forward.email.subject` and `forward.email.body` from the API response (URL-encoded).
+- A **Forward by WhatsApp** button (rendered only when `forward.whatsapp.phone` is non-null) that opens `https://wa.me/<phone>?text=<text>` using the pre-rendered `forward.whatsapp.text`.
+
+The frontend SHALL NOT do any placeholder substitution itself — the API response already contains the rendered text using the operator's templates (or the localised defaults when the operator left a field empty).
 
 A "Dismiss all" button at the top of the page SHALL `POST` to `/api/notifications/dismiss_all/` and clear the list.
 
@@ -56,26 +61,32 @@ When the master flag is disabled, the page SHALL redirect to `/` (or render a 40
 - THEN the row SHALL show the localised value of `notifications.kinds.pet_arriving_today.title` (e.g. "Pet arriving today")
 - AND the body SHALL be the localised template interpolated with `{name: "Luna", time_slot: "..."}`
 
-#### Scenario: Forward-to-owner email
+#### Scenario: Forward-to-owner email uses the pre-rendered subject/body
 
-- GIVEN a notification for a pet whose owner has email `juana@example.com`
+- GIVEN a `vaccination_due` notification whose API row has `forward.email = { subject: "Reminder: Luna's annual rabies is due 01/05/2026", body: "Hi Juana, …", to: "juana@example.com" }`
 - WHEN the operator clicks "Email owner"
-- THEN the browser SHALL open the system's default mail client with the recipient pre-filled to `juana@example.com`
-- AND the subject and body SHALL match the `notifications.forward.email.{subject,body}` templates interpolated with the row's data
+- THEN the browser SHALL open `mailto:juana@example.com?subject=Reminder...&body=Hi%20Juana...`
+- AND the subject and body SHALL match the API row's `forward.email.{subject,body}` exactly (URL-encoded)
 
-#### Scenario: Forward-to-WhatsApp
+#### Scenario: Forward-to-WhatsApp uses the pre-rendered text
 
-- GIVEN a notification for a pet whose owner has phone `+5491165432109`
+- GIVEN a `pet_birthday` notification whose API row has `forward.whatsapp = { text: "🎉 Happy birthday Luna!", phone: "+5491165432109" }`
 - WHEN the operator clicks "WhatsApp owner"
-- THEN the browser SHALL open `https://wa.me/+5491165432109?text=<encoded message>`
-- AND the message body SHALL match the `notifications.forward.whatsapp.text` template
+- THEN the browser SHALL open `https://wa.me/+5491165432109?text=%F0%9F%8E%89%20Happy%20birthday%20Luna%21`
 
-#### Scenario: Owner without email / phone
+#### Scenario: Internal-only kinds have no forward buttons
 
-- GIVEN a notification for a pet whose owner has no email AND no phone
-- WHEN the page renders
+- GIVEN a `pet_arriving_today` notification (whose `forward` is `null`)
+- WHEN the page renders the row
 - THEN neither forward button SHALL be visible
 - AND the Dismiss button SHALL still be visible
+
+#### Scenario: Owner-bound kind without contact info hides only the affected button
+
+- GIVEN a `vaccination_due` notification whose owner has `phone = ""` but a valid email
+- WHEN the page renders the row
+- THEN the "Email owner" button SHALL be visible
+- AND the "WhatsApp owner" button SHALL NOT be visible
 
 #### Scenario: Dismiss removes the row from the list
 

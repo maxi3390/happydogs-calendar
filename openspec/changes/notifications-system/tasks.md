@@ -5,9 +5,11 @@
 - [x] Create `backend/notifications/` Django app (models, serializers, views, urls, tests).
 - [x] Add `Notification` model with the natural-key unique constraint, indexes, and `ordering`.
 - [x] Add `NotificationPreference` model (one-to-one to `User`, just `email_enabled` for now).
+- [x] Add `NotificationTemplate` model with `scope` (unique, choices `treatment_due` / `pet_birthday`), `email_subject`, `email_body`, `whatsapp_text` (all blank by default).
+- [x] Add a small `render_template(template_field, payload)` helper using `str.format_map(SafeDict(...))` so missing-key substitutions are safe.
 - [x] Register the app in `INSTALLED_APPS`.
 - [x] Generate migration.
-- [x] Wire URLs under `/api/notifications/`.
+- [x] Wire URLs under `/api/notifications/` and `/api/notification-templates/`.
 
 ## Phase 2 — Backend: settings + flag changes
 
@@ -18,13 +20,15 @@
 
 ## Phase 3 — Backend: REST endpoints
 
-- [x] `GET /api/notifications/` — list undismissed for the logged-in user (optional `unread_only=1`).
+- [x] `GET /api/notifications/` — list undismissed for the logged-in user (optional `unread_only=1`). Each row includes a pre-rendered `forward` block (or null for internal-only kinds).
 - [x] `POST /api/notifications/{id}/mark_read/`.
 - [x] `POST /api/notifications/{id}/dismiss/`.
 - [x] `POST /api/notifications/dismiss_all/`.
 - [x] `GET /api/notifications/preferences/`.
 - [x] `PATCH /api/notifications/preferences/`.
-- [x] Tests: pagination, ownership enforcement (one user can't read or dismiss another's notifications), `unread_only` filter.
+- [x] `GET /api/notification-templates/` — list, materialising both rows (`treatment_due`, `pet_birthday`) on first read.
+- [x] `PATCH /api/notification-templates/{scope}/` — update the operator's text. Empty fields are valid.
+- [x] Tests: pagination, ownership enforcement (one user can't read or dismiss another's notifications), `unread_only` filter, forward-rendering uses the operator's template when set, falls back to the localised translation default when empty, missing-placeholder fallbacks (operator typed `{nonexistent}` → literal stays in output).
 
 ## Phase 4 — Backend: management command `generate_notifications`
 
@@ -71,7 +75,8 @@
 
 - [x] `/notifications` page with auth guard.
 - [x] Group rows by kind with per-kind icons + titles.
-- [x] Each row: localized title, localized body (using the payload), two forward-to-owner buttons (`mailto:`, `wa.me`), a Dismiss (X).
+- [x] Each row: localized title, localized body (using the payload), Dismiss (X) button.
+- [x] Forward-to-owner buttons (`mailto:`, `wa.me`) rendered ONLY when `forward` is non-null AND the matching `to` / `phone` is present. The buttons assemble the URL from the pre-rendered `forward.email.{subject,body,to}` / `forward.whatsapp.{text,phone}` (URL-encode the body / text).
 - [x] Bulk "Dismiss all" button.
 - [x] Empty state ("Nothing today").
 
@@ -81,6 +86,7 @@
   - Per-kind toggles (5 booleans).
   - Daily run time picker (`<input type="time">`).
   - Deworming default cadence (number input).
+- [x] Add a "Message templates" subsection to the same Notifications section, with two collapsible cards (`treatment_due`, `pet_birthday`). Each card renders three text inputs (`email_subject`, `email_body`, `whatsapp_text`) with a static help line listing the available placeholders for that scope. Empty inputs are valid (operator opts into the translation default).
 - [x] Add a "Notification preferences" panel for the logged-in user (in profile or as a Settings sub-section): `email_enabled` toggle.
 - [x] VaccinationType form: `due_after_days` input (default 365, accept 0 for "non-recurring").
 
@@ -89,8 +95,10 @@
 - [x] EN / ES strings under `notifications.*`:
   - `notifications.title`, `notifications.empty`, `notifications.dismissAll`.
   - `notifications.kinds.<kind>.title` and `.body` (template strings with `{name}`, `{date}`, …).
-  - `notifications.forward.email.subject` / `.body`, `notifications.forward.whatsapp.text`.
-  - Settings strings.
+  - `notifications.forward.<scope>.email.{subject,body}` and `notifications.forward.<scope>.whatsapp.text` for the two scopes (`treatment_due`, `pet_birthday`). These are the localised defaults used when the operator's `NotificationTemplate` field is empty.
+  - `notifications.templates.<scope>.{label,description}` for the Settings UI cards.
+  - `notifications.templates.<scope>.placeholders` — a localised string listing the available `{placeholders}` for that scope.
+  - Settings strings (section headers, toggle labels, run-time picker label, deworming-cadence label).
 
 ## Phase 12 — Docs
 
