@@ -137,4 +137,48 @@ class Pet(models.Model):
             dominance_diff > 4):
             reasons.append("Anxious pets may be stressed by highly playful pets with different dominance levels")
 
+        # Rule 6: Two same-species same-sex highly-dominant pets (>= 7)
+        if (self.species == other_pet.species and
+            self.sex == other_pet.sex and
+            self.dominance_level >= 7 and other_pet.dominance_level >= 7):
+            reasons.append("Two same-species same-sex highly-dominant pets cannot be scheduled together")
+
+        # Custom incompatibility rules — order-independent lookup against the
+        # PetIncompatibility catalog. A rule fires only when an actual schedule
+        # overlap occurs (handled by the caller); is_compatible_with itself just
+        # surfaces the rule's reason text when the catalog has an entry.
+        if self.pk and other_pet.pk:
+            lo, hi = sorted([self.pk, other_pet.pk])
+            for rule in PetIncompatibility.objects.filter(pet1_id=lo, pet2_id=hi):
+                reasons.append(rule.reason)
+
         return (len(reasons) == 0), reasons
+
+
+class PetIncompatibility(models.Model):
+    """A custom, per-pet-pair incompatibility rule.
+
+    Stored order-independently: ``pet1_id`` is always the smaller id,
+    ``pet2_id`` the larger. The serializer normalises before save so the
+    DB-level ``unique_together`` enforces "one rule per unordered pair".
+    """
+
+    pet1 = models.ForeignKey(
+        'pets.Pet', on_delete=models.CASCADE, related_name='incompatibilities_as_pet1',
+    )
+    pet2 = models.ForeignKey(
+        'pets.Pet', on_delete=models.CASCADE, related_name='incompatibilities_as_pet2',
+    )
+    reason = models.TextField(help_text="Free-text reason shown alongside the conflict warning.")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        app_label = 'pets'
+        unique_together = [('pet1', 'pet2')]
+        ordering = ['pet1_id', 'pet2_id']
+        verbose_name = 'pet incompatibility'
+        verbose_name_plural = 'pet incompatibilities'
+
+    def __str__(self):
+        return f"Incompatibility: pet#{self.pet1_id} ↔ pet#{self.pet2_id}"

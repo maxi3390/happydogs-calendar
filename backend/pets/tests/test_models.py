@@ -1,7 +1,7 @@
 from datetime import date, time, timedelta
 from django.test import TestCase
 from tests.factories import create_owner, create_pet, create_schedule, create_vaccination_type, create_vaccination
-from pets.models import Owner, Pet, Schedule, VaccinationType, Vaccination
+from pets.models import Owner, Pet, PetIncompatibility, Schedule, VaccinationType, Vaccination
 
 
 class OwnerModelTests(TestCase):
@@ -67,9 +67,12 @@ class PetModelTests(TestCase):
         self.assertTrue(any('dominant' in r.lower() for r in reasons))
 
     def test_high_dominance_boundary(self):
-        """Dominance 7 is NOT > 7, so two pets at 7 are compatible."""
-        p1 = create_pet(temperament='friendly', dominance_level=7)
-        p2 = create_pet(temperament='friendly', dominance_level=7)
+        """Rule 2 requires both > 7, so two pets at exactly 7 do NOT
+        trigger rule 2. Pick mixed sex so rule 6 (which needs same sex
+        and both >= 7) is also out of the picture and the pair is
+        compatible overall."""
+        p1 = create_pet(temperament='friendly', dominance_level=7, sex='male')
+        p2 = create_pet(temperament='friendly', dominance_level=7, sex='female')
         ok, _ = p1.is_compatible_with(p2)
         self.assertTrue(ok)
 
@@ -105,6 +108,105 @@ class PetModelTests(TestCase):
         p2 = create_pet(temperament='playful', dominance_level=6, size='medium')
         ok, _ = p1.is_compatible_with(p2)
         self.assertTrue(ok)
+
+    # ── Rule 6: same species + same sex + both dominance >= 7 ──────────
+
+    def test_rule6_fires_at_boundary(self):
+        """Both at exactly 7 → rule 6 fires, rule 2 does NOT (rule 2 requires > 7)."""
+        p1 = create_pet(species='dog', sex='male', dominance_level=7,
+                        temperament='friendly', size='medium')
+        p2 = create_pet(species='dog', sex='male', dominance_level=7,
+                        temperament='friendly', size='medium')
+        ok, reasons = p1.is_compatible_with(p2)
+        self.assertFalse(ok)
+        self.assertTrue(any('same-species same-sex' in r for r in reasons))
+        self.assertFalse(any('Two highly dominant' in r for r in reasons))
+
+    def test_rule6_and_rule2_fire_together(self):
+        """Both > 7 + same species + same sex → both rules fire."""
+        p1 = create_pet(species='dog', sex='female', dominance_level=9,
+                        temperament='friendly', size='medium')
+        p2 = create_pet(species='dog', sex='female', dominance_level=9,
+                        temperament='friendly', size='medium')
+        ok, reasons = p1.is_compatible_with(p2)
+        self.assertFalse(ok)
+        self.assertTrue(any('Two highly dominant' in r for r in reasons))
+        self.assertTrue(any('same-species same-sex' in r for r in reasons))
+
+    def test_rule6_does_not_fire_across_species(self):
+        """Different species → rule 6 must not fire even if everything else matches."""
+        p1 = create_pet(species='dog', sex='male', dominance_level=8,
+                        temperament='friendly', size='medium')
+        p2 = create_pet(species='cat', sex='male', dominance_level=8,
+                        temperament='friendly', size='medium')
+        ok, reasons = p1.is_compatible_with(p2)
+        self.assertFalse(ok)  # rule 2 still applies (both > 7)
+        self.assertFalse(any('same-species same-sex' in r for r in reasons))
+
+    def test_rule6_does_not_fire_across_sex(self):
+        p1 = create_pet(species='dog', sex='male', dominance_level=8,
+                        temperament='friendly', size='medium')
+        p2 = create_pet(species='dog', sex='female', dominance_level=8,
+                        temperament='friendly', size='medium')
+        _, reasons = p1.is_compatible_with(p2)
+        self.assertFalse(any('same-species same-sex' in r for r in reasons))
+
+    # ── Custom rules: catalog lookup integrated with hardcoded rules ───
+
+    def test_custom_rule_alone_makes_pair_incompatible(self):
+        """Two friendly low-dominance same-species same-sex pets are
+        normally compatible — but a persisted custom rule between them
+        SHALL surface its reason and flip is_compatible_with to False."""
+        p1 = create_pet(species='dog', sex='male', dominance_level=3,
+                        temperament='friendly', size='medium')
+        p2 = create_pet(species='dog', sex='male', dominance_level=3,
+                        temperament='friendly', size='medium')
+        # Sanity: no hardcoded rule fires.
+        ok, reasons = p1.is_compatible_with(p2)
+        self.assertTrue(ok)
+        self.assertEqual(reasons, [])
+        # Add a custom rule.
+        lo, hi = sorted([p1.id, p2.id])
+        PetIncompatibility.objects.create(
+            pet1=Pet.objects.get(pk=lo),
+            pet2=Pet.objects.get(pk=hi),
+            reason='Vet advised separation',
+        )
+        ok, reasons = p1.is_compatible_with(p2)
+        self.assertFalse(ok)
+        self.assertEqual(reasons, ['Vet advised separation'])
+
+    def test_custom_rule_appended_to_hardcoded_reasons(self):
+        """When a hardcoded rule already fires, the custom reason is
+        appended (both surface to the operator)."""
+        p1 = create_pet(temperament='aggressive', dominance_level=5, size='medium')
+        p2 = create_pet(temperament='friendly', dominance_level=5, size='medium')
+        lo, hi = sorted([p1.id, p2.id])
+        PetIncompatibility.objects.create(
+            pet1=Pet.objects.get(pk=lo),
+            pet2=Pet.objects.get(pk=hi),
+            reason='Custom: vet warning',
+        )
+        ok, reasons = p1.is_compatible_with(p2)
+        self.assertFalse(ok)
+        self.assertTrue(any('Aggressive' in r for r in reasons))
+        self.assertIn('Custom: vet warning', reasons)
+
+    def test_custom_rule_lookup_is_order_independent(self):
+        """Calling pet_b.is_compatible_with(pet_a) finds the same rule
+        as pet_a.is_compatible_with(pet_b)."""
+        p1 = create_pet(temperament='friendly', dominance_level=3, size='medium')
+        p2 = create_pet(temperament='friendly', dominance_level=3, size='medium')
+        lo, hi = sorted([p1.id, p2.id])
+        PetIncompatibility.objects.create(
+            pet1=Pet.objects.get(pk=lo),
+            pet2=Pet.objects.get(pk=hi),
+            reason='symmetry-test',
+        )
+        _, reasons_forward = p1.is_compatible_with(p2)
+        _, reasons_reverse = p2.is_compatible_with(p1)
+        self.assertEqual(reasons_forward, reasons_reverse)
+        self.assertIn('symmetry-test', reasons_forward)
 
 
 class VaccinationTypeModelTests(TestCase):

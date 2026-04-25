@@ -254,6 +254,75 @@ class ConflictCheckAPITests(APITestCase):
         # Only the aggressive schedule should be checked
         self.assertTrue(response.data['has_conflicts'])
 
+    def test_reason_groups_dedupes_aggressive_across_many_overlaps(self):
+        """An aggressive pet overlapping with three pets SHALL produce a
+        single reason_groups entry whose pets list has all three names —
+        not three identical entries."""
+        # Two more pets with overlapping schedules. They're all "the
+        # aggressive rule fires because Rex (already in setUp) is
+        # aggressive" cases.
+        cleo = create_pet(name='Cleo', temperament='friendly',
+                          dominance_level=4, size='medium')
+        nala = create_pet(name='Nala', temperament='friendly',
+                          dominance_level=5, size='medium')
+        create_schedule(pet=cleo, start_date=self.today, end_date=self.today,
+                        start_time=time(9, 0), end_time=time(17, 0))
+        create_schedule(pet=nala, start_date=self.today, end_date=self.today,
+                        start_time=time(9, 0), end_time=time(17, 0))
+
+        # Now check the conflicts when our aggressive pet (Rex from setUp)
+        # would land at the same time slot. Use a completely separate
+        # incoming pet that triggers rule 1 against Rex but no other rules
+        # against Cleo / Nala — actually this is harder than it sounds.
+        # Easier: use an aggressive *new* pet so rule 1 fires against
+        # every overlapping pet.
+        new_aggressive = create_pet(
+            name='Rocco', temperament='aggressive', dominance_level=4,
+            size='medium')
+        response = self._check(new_aggressive, self.today, self.today,
+                               '10:00', '15:00')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['has_conflicts'])
+        # Three overlapping pets (Rex, Cleo, Nala).
+        self.assertEqual(response.data['overlapping_pets_count'], 3)
+        # Legacy `conflicts` array still returns one entry per overlap.
+        self.assertEqual(len(response.data['conflicts']), 3)
+        # New `reason_groups` collapses them: one entry for the
+        # aggressive reason, with all three pet names listed.
+        groups = response.data['reason_groups']
+        self.assertEqual(len(groups), 1)
+        self.assertIn('Aggressive', groups[0]['reason'])
+        names = sorted(p['name'] for p in groups[0]['pets'])
+        self.assertEqual(names, ['Cleo', 'Nala', 'Rex'])
+
+    def test_reason_groups_keeps_distinct_reasons_separate(self):
+        """When two distinct reasons fire for the same overlap, each
+        reason gets its own row in reason_groups."""
+        # Existing setUp gives Rex (aggressive, dom=8). Add an incoming
+        # dog that's same-species same-sex with dom>=7 → triggers
+        # rule 1 (aggressive Rex) AND rule 6 (same species + same sex
+        # + both dom >= 7) AND rule 2 (both > 7) AND rule 4 nope.
+        contender = create_pet(
+            name='Bruno', species='dog', sex=self.aggressive.sex,
+            temperament='friendly', dominance_level=8, size='large')
+        response = self._check(contender, self.today, self.today,
+                               '10:00', '15:00')
+        groups = response.data['reason_groups']
+        # Three distinct reasons fire (rule 1 / rule 2 / rule 6) — each
+        # is its own row, all listing Rex.
+        reasons = [g['reason'] for g in groups]
+        self.assertEqual(len(set(reasons)), len(reasons),
+                         f"reason_groups should be unique; got {reasons}")
+        self.assertGreaterEqual(len(groups), 3)
+        for g in groups:
+            self.assertEqual([p['name'] for p in g['pets']], ['Rex'])
+
+    def test_reason_groups_empty_when_no_conflicts(self):
+        response = self._check(self.friendly, self.today, self.today,
+                               '18:00', '20:00')
+        self.assertFalse(response.data['has_conflicts'])
+        self.assertEqual(response.data['reason_groups'], [])
+
 
 class DailySummaryAPITests(APITestCase):
     """Tests for the daily_summary action."""
