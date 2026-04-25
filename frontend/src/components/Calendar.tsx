@@ -13,6 +13,13 @@ interface CalendarProps {
   selectedDate: Date;
   calendarView?: 'month' | 'week';
   onViewChange?: (view: 'month' | 'week') => void;
+  /** Counter from the parent page that increments on every schedule
+   *  mutation (create / edit / delete). Including it in the fetch
+   *  effect's dep array re-runs the fetch and refreshes the bars
+   *  without forcing the user to navigate between months. Optional
+   *  so `PublicCalendar` (and any future read-only consumer) can
+   *  omit it and keep the fetch driven only by period changes. */
+  refreshTrigger?: number;
 }
 
 const BAR_COLORS = [
@@ -43,7 +50,7 @@ interface WeekBarSegment {
 
 const MAX_VISIBLE_BARS = 3;
 
-export default function Calendar({ onDateSelect, selectedDate, calendarView = 'month', onViewChange }: CalendarProps) {
+export default function Calendar({ onDateSelect, selectedDate, calendarView = 'month', onViewChange, refreshTrigger = 0 }: CalendarProps) {
   const { t, language } = useTranslation();
   const dateLocale = getDateLocale(language);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -69,7 +76,10 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
       }
     };
     fetchSchedules();
-  }, [currentMonth]);
+    // `refreshTrigger` re-runs the fetch after the parent records a
+    // schedule mutation (create / edit / delete). Keeping it as the
+    // last dep makes intent obvious to the next reader.
+  }, [currentMonth, refreshTrigger]);
 
   // Build calendar grid: weeks containing 7 cells (some may be null for padding)
   const weeks = useMemo(() => {
