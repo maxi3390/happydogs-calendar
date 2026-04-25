@@ -73,12 +73,10 @@ When you need to spin up a one-off container (typically `docker run --rm ... <im
 |-------------|-------------------------------------------|---------------------------------------|
 | Backend     | `python:3.12-slim`                        | `backend/Dockerfile`                  |
 | Frontend    | `node:24-alpine`                          | `frontend/Dockerfile`                 |
-| Docs        | `node:20`                                 | `docs/Dockerfile` (held back; see note) |
+| Docs        | `node:24-alpine`                          | `docs/Dockerfile`                     |
 | Database    | `postgres:18-alpine`                      | `docker-compose.yml` (`db` service)   |
 | Reverse proxy | `traefik:v3.6`                          | `docker-compose.yml` (`traefik`)      |
 | Playwright  | `mcr.microsoft.com/playwright:v1.58.2-noble` | `Makefile` (`PLAYWRIGHT_IMAGE`)    |
-
-> **Docs Node version note.** Docusaurus 3.9.x pulls in a webpack peer that fails npm 11's strict ProgressPlugin schema check. Until Docusaurus is bumped to a version that accepts a current webpack, the docs container stays on `node:20`. Bump together with the Docusaurus dependency, not in isolation.
 
 Always cross-check the source before running an ad-hoc container; the pins above are a snapshot, not a contract. When the source changes, follow the source.
 
