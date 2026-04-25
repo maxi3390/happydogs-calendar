@@ -208,9 +208,17 @@ A scrollable list of all schedules for the selected date. Features:
 
 A single component handling both scheduling modes via a `mode` prop:
 
-- **`mode='single'`**: Pet dropdown selection. Includes a **500ms debounced conflict check** — as the user adjusts dates/times, the system checks for incompatibility and capacity conflicts in near real-time.
-- **`mode='multi'`**: Owner filter dropdown + pet checkboxes. Supports **select all / clear all** for batch scheduling.
+- **`mode='single'`**: Pet dropdown selection. Includes two debounced detections that run as the user adjusts dates/times:
+  - **Cross-pet conflict check** (500ms): hits the backend `/api/schedules/check_conflicts/` endpoint to surface compatibility / capacity warnings against *other* pets sharing the time slot.
+  - **Same-pet overlap / adjacency check** (500ms): client-side query for the selected pet's own active schedules in the `[start_date − 1, end_date + 1]` window. When the proposed range overlaps OR is exactly one day adjacent to an existing one, an amber info block surfaces the existing schedule and offers an **Edit existing schedule →** link. Clicking the link swaps the modal into edit mode for that schedule and auto-focuses the date input the operator should adjust:
+    - Adjacent forward / overlap extending forward → focus `end_date`.
+    - Adjacent backward / overlap extending backward → focus `start_date`.
+    - Contained or equal range → focus `end_date` (default).
+  - The same-pet check ignores the schedule currently being edited (in edit mode) and skips `cancelled` / `completed` rows. If multiple existing schedules qualify, the closest match by date distance wins.
+- **`mode='multi'`**: Owner filter dropdown + pet checkboxes. Supports **select all / clear all** for batch scheduling. Same-pet detection does NOT run in multi mode (each pet is its own row in the batch result).
 - **Both modes**: 15-minute time intervals for start/end times. Daily capacity limit check before submission. After scheduling, a **result screen** shows successes and failures.
+
+The form exposes a single-mode-only `onEditExisting?: (id, focusField) => void` callback for the same-pet overlap CTA. The host page (`app/page.tsx`) handles the swap by closing the create modal, fetching the existing schedule, and re-mounting the form in edit mode (a React `key` prop scopes internal state to the schedule id, ensuring a clean reset).
 
 `MultiPetScheduleForm.tsx` is a thin re-export wrapper that renders `ScheduleForm` with `mode='multi'`.
 

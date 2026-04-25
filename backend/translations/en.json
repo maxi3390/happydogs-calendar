@@ -80,6 +80,11 @@
     "conflictsWarning": "You can still create this schedule, but be aware of the potential conflicts.",
     "noConflicts": "No conflicts detected",
     "compatiblePets": "{count} compatible pets at this time",
+    "samePetOverlap": {
+      "title": "This pet is already scheduled",
+      "description": "{name} already has a schedule for {start} → {end} that overlaps or sits next to your selection. You may want to extend the existing schedule instead of creating a new one.",
+      "editLink": "Edit existing schedule"
+    },
     "dailyLimitReached": "Daily booking limit reached!",
     "dailyLimitReachedDetail": "There are already {count} bookings for {date} (limit: {limit}). You can still proceed, but please confirm.",
     "dailyLimitWarning": "Approaching daily booking limit",

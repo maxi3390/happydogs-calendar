@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { format } from 'date-fns';
-import { X, AlertTriangle, CheckCircle, Users } from 'lucide-react';
+import { X, AlertTriangle, CheckCircle, CalendarPlus, Users } from 'lucide-react';
 import { api, Pet, PetListItem, Schedule, ScheduleFormData, BatchScheduleFormData, BatchScheduleResult, ConflictCheckResult, DailyCountResult, OwnerListItem } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 import { useFeatureFlag } from '@/lib/feature-flags';
 import { translateSpecies, translateTemperament } from '@/domain/pets/labels';
 import { Button } from '@/components/ui/Button';
+
+export type DateField = 'start_date' | 'end_date';
 
 interface ScheduleFormBaseProps {
   selectedDate: Date;
@@ -19,12 +21,23 @@ interface SingleModeProps extends ScheduleFormBaseProps {
   mode?: 'single';
   schedule?: Schedule;
   preselectedPetIds?: never;
+  /** Auto-focus a specific date input on mount. Set by the parent when
+   *  swapping from a "create" form to "edit existing schedule" via the
+   *  same-pet overlap CTA. */
+  focusField?: DateField;
+  /** Called when the operator clicks the "edit existing schedule" link
+   *  in the same-pet overlap block. Parent should close the create
+   *  modal and re-open the form in edit mode for `id`, passing
+   *  `focusField` through. */
+  onEditExisting?: (id: number, focusField: DateField) => void;
 }
 
 interface MultiModeProps extends ScheduleFormBaseProps {
   mode: 'multi';
   schedule?: never;
   preselectedPetIds?: number[];
+  focusField?: never;
+  onEditExisting?: never;
 }
 
 export type ScheduleFormProps = SingleModeProps | MultiModeProps;
@@ -41,11 +54,47 @@ const TIME_OPTIONS = (() => {
   return options;
 })();
 
+/** Classify the relationship between an existing same-pet schedule
+ *  and the new range the form is composing. Returns the date input
+ *  the operator should focus when extending the existing one, or
+ *  `null` if there's no overlap / adjacency. */
+function classifySamePet(
+  existing: { start_date: string; end_date: string },
+  newStart: string,
+  newEnd: string,
+): DateField | null {
+  const adjacentForward = shiftDays(existing.end_date, 1) === newStart;
+  const adjacentBackward = shiftDays(existing.start_date, -1) === newEnd;
+  if (adjacentForward) return 'end_date';
+  if (adjacentBackward) return 'start_date';
+  const overlaps = existing.start_date <= newEnd && existing.end_date >= newStart;
+  if (!overlaps) return null;
+  if (newStart < existing.start_date) return 'start_date';
+  if (newEnd > existing.end_date) return 'end_date';
+  return 'end_date';
+}
+
+/** Add `delta` days to an ISO date string (`yyyy-MM-dd`). */
+function shiftDays(iso: string, delta: number): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + delta);
+  return d.toISOString().slice(0, 10);
+}
+
+interface SamePetMatch {
+  existing: Schedule;
+  focusField: DateField;
+}
+
 export default function ScheduleForm(props: ScheduleFormProps) {
   const { selectedDate, onClose, onSave } = props;
   const isMulti = props.mode === 'multi';
   const schedule = isMulti ? undefined : props.schedule;
   const preselectedPetIds = isMulti ? props.preselectedPetIds : undefined;
+  const focusField = isMulti ? undefined : props.focusField;
+  const onEditExisting = isMulti ? undefined : props.onEditExisting;
+  const startDateRef = useRef<HTMLInputElement | null>(null);
+  const endDateRef = useRef<HTMLInputElement | null>(null);
 
   const { t } = useTranslation();
   const multidayEnabled = useFeatureFlag('multiday_schedule');
@@ -59,6 +108,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
   // Single-mode specific state
   const [checkingConflicts, setCheckingConflicts] = useState(false);
   const [conflictResult, setConflictResult] = useState<ConflictCheckResult | null>(null);
+  const [samePetMatch, setSamePetMatch] = useState<SamePetMatch | null>(null);
 
   // Multi-mode specific state
   const [owners, setOwners] = useState<OwnerListItem[]>([]);
@@ -138,6 +188,63 @@ export default function ScheduleForm(props: ScheduleFormProps) {
     const timer = setTimeout(checkConflicts, 500);
     return () => clearTimeout(timer);
   }, [singlePetId, startDate, endDate, startTime, endTime, schedule?.id, isMulti]);
+
+  // Same-pet overlap / adjacency detection (single-mode only). Suggests
+  // editing an existing schedule for the same pet rather than creating a
+  // duplicate. Picks the closest-in-time match if multiple qualify.
+  useEffect(() => {
+    if (isMulti) return;
+
+    if (!singlePetId || !startDate || !endDate) {
+      setSamePetMatch(null);
+      return;
+    }
+
+    const detect = async () => {
+      try {
+        const list = await api.schedules.list({
+          pet_id: singlePetId,
+          start_date: shiftDays(startDate, -1),
+          end_date: shiftDays(endDate, 1),
+        });
+        const candidates = list.filter(s =>
+          s.id !== schedule?.id
+          && (s.status === 'scheduled' || s.status === 'checked_in')
+        );
+        const matches = candidates
+          .map(existing => {
+            const focus = classifySamePet(existing, startDate, endDate);
+            return focus ? { existing, focusField: focus } : null;
+          })
+          .filter((m): m is SamePetMatch => m !== null);
+        if (matches.length === 0) {
+          setSamePetMatch(null);
+          return;
+        }
+        const distance = (m: SamePetMatch) =>
+          Math.abs(Date.parse(m.existing.start_date) - Date.parse(startDate))
+          + Math.abs(Date.parse(m.existing.end_date) - Date.parse(endDate));
+        matches.sort((a, b) => distance(a) - distance(b));
+        setSamePetMatch(matches[0]);
+      } catch (err) {
+        console.error('Failed to detect same-pet overlap:', err);
+        setSamePetMatch(null);
+      }
+    };
+
+    const timer = setTimeout(detect, 500);
+    return () => clearTimeout(timer);
+  }, [singlePetId, startDate, endDate, schedule?.id, isMulti]);
+
+  // Auto-focus a date input when the parent passes `focusField` (set
+  // when swapping from "create" to "edit existing" via the same-pet
+  // overlap CTA). One-shot on mount; later prop changes are ignored
+  // to avoid stealing focus during user input.
+  useEffect(() => {
+    if (focusField === 'start_date') startDateRef.current?.focus();
+    if (focusField === 'end_date') endDateRef.current?.focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Daily count (both modes)
   useEffect(() => {
@@ -515,6 +622,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                 {t('schedule.startDate')} *
               </label>
               <input
+                ref={startDateRef}
                 type="date"
                 required
                 value={startDate}
@@ -534,6 +642,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                   {t('schedule.endDate')} *
                 </label>
                 <input
+                  ref={endDateRef}
                   type="date"
                   required
                   value={endDate}
@@ -660,6 +769,31 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                     </span>
                   )}
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* Same-pet overlap / adjacency block (single mode only) */}
+          {!isMulti && samePetMatch && (
+            <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-900/30 dark:border-amber-800">
+              <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200 font-medium">
+                <CalendarPlus className="w-5 h-5" />
+                {t('schedule.samePetOverlap.title')}
+              </div>
+              <p className="text-sm text-amber-700 dark:text-amber-300 mt-2">
+                {t('schedule.samePetOverlap.description')
+                  .replace('{name}', samePetMatch.existing.pet_details.name)
+                  .replace('{start}', samePetMatch.existing.start_date)
+                  .replace('{end}', samePetMatch.existing.end_date)}
+              </p>
+              {onEditExisting && (
+                <button
+                  type="button"
+                  onClick={() => onEditExisting(samePetMatch.existing.id, samePetMatch.focusField)}
+                  className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-amber-800 dark:text-amber-200 hover:underline focus:outline-none focus:ring-2 focus:ring-amber-500/50 rounded"
+                >
+                  {t('schedule.samePetOverlap.editLink')} →
+                </button>
               )}
             </div>
           )}
