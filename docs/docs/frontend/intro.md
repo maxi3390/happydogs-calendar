@@ -84,7 +84,7 @@ frontend/
 │   ├── navigation.spec.ts
 │   ├── settings.spec.ts
 │   └── helpers.ts
-├── Dockerfile                      # Multi-stage: deps -> builder -> runner (node:22-alpine)
+├── Dockerfile                      # Multi-stage: deps -> builder -> runner (node:24-alpine)
 ├── package.json
 ├── tailwind.config.ts
 ├── playwright.config.ts
@@ -400,9 +400,9 @@ make test-frontend-debug    # Run with Playwright UI for debugging
 
 The frontend Dockerfile uses a **multi-stage build**:
 
-1. **`deps`** stage: `node:22-alpine`, installs `node_modules` from `package.json` / lock file.
+1. **`deps`** stage: `node:24-alpine`, installs `node_modules` from `package.json` / lock file.
 2. **`builder`** stage: Copies source code, runs `next build` to produce the production bundle.
-3. **`runner`** stage: Minimal `node:22-alpine` image, copies only the built output and runs `next start`.
+3. **`runner`** stage: Minimal `node:24-alpine` image, copies only the built output and runs `next start`.
 
 In the Docker Compose setup, Traefik routes all requests matching `/*` (except `/api/*` and `/media/*`) to the frontend container on port 3000.
 er on port 3000.

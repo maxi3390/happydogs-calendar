@@ -2,7 +2,7 @@
 
 ## System Overview
 
-Happy Calendar is a full-stack web application with a clear three-tier architecture: a **Next.js 16** frontend, a **Django 5.1.4** REST API backend, and a **PostgreSQL 16** database. All services are containerized with Docker Compose and routed through a **Traefik v3.6** reverse proxy that handles TLS termination and path-based routing.
+Happy Calendar is a full-stack web application with a clear three-tier architecture: a **Next.js 16** frontend, a **Django 5.1.4** REST API backend, and a **PostgreSQL 18** database. All services are containerized with Docker Compose and routed through a **Traefik v3.6** reverse proxy that handles TLS termination and path-based routing.
 
 There is no external caching layer (no Redis). All state lives in PostgreSQL. Authentication uses stateless JWT tokens with server-side blacklisting for revocation.
 
@@ -27,7 +27,7 @@ graph TB
         end
 
         subgraph "Data Layer"
-            DB[("PostgreSQL 16<br/>:5432")]
+            DB[("PostgreSQL 18<br/>:5432")]
         end
 
         subgraph "Infrastructure"
@@ -559,7 +559,7 @@ All API requests pass through:
 graph TB
     subgraph "Docker Compose Services"
         subgraph "Core Services (always running)"
-            DB["db<br/>postgres:16-alpine<br/>:5432"]
+            DB["db<br/>postgres:18-alpine<br/>:5432"]
             Backend["backend<br/>Django + DRF<br/>:8000"]
             Frontend["frontend<br/>Next.js 16<br/>:3000"]
             Traefik["traefik<br/>traefik:v3.6<br/>:80, :443, :8080"]
@@ -607,7 +607,7 @@ graph TB
 
 | Service | Image / Build | Port | Network | Profile |
 |---|---|---|---|---|
-| `db` | `postgres:16-alpine` | 5432 (internal) | proxy | — |
+| `db` | `postgres:18-alpine` | 5432 (internal) | proxy | — |
 | `backend` | `./backend` (Dockerfile) | 8000 (via Traefik) | proxy | — |
 | `frontend` | `./frontend` (Dockerfile) | 3000 (via Traefik) | proxy | — |
 | `traefik` | `traefik:v3.6` | 80, 443, 8080 | proxy, socket-proxy | — |
