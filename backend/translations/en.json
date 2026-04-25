@@ -43,7 +43,8 @@
       "fri": "F",
       "sat": "S"
     },
-    "more": "+{count} more"
+    "more": "+{count} more",
+    "showLess": "Show less"
   },
   "schedule": {
     "title": "Schedule",
