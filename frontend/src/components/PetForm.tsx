@@ -105,11 +105,7 @@ export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAnd
   const enabledVaxTypes = vaxTypes.filter(v => v.enabled);
   const isOwnerSelected = isOwnerLocked || Boolean(formData.owner);
 
-  // When the custom_pet_species flag is on, an operator can type a bespoke
-  // value that overrides the dropdown at submit time. Store it outside
-  // PetFormData so it never round-trips to the server as a separate field.
   const [customSpecies, setCustomSpecies] = useState<string>(
-    // Seed with the pet's species if it's not one of the canonical choices.
     pet && !SPECIES_VALUES.includes(pet.species) ? pet.species : '',
   );
 
@@ -433,12 +429,6 @@ export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAnd
               onChange={kg => setFormData({ ...formData, weight: kg })}
             />
 
-            {/* Deworming pair (flag-gated). Rendered BEFORE the
-                neutered checkbox so the two date inputs share a grid
-                row with each other — pairing them with the much
-                shorter checkbox would leave Neutered floating at the
-                top of an over-tall row and split the second
-                deworming input onto a half-empty row. */}
             {dewormingTrackingEnabled && (
               <>
                 <div>

@@ -21,14 +21,7 @@ interface SingleModeProps extends ScheduleFormBaseProps {
   mode?: 'single';
   schedule?: Schedule;
   preselectedPetIds?: never;
-  /** Auto-focus a specific date input on mount. Set by the parent when
-   *  swapping from a "create" form to "edit existing schedule" via the
-   *  same-pet overlap CTA. */
   focusField?: DateField;
-  /** Called when the operator clicks the "edit existing schedule" link
-   *  in the same-pet overlap block. Parent should close the create
-   *  modal and re-open the form in edit mode for `id`, passing
-   *  `focusField` through. */
   onEditExisting?: (id: number, focusField: DateField) => void;
 }
 
@@ -54,10 +47,6 @@ const TIME_OPTIONS = (() => {
   return options;
 })();
 
-/** Classify the relationship between an existing same-pet schedule
- *  and the new range the form is composing. Returns the date input
- *  the operator should focus when extending the existing one, or
- *  `null` if there's no overlap / adjacency. */
 function classifySamePet(
   existing: { start_date: string; end_date: string },
   newStart: string,
@@ -74,7 +63,6 @@ function classifySamePet(
   return 'end_date';
 }
 
-/** Add `delta` days to an ISO date string (`yyyy-MM-dd`). */
 function shiftDays(iso: string, delta: number): string {
   const d = new Date(`${iso}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + delta);
@@ -189,9 +177,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
     return () => clearTimeout(timer);
   }, [singlePetId, startDate, endDate, startTime, endTime, schedule?.id, isMulti]);
 
-  // Same-pet overlap / adjacency detection (single-mode only). Suggests
-  // editing an existing schedule for the same pet rather than creating a
-  // duplicate. Picks the closest-in-time match if multiple qualify.
+  // Same-pet overlap / adjacency detection (single-mode only).
   useEffect(() => {
     if (isMulti) return;
 
@@ -236,10 +222,6 @@ export default function ScheduleForm(props: ScheduleFormProps) {
     return () => clearTimeout(timer);
   }, [singlePetId, startDate, endDate, schedule?.id, isMulti]);
 
-  // Auto-focus a date input when the parent passes `focusField` (set
-  // when swapping from "create" to "edit existing" via the same-pet
-  // overlap CTA). One-shot on mount; later prop changes are ignored
-  // to avoid stealing focus during user input.
   useEffect(() => {
     if (focusField === 'start_date') startDateRef.current?.focus();
     if (focusField === 'end_date') endDateRef.current?.focus();
