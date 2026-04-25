@@ -263,7 +263,17 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
-              onClick={() => setCurrentMonth(new Date())}
+              onClick={() => {
+                // "Today" snaps both the displayed month AND the
+                // selected day. Without `onDateSelect` here the
+                // day-schedule panel would stay anchored on whatever
+                // the user previously clicked, and downstream actions
+                // (e.g. opening the create-schedule form via the day
+                // panel) would pre-fill that stale date.
+                const today = new Date();
+                setCurrentMonth(today);
+                onDateSelect(today);
+              }}
               className="px-3 py-1 text-sm bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors"
             >
               {t('calendar.today')}
