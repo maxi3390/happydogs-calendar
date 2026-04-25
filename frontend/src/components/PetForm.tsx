@@ -433,18 +433,12 @@ export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAnd
               onChange={kg => setFormData({ ...formData, weight: kg })}
             />
 
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.neutered}
-                  onChange={e => setFormData({ ...formData, neutered: e.target.checked })}
-                  className="w-4 h-4 text-primary border-border rounded focus:ring-ring"
-                />
-                {t('pet.neutered')}
-              </label>
-            </div>
-
+            {/* Deworming pair (flag-gated). Rendered BEFORE the
+                neutered checkbox so the two date inputs share a grid
+                row with each other — pairing them with the much
+                shorter checkbox would leave Neutered floating at the
+                top of an over-tall row and split the second
+                deworming input onto a half-empty row. */}
             {dewormingTrackingEnabled && (
               <>
                 <div>
@@ -484,6 +478,18 @@ export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAnd
                 </div>
               </>
             )}
+
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.neutered}
+                  onChange={e => setFormData({ ...formData, neutered: e.target.checked })}
+                  className="w-4 h-4 text-primary border-border rounded focus:ring-ring"
+                />
+                {t('pet.neutered')}
+              </label>
+            </div>
           </div>
 
           <div>
