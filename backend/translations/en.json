@@ -309,7 +309,8 @@
     "note": "Note",
     "dom": "Dom",
     "pets": "Pets",
-    "kg": "kg"
+    "kg": "kg",
+    "dismiss": "Dismiss"
   },
   "errors": {
     "fetchFailed": "Failed to fetch data",
@@ -332,6 +333,7 @@
     "title": "Settings",
     "incompatibilities": "Pet Incompatibilities",
     "incompatibilityInfo": "Define custom incompatibility rules between specific pets. These rules will generate warnings when scheduling incompatible pets together.",
+    "incompatibilityMigrationBanner": "Custom incompatibility rules are now stored centrally — any local rules from before this update will need to be re-entered.",
     "addRule": "Add Rule",
     "newRule": "New Incompatibility Rule",
     "pet1": "First Pet",

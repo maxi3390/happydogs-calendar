@@ -309,7 +309,8 @@
     "note": "Nota",
     "dom": "Dom",
     "pets": "Mascotas",
-    "kg": "kg"
+    "kg": "kg",
+    "dismiss": "Descartar"
   },
   "errors": {
     "fetchFailed": "Error al obtener datos",
@@ -332,6 +333,7 @@
     "title": "Configuración",
     "incompatibilities": "Incompatibilidades de Mascotas",
     "incompatibilityInfo": "Define reglas de incompatibilidad personalizadas entre mascotas específicas. Estas reglas generarán advertencias al programar mascotas incompatibles juntas.",
+    "incompatibilityMigrationBanner": "Las reglas de incompatibilidad personalizadas ahora se guardan en el servidor — las reglas locales anteriores deberán volver a ingresarse.",
     "addRule": "Agregar Regla",
     "newRule": "Nueva Regla de Incompatibilidad",
     "pet1": "Primera Mascota",

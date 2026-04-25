@@ -7,25 +7,20 @@ import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import DataBackupSection from '@/components/DataBackupSection';
 import { useTranslation } from '@/lib/translations';
 import { useFeatureFlag } from '@/lib/feature-flags';
-import { api, Pet, VaccinationType } from '@/lib/api';
+import { api, Pet, PetIncompatibility, VaccinationType } from '@/lib/api';
 import { translateTemperament } from '@/domain/pets/labels';
 import { withAuth } from '@/lib/withAuth';
 import { Button } from '@/components/ui/Button';
 
-interface IncompatibilityRule {
-  id: number;
-  pet1_id: number;
-  pet2_id: number;
-  pet1_name: string;
-  pet2_name: string;
-  reason: string;
-}
+const LEGACY_LOCAL_KEY = 'pet_incompatibilities';
+const MIGRATION_BANNER_DISMISSED_KEY = 'pet_incompatibilities_migration_banner_dismissed';
 
 function SettingsPage() {
   const { t } = useTranslation();
   const dataBackupEnabled = useFeatureFlag('data_backup');
   const [pets, setPets] = useState<Pet[]>([]);
-  const [incompatibilities, setIncompatibilities] = useState<IncompatibilityRule[]>([]);
+  const [incompatibilities, setIncompatibilities] = useState<PetIncompatibility[]>([]);
+  const [migrationBannerVisible, setMigrationBannerVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newRule, setNewRule] = useState({ pet1_id: '', pet2_id: '', reason: '' });
@@ -44,20 +39,25 @@ function SettingsPage() {
 
   const fetchData = async () => {
     try {
-      const [petsData, vaxTypesData, settingsData] = await Promise.all([
+      const [petsData, vaxTypesData, settingsData, incompatibilitiesData] = await Promise.all([
         api.pets.list(),
         api.vaccinationTypes.list(),
         api.nurserySettings.get(),
+        api.petIncompatibilities.list(),
       ]);
       setPets(petsData);
       setVaccinationTypes(vaxTypesData);
       setDailyLimit(settingsData.daily_booking_limit);
       setLogoUrl(settingsData.logo_url);
+      setIncompatibilities(incompatibilitiesData);
 
-      // Fetch incompatibilities from localStorage (or could be from API)
-      const stored = localStorage.getItem('pet_incompatibilities');
-      if (stored) {
-        setIncompatibilities(JSON.parse(stored));
+      // Show a one-time migration banner when (a) the legacy localStorage
+      // key is still around with stale rules from before this change, and
+      // (b) the user hasn't already dismissed it.
+      const legacy = localStorage.getItem(LEGACY_LOCAL_KEY);
+      const dismissed = localStorage.getItem(MIGRATION_BANNER_DISMISSED_KEY);
+      if (legacy && !dismissed) {
+        setMigrationBannerVisible(true);
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -66,54 +66,44 @@ function SettingsPage() {
     }
   };
 
-  const saveIncompatibilities = (rules: IncompatibilityRule[]) => {
-    localStorage.setItem('pet_incompatibilities', JSON.stringify(rules));
-    setIncompatibilities(rules);
+  const dismissMigrationBanner = () => {
+    localStorage.setItem(MIGRATION_BANNER_DISMISSED_KEY, '1');
+    localStorage.removeItem(LEGACY_LOCAL_KEY);
+    setMigrationBannerVisible(false);
   };
 
-  const handleAddRule = () => {
+  const handleAddRule = async () => {
     if (!newRule.pet1_id || !newRule.pet2_id || !newRule.reason) {
       alert(t('settings.fillAllFields'));
       return;
     }
-
     if (newRule.pet1_id === newRule.pet2_id) {
       alert(t('settings.samePetError'));
       return;
     }
-
-    const pet1 = pets.find(p => p.id === Number(newRule.pet1_id));
-    const pet2 = pets.find(p => p.id === Number(newRule.pet2_id));
-
-    if (!pet1 || !pet2) return;
-
-    const exists = incompatibilities.some(
-      r => (r.pet1_id === pet1.id && r.pet2_id === pet2.id) ||
-           (r.pet1_id === pet2.id && r.pet2_id === pet1.id)
-    );
-
-    if (exists) {
-      alert(t('settings.ruleExists'));
-      return;
+    try {
+      const created = await api.petIncompatibilities.create({
+        pet1: Number(newRule.pet1_id),
+        pet2: Number(newRule.pet2_id),
+        reason: newRule.reason,
+      });
+      setIncompatibilities([...incompatibilities, created]);
+      setNewRule({ pet1_id: '', pet2_id: '', reason: '' });
+      setShowAddForm(false);
+    } catch (err) {
+      // The serializer surfaces "duplicate" / "self-pair" errors as 400s.
+      const message = err instanceof Error ? err.message : t('settings.ruleExists');
+      alert(message);
     }
-
-    const newIncompatibility: IncompatibilityRule = {
-      id: Date.now(),
-      pet1_id: pet1.id,
-      pet2_id: pet2.id,
-      pet1_name: pet1.name,
-      pet2_name: pet2.name,
-      reason: newRule.reason,
-    };
-
-    saveIncompatibilities([...incompatibilities, newIncompatibility]);
-    setNewRule({ pet1_id: '', pet2_id: '', reason: '' });
-    setShowAddForm(false);
   };
 
-  const handleDeleteRule = (id: number) => {
-    if (confirm(t('settings.confirmDelete'))) {
-      saveIncompatibilities(incompatibilities.filter(r => r.id !== id));
+  const handleDeleteRule = async (id: number) => {
+    if (!confirm(t('settings.confirmDelete'))) return;
+    try {
+      await api.petIncompatibilities.delete(id);
+      setIncompatibilities(incompatibilities.filter(r => r.id !== id));
+    } catch (err) {
+      console.error('Failed to delete rule:', err);
     }
   };
 
@@ -307,6 +297,24 @@ function SettingsPage() {
                 {t('settings.incompatibilityInfo')}
               </p>
             </div>
+
+            {migrationBannerVisible && (
+              <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-amber-800 dark:text-amber-200">
+                    {t('settings.incompatibilityMigrationBanner')}
+                  </p>
+                </div>
+                <Button
+                  onClick={dismissMigrationBanner}
+                  variant="ghost"
+                  size="sm"
+                >
+                  {t('common.dismiss')}
+                </Button>
+              </div>
+            )}
 
             {/* Add Form */}
             {showAddForm && (

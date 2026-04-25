@@ -1,5 +1,6 @@
 export type { Owner, OwnerWithPets, OwnerFormData, OwnerListItem } from '@/domain/owners/types';
 export type { Pet, PetListItem, PetFormData, PetCompatibilityResult } from '@/domain/pets/types';
+export type { PetIncompatibility, PetIncompatibilityFormData } from '@/domain/pet-incompatibilities/types';
 export type { Vaccination, VaccinationType } from '@/domain/vaccinations/types';
 export type { MedicalNote, MedicalNoteFormData } from '@/domain/medical-notes/types';
 export type {
@@ -7,6 +8,8 @@ export type {
   ScheduleFormData,
   Conflict,
   ConflictCheckResult,
+  ReasonGroup,
+  ReasonGroupPet,
   BatchScheduleFormData,
   BatchScheduleResult,
   DailyCountResult,
@@ -19,6 +22,7 @@ export type { FeatureFlag, FeatureFlagsMap } from '@/domain/feature-flags/types'
 
 import { ownersApi } from '@/domain/owners/api';
 import { petsApi } from '@/domain/pets/api';
+import { petIncompatibilitiesApi } from '@/domain/pet-incompatibilities/api';
 import { vaccinationTypesApi } from '@/domain/vaccinations/api';
 import { medicalNotesApi } from '@/domain/medical-notes/api';
 import { schedulesApi } from '@/domain/schedules/api';
@@ -32,6 +36,7 @@ import { featureFlagsApi } from '@/domain/feature-flags/api';
 export const api = {
   owners: ownersApi,
   pets: petsApi,
+  petIncompatibilities: petIncompatibilitiesApi,
   vaccinationTypes: vaccinationTypesApi,
   medicalNotes: medicalNotesApi,
   schedules: schedulesApi,

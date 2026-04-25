@@ -16,6 +16,7 @@ export interface Schedule {
   status: string;
   notes: string;
   conflicts: Conflict[];
+  reason_groups?: ReasonGroup[];
   created_at: string;
   updated_at: string;
 }
@@ -32,15 +33,30 @@ export interface ScheduleFormData {
 
 export interface Conflict {
   conflicting_pet: string;
+  conflicting_pet_id?: number;
   conflicting_schedule_id: number;
   reason: string;
+  reasons?: string[];
   date_range?: string;
   time_slot: string;
+}
+
+export interface ReasonGroupPet {
+  id: number | null;
+  name: string;
+  time_slot?: string;
+  date_range?: string;
+}
+
+export interface ReasonGroup {
+  reason: string;
+  pets: ReasonGroupPet[];
 }
 
 export interface ConflictCheckResult {
   has_conflicts: boolean;
   conflicts: Conflict[];
+  reason_groups?: ReasonGroup[];
   overlapping_pets_count: number;
 }
 
@@ -62,6 +78,7 @@ export interface BatchScheduleResult {
     pet_name: string;
     schedule_id: number;
     conflicts: Conflict[];
+    reason_groups?: ReasonGroup[];
   }>;
 }
 
