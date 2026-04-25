@@ -226,6 +226,7 @@ export default function Home() {
                   onDateSelect={setSelectedDate}
                   calendarView={calendarView}
                   onViewChange={setCalendarView}
+                  refreshTrigger={refreshSchedules}
                 />
               ) : (
                 <WeekView
@@ -233,6 +234,7 @@ export default function Home() {
                   onDateSelect={setSelectedDate}
                   calendarView={calendarView}
                   onViewChange={setCalendarView}
+                  refreshTrigger={refreshSchedules}
                 />
               )}
             </div>

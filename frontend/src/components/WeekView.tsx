@@ -14,6 +14,12 @@ interface WeekViewProps {
   onDateSelect: (date: Date) => void;
   calendarView?: 'month' | 'week';
   onViewChange?: (view: 'month' | 'week') => void;
+  /** Counter from the parent page that increments on every schedule
+   *  mutation (create / edit / delete). Including it in the fetch
+   *  effect's dep array re-runs the fetch and refreshes the bars
+   *  without forcing the user to navigate between weeks. Optional
+   *  so read-only consumers can omit it. */
+  refreshTrigger?: number;
 }
 
 const BAR_COLORS = [
@@ -42,7 +48,7 @@ interface BarLayout {
   endsAfterWeek: boolean;
 }
 
-export default function WeekView({ selectedDate, onDateSelect, calendarView = 'week', onViewChange }: WeekViewProps) {
+export default function WeekView({ selectedDate, onDateSelect, calendarView = 'week', onViewChange, refreshTrigger = 0 }: WeekViewProps) {
   const { t, language } = useTranslation();
   const dateLocale = getDateLocale(language);
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(selectedDate));
@@ -68,7 +74,10 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
       }
     };
     fetchSchedules();
-  }, [currentWeekStart]);
+    // `refreshTrigger` re-runs the fetch after the parent records a
+    // schedule mutation (create / edit / delete). Same pattern as the
+    // monthly Calendar component.
+  }, [currentWeekStart, refreshTrigger]);
 
   const goToPreviousWeek = () => setCurrentWeekStart(subWeeks(currentWeekStart, 1));
   const goToNextWeek = () => setCurrentWeekStart(addWeeks(currentWeekStart, 1));
