@@ -171,6 +171,8 @@ Represents a pet in the nursery. `Meta: app_label = 'pets'`.
 | `sex` | `CharField(10)` | Choices: `male`, `female` |
 | `birth_date` | `DateField` | Optional |
 | `weight` | `DecimalField(6,2)` | Optional, in kg |
+| `last_internal_deworming_date` | `DateField` | Optional. Surfaced in the UI behind the `deworming_tracking` feature flag; the API always accepts and persists the value regardless of the flag. |
+| `last_external_deworming_date` | `DateField` | Optional. Same flag-gated UI / always-persisted contract as `last_internal_deworming_date`. |
 | `special_notes` | `TextField` | Optional |
 | `owner` | `ForeignKey -> Owner` | `CASCADE`, optional |
 | `profile_picture` | `ImageField` | `upload_to='profile_pictures/pets/'`, max 5 MB |

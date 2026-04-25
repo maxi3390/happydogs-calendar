@@ -25,6 +25,14 @@ export interface Pet {
   sex: string;
   birth_date: string | null;
   weight: number | null;
+  /** ISO date (yyyy-MM-dd) of the last internal (intestinal) deworming
+   *  treatment. `null` when not recorded. Surfaced behind the
+   *  `deworming_tracking` feature flag. */
+  last_internal_deworming_date: string | null;
+  /** ISO date (yyyy-MM-dd) of the last external (flea/tick) deworming
+   *  treatment. `null` when not recorded. Surfaced behind the
+   *  `deworming_tracking` feature flag. */
+  last_external_deworming_date: string | null;
   special_notes: string;
   owner: number | null;
   vet_override: number | null;
@@ -61,6 +69,8 @@ export interface PetFormData {
   sex: string;
   birth_date: string | null;
   weight: number | null;
+  last_internal_deworming_date: string | null;
+  last_external_deworming_date: string | null;
   special_notes: string;
   owner?: number | null;
   vet_override?: number | null;

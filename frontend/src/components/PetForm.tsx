@@ -37,6 +37,8 @@ const defaultFormData = (ownerId: number | null): PetFormData => ({
   sex: 'male',
   birth_date: null,
   weight: null,
+  last_internal_deworming_date: null,
+  last_external_deworming_date: null,
   special_notes: '',
   owner: ownerId,
   vet_override: null,
@@ -48,6 +50,7 @@ export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAnd
   const vetManagementEnabled = useFeatureFlag('vet_management');
   const medicalNotesEnabled = useFeatureFlag('medical_notes');
   const customSpeciesEnabled = useFeatureFlag('custom_pet_species');
+  const dewormingTrackingEnabled = useFeatureFlag('deworming_tracking');
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +74,8 @@ export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAnd
     sex: pet?.sex || 'male',
     birth_date: pet?.birth_date || null,
     weight: pet?.weight ?? null,
+    last_internal_deworming_date: pet?.last_internal_deworming_date || null,
+    last_external_deworming_date: pet?.last_external_deworming_date || null,
     special_notes: pet?.special_notes || '',
     owner: pet?.owner ?? lockedOwnerId ?? null,
     vet_override: pet?.vet_override ?? null,
@@ -427,6 +432,52 @@ export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAnd
               value={formData.weight}
               onChange={kg => setFormData({ ...formData, weight: kg })}
             />
+
+            {/* Deworming pair (flag-gated). Rendered BEFORE the
+                neutered checkbox so the two date inputs share a grid
+                row with each other — pairing them with the much
+                shorter checkbox would leave Neutered floating at the
+                top of an over-tall row and split the second
+                deworming input onto a half-empty row. */}
+            {dewormingTrackingEnabled && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('pet.lastInternalDewormingDate')}
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.last_internal_deworming_date || ''}
+                    onChange={e => setFormData({
+                      ...formData,
+                      last_internal_deworming_date: e.target.value || null,
+                    })}
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t('pet.lastInternalDewormingHint')}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('pet.lastExternalDewormingDate')}
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.last_external_deworming_date || ''}
+                    onChange={e => setFormData({
+                      ...formData,
+                      last_external_deworming_date: e.target.value || null,
+                    })}
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-primary bg-card text-card-foreground dark:bg-slate-700 text-foreground-100"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t('pet.lastExternalDewormingHint')}
+                  </p>
+                </div>
+              </>
+            )}
 
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">

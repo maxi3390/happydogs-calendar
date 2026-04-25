@@ -8,6 +8,7 @@ import {
 import { api, Pet, Vet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 import { useFeatureFlag } from '@/lib/feature-flags';
+import { formatIsoDate } from '@/lib/dateLocale';
 import { translateSpecies } from '@/domain/pets/labels';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -142,6 +143,7 @@ function ChipFilterRow<T extends string>({
 export default function PetList({ onEdit, refreshTrigger, onViewOwner }: PetListProps) {
   const { t } = useTranslation();
   const vetManagementEnabled = useFeatureFlag('vet_management');
+  const dewormingTrackingEnabled = useFeatureFlag('deworming_tracking');
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -507,6 +509,34 @@ export default function PetList({ onEdit, refreshTrigger, onViewOwner }: PetList
                           }}
                           onOpenVet={setOpenVetId}
                         />
+                      )}
+
+                      {/* Deworming dates (flag-gated). Mirrors the
+                          PetDetailsPopup layout so the accordion and
+                          the popup stay in sync. */}
+                      {dewormingTrackingEnabled && (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="bg-secondary/30 p-3 rounded-xl">
+                            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                              {t('pet.lastInternalDewormingDate')}
+                            </span>
+                            <p className="font-semibold text-sm text-foreground mt-0.5">
+                              {pet.last_internal_deworming_date
+                                ? formatIsoDate(pet.last_internal_deworming_date)
+                                : '—'}
+                            </p>
+                          </div>
+                          <div className="bg-secondary/30 p-3 rounded-xl">
+                            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                              {t('pet.lastExternalDewormingDate')}
+                            </span>
+                            <p className="font-semibold text-sm text-foreground mt-0.5">
+                              {pet.last_external_deworming_date
+                                ? formatIsoDate(pet.last_external_deworming_date)
+                                : '—'}
+                            </p>
+                          </div>
+                        </div>
                       )}
 
                       {pet.special_notes && (

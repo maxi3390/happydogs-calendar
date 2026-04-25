@@ -228,6 +228,7 @@ The form exposes a single-mode-only `onEditExisting?: (id, focusField) => void` 
 - **Dominance slider**: Visual slider from 1–10 with color coding: green (1–3), yellow (4–6), red (7–10).
 - **Birth date → age**: Selecting a birth date automatically calculates and displays the pet's age.
 - **Vaccinations**: Dynamic list — add/remove vaccination entries with type and date.
+- **Deworming dates** (flag-gated by `deworming_tracking`): Two date inputs — last internal (intestinal) and last external (flea/tick) treatment. Both are optional. The two dates are also surfaced in `PetDetailsPopup` and the `PetList` accordion under the same flag, with `—` for any missing value.
 - **Edit-mode-only features**: Medical notes (`MedicalNotesSection`) and documents (`DocumentUpload`) are only available when editing an existing pet, not when creating. **Profile picture upload** (`ProfilePictureUpload`) is available in both create and edit modes — in create mode, the selected file is stored locally and sent with the creation request as multipart form data.
 
 #### Navigation.tsx — Top Navigation Bar

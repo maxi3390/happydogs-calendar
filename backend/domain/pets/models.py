@@ -45,6 +45,16 @@ class Pet(models.Model):
     sex = models.CharField(max_length=10, choices=SEX_CHOICES, default='male')
     birth_date = models.DateField(null=True, blank=True, help_text="Date of birth (dd/mm/yyyy)")
     weight = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, help_text="Weight in kg")
+    last_internal_deworming_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Date of the last internal (intestinal) deworming treatment.",
+    )
+    last_external_deworming_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Date of the last external (flea/tick) deworming treatment.",
+    )
     special_notes = models.TextField(blank=True)
     owner = models.ForeignKey(
         'pets.Owner', on_delete=models.CASCADE, related_name='pets', null=True, blank=True

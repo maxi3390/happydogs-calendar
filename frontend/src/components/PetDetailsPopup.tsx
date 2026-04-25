@@ -5,6 +5,7 @@ import { X, Edit2, AlertCircle, Loader2, Dog, Cat, Bird, Rabbit, HelpCircle, Ste
 import { api, Pet, Vet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 import { useFeatureFlag } from '@/lib/feature-flags';
+import { formatIsoDate } from '@/lib/dateLocale';
 import { translateSpecies } from '@/domain/pets/labels';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -45,6 +46,7 @@ function formatWeight(weight: number | null | undefined): string | null {
 export default function PetDetailsPopup({ petId, onEdit, onClose }: PetDetailsPopupProps) {
   const { t } = useTranslation();
   const vetManagementEnabled = useFeatureFlag('vet_management');
+  const dewormingTrackingEnabled = useFeatureFlag('deworming_tracking');
   const [pet, setPet] = useState<Pet | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -242,6 +244,35 @@ export default function PetDetailsPopup({ petId, onEdit, onClose }: PetDetailsPo
                   ) : (
                     <p className="text-sm text-foreground mt-0.5">#{pet.vet_override}</p>
                   )}
+                </div>
+              )}
+
+              {/* Deworming dates (flag-gated). Each cell renders even
+                  when its date is null so the absence is informative
+                  ("not recorded yet") rather than the section
+                  collapsing entirely. */}
+              {dewormingTrackingEnabled && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-secondary/30 p-3 rounded-xl">
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                      {t('pet.lastInternalDewormingDate')}
+                    </span>
+                    <p className="font-semibold text-sm text-foreground mt-0.5">
+                      {pet.last_internal_deworming_date
+                        ? formatIsoDate(pet.last_internal_deworming_date)
+                        : '—'}
+                    </p>
+                  </div>
+                  <div className="bg-secondary/30 p-3 rounded-xl">
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                      {t('pet.lastExternalDewormingDate')}
+                    </span>
+                    <p className="font-semibold text-sm text-foreground mt-0.5">
+                      {pet.last_external_deworming_date
+                        ? formatIsoDate(pet.last_external_deworming_date)
+                        : '—'}
+                    </p>
+                  </div>
                 </div>
               )}
 
