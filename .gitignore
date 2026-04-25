@@ -51,6 +51,8 @@ npm-debug.log*
 .coverage
 htmlcov/
 .pytest_cache/
+frontend/playwright-report/
+frontend/test-results/
 
 # Docker
 .docker/
