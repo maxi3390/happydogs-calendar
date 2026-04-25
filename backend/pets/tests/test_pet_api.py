@@ -271,3 +271,60 @@ class PetAPITests(APITestCase):
         url = reverse('pet-delete-profile-picture', args=[self.pet.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    # ── Deworming dates (feature-flagged on the frontend; the API
+    #    accepts and persists the values regardless of the flag so
+    #    existing data is never lost when the flag is toggled). ─────
+
+    def test_default_deworming_dates_are_null(self):
+        """Pets created without deworming dates serialize the fields as null."""
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data['last_internal_deworming_date'])
+        self.assertIsNone(response.data['last_external_deworming_date'])
+
+    def test_create_pet_with_deworming_dates(self):
+        today = date.today().isoformat()
+        last_week = date(date.today().year, 1, 1).isoformat()
+        data = {
+            'name': 'Dewormed',
+            'species': 'dog',
+            'breed': 'Beagle',
+            'age': 4,
+            'temperament': 'friendly',
+            'dominance_level': 4,
+            'size': 'medium',
+            'owner': self.owner.id,
+            'last_internal_deworming_date': last_week,
+            'last_external_deworming_date': today,
+        }
+        response = self.client.post(self.list_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['last_internal_deworming_date'], last_week)
+        self.assertEqual(response.data['last_external_deworming_date'], today)
+        pet = Pet.objects.get(pk=response.data['id'])
+        self.assertEqual(pet.last_internal_deworming_date.isoformat(), last_week)
+        self.assertEqual(pet.last_external_deworming_date.isoformat(), today)
+
+    def test_partial_update_clears_deworming_date_with_null(self):
+        """PATCH with `null` SHALL clear a previously-set deworming date."""
+        self.pet.last_internal_deworming_date = date.today()
+        self.pet.save()
+        response = self.client.patch(
+            self.detail_url,
+            {'last_internal_deworming_date': None},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.pet.refresh_from_db()
+        self.assertIsNone(self.pet.last_internal_deworming_date)
+
+    def test_partial_update_sets_external_deworming_date(self):
+        today = date.today().isoformat()
+        response = self.client.patch(
+            self.detail_url,
+            {'last_external_deworming_date': today},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['last_external_deworming_date'], today)
