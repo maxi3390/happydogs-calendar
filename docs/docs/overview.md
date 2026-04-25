@@ -4,7 +4,7 @@
 
 Happy Calendar is a calendar-based schedule management system built specifically for pet nurseries. It provides a full-featured platform for managing pets, owners, and daily schedules — with an intelligent conflict detection engine that automatically evaluates pet compatibility based on behavioral characteristics such as temperament, dominance level, species, and size.
 
-The system is designed as a modern full-stack web application with a **Next.js 16** frontend, a **Django 5.1.4** REST API backend, and a **PostgreSQL 16** database, all orchestrated via **Docker Compose** with a **Traefik v3.6** reverse proxy.
+The system is designed as a modern full-stack web application with a **Next.js 16** frontend, a **Django 5.1.4** REST API backend, and a **PostgreSQL 18** database, all orchestrated via **Docker Compose** with a **Traefik v3.6** reverse proxy.
 
 - 📘 [Backend Documentation](backend/intro)
 - 📗 [Frontend Documentation](frontend/intro)
@@ -193,7 +193,7 @@ The scheduling engine implements 5 conflict detection rules (see [Business Logic
                                                   │
                                                   ▼
                                      ┌─────────────────────────┐
-                                     │   PostgreSQL 16         │
+                                     │   PostgreSQL 18         │
                                      │   Port 5432             │
                                      └─────────────────────────┘
 

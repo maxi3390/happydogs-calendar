@@ -50,7 +50,7 @@ graph TB
             Traefik["traefik:v3.6<br/>Ports: 80, 443, 8080"]
             Frontend["frontend<br/>:3000"]
             Backend["backend<br/>:8000"]
-            DB["db<br/>postgres:16-alpine"]
+            DB["db<br/>postgres:18-alpine"]
             Docs["docs<br/>:3001 (profile: docs)"]
             pgAdmin["pgadmin<br/>:5050 (profile: dev)"]
         end
@@ -78,7 +78,7 @@ graph TB
 
 ### `db` — PostgreSQL Database
 
-- **Image**: `postgres:16-alpine`
+- **Image**: `postgres:18-alpine`
 - **Environment**: `POSTGRES_DB=nursery`, `POSTGRES_USER=nursery`, `POSTGRES_PASSWORD=nursery`
 - **Volume**: `postgres_data` mounted to `/var/lib/postgresql/data`
 - **Healthcheck**: `pg_isready` command to verify the database is accepting connections
