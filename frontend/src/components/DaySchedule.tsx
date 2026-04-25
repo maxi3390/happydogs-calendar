@@ -188,12 +188,12 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger, onNe
                       {schedule.reason_groups && schedule.reason_groups.length > 0
                         ? schedule.reason_groups.map((group, i) => (
                             <p key={i} className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                              • {group.reason} — {group.pets.map(p => p.name).join(', ')}
+                              • {t(group.reason)} — {group.pets.map(p => p.name).join(', ')}
                             </p>
                           ))
                         : schedule.conflicts.map((conflict, i) => (
                             <p key={i} className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                              • {conflict.conflicting_pet}: {conflict.reason}
+                              • {conflict.conflicting_pet}: {t(conflict.reason)}
                             </p>
                           ))}
                     </div>

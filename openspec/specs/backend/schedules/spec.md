@@ -419,12 +419,14 @@ When two or more distinct reasons fire for the same overlapping pet, each reason
 
 The existing `conflicts` array SHALL continue to be emitted for backwards compatibility and SHALL be marked deprecated in the OpenAPI schema. Frontend consumers SHALL prefer `reason_groups` when present.
 
+The `reason` field of every entry in `reason_groups` (and the legacy `conflicts[].reason` / `conflicts[].reasons[]` fields) SHALL be either a translation key from the catalog defined in `backend/pets`'s "Compatibility reasons SHALL be returned as i18n keys" requirement, OR the literal `reason` text of a `PetIncompatibility` row for a custom rule. Hardcoded-rule entries SHALL NOT carry their English warning text in this field.
+
 #### Scenario: One reason across many overlaps collapses
 
 - GIVEN an aggressive pet is being scheduled
 - AND three other pets have overlapping schedules
 - WHEN the conflict check runs
-- THEN `reason_groups` SHALL contain exactly one entry with `reason = "Aggressive pets cannot be scheduled together with other pets"`
+- THEN `reason_groups` SHALL contain exactly one entry with `reason = "schedule.conflictReasons.aggressive"`
 - AND that entry's `pets` list SHALL contain three rows, one per overlapping pet
 - AND `overlapping_pets_count` SHALL be `3`
 

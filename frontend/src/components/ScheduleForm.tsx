@@ -391,12 +391,12 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                       {warning.reason_groups && warning.reason_groups.length > 0
                         ? warning.reason_groups.map((group, j) => (
                             <div key={j} className="ml-2 text-amber-600 dark:text-amber-400">
-                              • {group.reason} — {group.pets.map(p => p.name).join(', ')}
+                              • {t(group.reason)} — {group.pets.map(p => p.name).join(', ')}
                             </div>
                           ))
                         : warning.conflicts.map((c, j) => (
                             <div key={j} className="ml-2 text-amber-600 dark:text-amber-400">
-                              • {c.reason} with {c.conflicting_pet}
+                              • {t(c.reason)} with {c.conflicting_pet}
                             </div>
                           ))}
                     </li>
@@ -738,7 +738,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                     {conflictResult.reason_groups && conflictResult.reason_groups.length > 0
                       ? conflictResult.reason_groups.map((group, i) => (
                           <li key={i} className="text-sm text-amber-700">
-                            <div className="text-amber-700 font-medium">{group.reason}</div>
+                            <div className="text-amber-700 font-medium">{t(group.reason)}</div>
                             <div className="text-amber-600">
                               {group.pets.map(p => p.name).join(', ')}
                             </div>
@@ -748,7 +748,7 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                           <li key={i} className="text-sm text-amber-700">
                             <span className="font-medium">{conflict.conflicting_pet}</span>
                             <span className="text-amber-600"> ({conflict.time_slot})</span>
-                            <div className="text-amber-600">{conflict.reason}</div>
+                            <div className="text-amber-600">{t(conflict.reason)}</div>
                           </li>
                         ))}
                   </ul>

@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
 from tests.factories import create_pet, create_schedule, create_and_auth_user
-from pets.models import Schedule
+from pets.models import Pet, Schedule
 
 
 class ScheduleCRUDTests(APITestCase):
@@ -291,7 +291,7 @@ class ConflictCheckAPITests(APITestCase):
         # aggressive reason, with all three pet names listed.
         groups = response.data['reason_groups']
         self.assertEqual(len(groups), 1)
-        self.assertIn('Aggressive', groups[0]['reason'])
+        self.assertEqual(groups[0]['reason'], Pet.CONFLICT_REASON_AGGRESSIVE)
         names = sorted(p['name'] for p in groups[0]['pets'])
         self.assertEqual(names, ['Cleo', 'Nala', 'Rex'])
 

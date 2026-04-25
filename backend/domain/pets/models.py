@@ -102,19 +102,34 @@ class Pet(models.Model):
             return self.owner.primary_vet
         return None
 
+    # Translation keys for the hardcoded compatibility rules. The
+    # frontend resolves these via t(...) — fall-through behavior of the
+    # translation lookup means custom rules (free-text reasons) pass
+    # straight through unchanged.
+    CONFLICT_REASON_AGGRESSIVE = 'schedule.conflictReasons.aggressive'
+    CONFLICT_REASON_BOTH_HIGH_DOMINANCE = 'schedule.conflictReasons.bothHighDominance'
+    CONFLICT_REASON_SIZE_AND_DOMINANCE_DIFF = 'schedule.conflictReasons.sizeAndDominanceDiff'
+    CONFLICT_REASON_CROSS_SPECIES_TEMPERAMENTS = 'schedule.conflictReasons.crossSpeciesIncompatibleTemperaments'
+    CONFLICT_REASON_ANXIOUS_VS_PLAYFUL = 'schedule.conflictReasons.anxiousVsPlayful'
+    CONFLICT_REASON_SAME_SPECIES_SAME_SEX_HIGHLY_DOMINANT = 'schedule.conflictReasons.sameSpeciesSameSexHighlyDominant'
+
     def is_compatible_with(self, other_pet):
         """
         Check compatibility. Returns (is_compatible, reasons_list).
-        All triggered rules are collected; reasons_list is empty when compatible.
+        Each entry in reasons_list is a translation key for one of the
+        hardcoded rules, or the free-text `reason` of a persisted
+        ``PetIncompatibility`` row for a custom rule. The frontend
+        resolves each entry through its translation lookup, which
+        passes free-text custom reasons through unchanged.
         """
         reasons = []
         # Rule 1: Aggressive pets should not be with other pets
         if self.temperament == 'aggressive' or other_pet.temperament == 'aggressive':
-            reasons.append("Aggressive pets cannot be scheduled together with other pets")
+            reasons.append(self.CONFLICT_REASON_AGGRESSIVE)
 
         # Rule 2: Two highly dominant pets (>7) should not be together
         if self.dominance_level > 7 and other_pet.dominance_level > 7:
-            reasons.append("Two highly dominant pets cannot be scheduled together")
+            reasons.append(self.CONFLICT_REASON_BOTH_HIGH_DOMINANCE)
 
         # Rule 3: Large size difference with high dominance difference
         size_order = {'small': 1, 'medium': 2, 'large': 3}
@@ -122,31 +137,31 @@ class Pet(models.Model):
         dominance_diff = abs(self.dominance_level - other_pet.dominance_level)
 
         if size_diff >= 2 and dominance_diff >= 5:
-            reasons.append("Large size difference with significant dominance difference poses a risk")
+            reasons.append(self.CONFLICT_REASON_SIZE_AND_DOMINANCE_DIFF)
 
         # Rule 4: Different species with incompatible temperaments
         if self.species != other_pet.species:
             incompatible_temps = [('aggressive', 'anxious'), ('aggressive', 'calm')]
             temps = (self.temperament, other_pet.temperament)
             if temps in incompatible_temps or temps[::-1] in incompatible_temps:
-                reasons.append("Incompatible temperaments between different species")
+                reasons.append(self.CONFLICT_REASON_CROSS_SPECIES_TEMPERAMENTS)
 
         # Rule 5: Anxious pets should not be with playful/energetic pets if dominance diff > 4
         if ('anxious' in [self.temperament, other_pet.temperament] and
             'playful' in [self.temperament, other_pet.temperament] and
             dominance_diff > 4):
-            reasons.append("Anxious pets may be stressed by highly playful pets with different dominance levels")
+            reasons.append(self.CONFLICT_REASON_ANXIOUS_VS_PLAYFUL)
 
         # Rule 6: Two same-species same-sex highly-dominant pets (>= 7)
         if (self.species == other_pet.species and
             self.sex == other_pet.sex and
             self.dominance_level >= 7 and other_pet.dominance_level >= 7):
-            reasons.append("Two same-species same-sex highly-dominant pets cannot be scheduled together")
+            reasons.append(self.CONFLICT_REASON_SAME_SPECIES_SAME_SEX_HIGHLY_DOMINANT)
 
-        # Custom incompatibility rules — order-independent lookup against the
-        # PetIncompatibility catalog. A rule fires only when an actual schedule
-        # overlap occurs (handled by the caller); is_compatible_with itself just
-        # surfaces the rule's reason text when the catalog has an entry.
+        # Custom incompatibility rules — order-independent lookup against
+        # the PetIncompatibility catalog. The custom rule's free-text
+        # `reason` is appended verbatim and passes through the frontend's
+        # translation lookup unchanged (no matching key → fallback).
         if self.pk and other_pet.pk:
             lo, hi = sorted([self.pk, other_pet.pk])
             for rule in PetIncompatibility.objects.filter(pet1_id=lo, pet2_id=hi):

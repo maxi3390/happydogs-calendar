@@ -465,15 +465,17 @@ The detection SHALL exclude the schedule currently being edited (in edit mode) a
 
 The conflict-warning UI surfaced by the schedule form (single mode), the multi-mode batch result, and the day-schedule panel SHALL render its rows from the `reason_groups` field of the conflict check response when present. Each row corresponds to one reason and lists every overlapping pet that triggered it. When `reason_groups` is absent (older backend), the UI MAY fall back to the legacy `conflicts[]` array.
 
+Each reason field arrives from the backend as either a translation key (for hardcoded rules) or as a custom rule's literal free-text. The UI SHALL pass every reason through the translation lookup `t(...)` before rendering. The lookup falls through unmatched keys, so custom-rule free text displays unchanged.
+
 The UI SHALL NOT show multiple identical warnings differing only in the overlapping pet's name; that is the entire purpose of the dedup.
 
 #### Scenario: Aggressive pet against three overlapping pets
 
 - GIVEN an aggressive pet is being scheduled
 - AND three other pets have overlapping schedules with no other rules firing
-- AND the backend returned `reason_groups` with one entry whose `pets` list has three rows
+- AND the backend returned `reason_groups` with one entry whose `reason` is `schedule.conflictReasons.aggressive` and whose `pets` list has three rows
 - WHEN the conflict-warning banner renders
-- THEN the banner SHALL show ONE row containing the aggressive-pets reason
+- THEN the banner SHALL show ONE row whose text is the localised value of `schedule.conflictReasons.aggressive` (e.g. "Aggressive pets cannot be scheduled together with other pets" in English, "Las mascotas agresivas…" in Spanish)
 - AND the row SHALL name all three overlapping pets (e.g. "Milo, Cleo, Nala")
 
 #### Scenario: Two distinct reasons fire

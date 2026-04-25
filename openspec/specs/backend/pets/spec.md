@@ -574,7 +574,7 @@ Both `pet1` and `pet2` SHALL cascade-delete with their owning `Pet` row.
 - GIVEN two pets where rule 1 (aggressive) already fires
 - AND a persisted custom rule exists between them with `reason = "Vet advised separation"`
 - WHEN `pet.is_compatible_with(other)` is called
-- THEN the returned `reasons` list SHALL contain BOTH the rule-1 reason AND `"Vet advised separation"`
+- THEN the returned `reasons` list SHALL contain BOTH the rule-1 translation key AND the literal `"Vet advised separation"` (custom rules are free text and are NOT translated)
 - AND the returned bool SHALL be `False`
 
 #### Scenario: Custom rule alone makes the pair incompatible
@@ -587,13 +587,13 @@ Both `pet1` and `pet2` SHALL cascade-delete with their owning `Pet` row.
 
 ### Requirement: Same-species same-sex highly-dominant pets rule (rule 6)
 
-`Pet.is_compatible_with(other)` SHALL emit a new "Two same-species same-sex highly-dominant pets" warning when ALL of the following are true:
+`Pet.is_compatible_with(other)` SHALL emit a new same-species/same-sex/both-dominant warning when ALL of the following are true:
 
 - `self.species == other.species`
 - `self.sex == other.sex`
 - `self.dominance_level >= 7 AND other.dominance_level >= 7`
 
-This rule SHALL be evaluated independently of rule 2 ("two highly dominant pets, both `> 7`"). Both reasons MAY appear in the result list when both conditions are met.
+This rule SHALL be evaluated independently of rule 2 (two highly dominant pets, both `> 7`). Both reasons MAY appear in the result list when both conditions are met.
 
 #### Scenario: Rule 6 fires at the boundary
 
@@ -601,7 +601,7 @@ This rule SHALL be evaluated independently of rule 2 ("two highly dominant pets,
 - WHEN `pet.is_compatible_with(other)` is called
 - THEN rule 6 SHALL fire (both dominance levels are `>= 7`, same species, same sex)
 - AND rule 2 SHALL NOT fire (rule 2 requires both `> 7`)
-- AND the returned `reasons` SHALL contain exactly one entry — rule 6's text
+- AND the returned `reasons` SHALL contain exactly one entry — rule 6's translation key
 
 #### Scenario: Rule 6 and rule 2 fire together
 
@@ -617,4 +617,45 @@ This rule SHALL be evaluated independently of rule 2 ("two highly dominant pets,
 - WHEN `pet.is_compatible_with(other)` is called
 - THEN rule 6 SHALL NOT fire (different species)
 - AND rule 2 MAY still fire if it would on its own merits
+
+### Requirement: Compatibility reasons SHALL be returned as i18n keys (not literal text)
+
+`Pet.is_compatible_with(other)` SHALL return, for every triggered hardcoded rule, the rule's translation key (e.g. `schedule.conflictReasons.aggressive`) instead of the literal English warning text. The frontend resolves each key through its translation lookup at render time, which keeps the warning text owned in `backend/translations/{en,es}.json` rather than inlined in the model.
+
+The catalog of keys SHALL be:
+
+| Rule | Translation key |
+|------|-----------------|
+| Rule 1 — aggressive pet pair | `schedule.conflictReasons.aggressive` |
+| Rule 2 — both pets dominance `> 7` | `schedule.conflictReasons.bothHighDominance` |
+| Rule 3 — size diff ≥ 2 AND dominance diff ≥ 5 | `schedule.conflictReasons.sizeAndDominanceDiff` |
+| Rule 4 — different species + incompatible temperaments | `schedule.conflictReasons.crossSpeciesIncompatibleTemperaments` |
+| Rule 5 — anxious vs playful with dominance diff `> 4` | `schedule.conflictReasons.anxiousVsPlayful` |
+| Rule 6 — same species + same sex + both dominance `>= 7` | `schedule.conflictReasons.sameSpeciesSameSexHighlyDominant` |
+
+Custom rules (rows in `PetIncompatibility`) carry a free-text `reason` and SHALL be appended to the returned list verbatim. The frontend's translation lookup MUST fall through unmatched keys, returning the input string unchanged, so custom rules display as the operator wrote them.
+
+The keys SHALL be exposed as class constants on `Pet` (`Pet.CONFLICT_REASON_AGGRESSIVE`, etc.) so callers can compare against them without hardcoding the string in tests.
+
+#### Scenario: A triggered hardcoded rule returns its translation key
+
+- GIVEN two pets that trigger rule 1 (one is aggressive)
+- WHEN `pet.is_compatible_with(other)` is called
+- THEN the returned `reasons` list SHALL contain `Pet.CONFLICT_REASON_AGGRESSIVE` (`schedule.conflictReasons.aggressive`)
+- AND it SHALL NOT contain the literal English string `"Aggressive pets cannot be scheduled together with other pets"`
+
+#### Scenario: A custom rule's free text is appended unchanged
+
+- GIVEN a persisted custom rule with `reason = "Vet advised separation"`
+- AND the two pets that the rule names
+- WHEN `pet.is_compatible_with(other)` is called
+- THEN the returned `reasons` list SHALL contain the literal string `"Vet advised separation"`
+- AND that string SHALL NOT be wrapped in or replaced by any translation key
+
+#### Scenario: Translation file owns the warning text
+
+- GIVEN the operator's preferred language is English
+- WHEN the frontend renders a conflict warning whose `reason` is `schedule.conflictReasons.aggressive`
+- THEN the rendered text SHALL come from `backend/translations/en.json`'s `schedule.conflictReasons.aggressive` value
+- AND swapping the operator's preferred language to Spanish SHALL change the rendered text without any backend change
 

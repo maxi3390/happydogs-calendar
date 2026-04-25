@@ -85,6 +85,14 @@
       "description": "{name} already has a schedule for {start} → {end} that overlaps or sits next to your selection. You may want to extend the existing schedule instead of creating a new one.",
       "editLink": "Edit existing schedule"
     },
+    "conflictReasons": {
+      "aggressive": "Aggressive pets cannot be scheduled together with other pets",
+      "bothHighDominance": "Two highly dominant pets cannot be scheduled together",
+      "sizeAndDominanceDiff": "Large size difference with significant dominance difference poses a risk",
+      "crossSpeciesIncompatibleTemperaments": "Incompatible temperaments between different species",
+      "anxiousVsPlayful": "Anxious pets may be stressed by highly playful pets with different dominance levels",
+      "sameSpeciesSameSexHighlyDominant": "Two same-species same-sex highly-dominant pets cannot be scheduled together"
+    },
     "dailyLimitReached": "Daily booking limit reached!",
     "dailyLimitReachedDetail": "There are already {count} bookings for {date} (limit: {limit}). You can still proceed, but please confirm.",
     "dailyLimitWarning": "Approaching daily booking limit",

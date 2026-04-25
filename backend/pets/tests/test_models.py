@@ -51,7 +51,7 @@ class PetModelTests(TestCase):
         p2 = create_pet(temperament='friendly', dominance_level=5, size='medium')
         ok, reasons = p1.is_compatible_with(p2)
         self.assertFalse(ok)
-        self.assertTrue(any('Aggressive' in r for r in reasons))
+        self.assertIn(Pet.CONFLICT_REASON_AGGRESSIVE, reasons)
 
     def test_aggressive_other_side(self):
         p1 = create_pet(temperament='friendly', dominance_level=5)
@@ -64,7 +64,7 @@ class PetModelTests(TestCase):
         p2 = create_pet(temperament='friendly', dominance_level=8, size='large')
         ok, reasons = p1.is_compatible_with(p2)
         self.assertFalse(ok)
-        self.assertTrue(any('dominant' in r.lower() for r in reasons))
+        self.assertIn(Pet.CONFLICT_REASON_BOTH_HIGH_DOMINANCE, reasons)
 
     def test_high_dominance_boundary(self):
         """Rule 2 requires both > 7, so two pets at exactly 7 do NOT
@@ -81,7 +81,7 @@ class PetModelTests(TestCase):
         p2 = create_pet(size='large', dominance_level=7, temperament='calm')
         ok, reasons = p1.is_compatible_with(p2)
         self.assertFalse(ok)
-        self.assertTrue(any('size' in r.lower() for r in reasons))
+        self.assertIn(Pet.CONFLICT_REASON_SIZE_AND_DOMINANCE_DIFF, reasons)
 
     def test_size_diff_without_dominance_diff_ok(self):
         p1 = create_pet(size='small', dominance_level=5, temperament='calm')
@@ -101,7 +101,7 @@ class PetModelTests(TestCase):
         p2 = create_pet(temperament='playful', dominance_level=7, size='medium')
         ok, reasons = p1.is_compatible_with(p2)
         self.assertFalse(ok)
-        self.assertTrue(any('Anxious' in r for r in reasons))
+        self.assertIn(Pet.CONFLICT_REASON_ANXIOUS_VS_PLAYFUL, reasons)
 
     def test_anxious_playful_low_dominance_diff_ok(self):
         p1 = create_pet(temperament='anxious', dominance_level=5, size='medium')
@@ -119,8 +119,8 @@ class PetModelTests(TestCase):
                         temperament='friendly', size='medium')
         ok, reasons = p1.is_compatible_with(p2)
         self.assertFalse(ok)
-        self.assertTrue(any('same-species same-sex' in r for r in reasons))
-        self.assertFalse(any('Two highly dominant' in r for r in reasons))
+        self.assertIn(Pet.CONFLICT_REASON_SAME_SPECIES_SAME_SEX_HIGHLY_DOMINANT, reasons)
+        self.assertNotIn(Pet.CONFLICT_REASON_BOTH_HIGH_DOMINANCE, reasons)
 
     def test_rule6_and_rule2_fire_together(self):
         """Both > 7 + same species + same sex → both rules fire."""
@@ -130,8 +130,8 @@ class PetModelTests(TestCase):
                         temperament='friendly', size='medium')
         ok, reasons = p1.is_compatible_with(p2)
         self.assertFalse(ok)
-        self.assertTrue(any('Two highly dominant' in r for r in reasons))
-        self.assertTrue(any('same-species same-sex' in r for r in reasons))
+        self.assertIn(Pet.CONFLICT_REASON_BOTH_HIGH_DOMINANCE, reasons)
+        self.assertIn(Pet.CONFLICT_REASON_SAME_SPECIES_SAME_SEX_HIGHLY_DOMINANT, reasons)
 
     def test_rule6_does_not_fire_across_species(self):
         """Different species → rule 6 must not fire even if everything else matches."""
@@ -141,7 +141,7 @@ class PetModelTests(TestCase):
                         temperament='friendly', size='medium')
         ok, reasons = p1.is_compatible_with(p2)
         self.assertFalse(ok)  # rule 2 still applies (both > 7)
-        self.assertFalse(any('same-species same-sex' in r for r in reasons))
+        self.assertNotIn(Pet.CONFLICT_REASON_SAME_SPECIES_SAME_SEX_HIGHLY_DOMINANT, reasons)
 
     def test_rule6_does_not_fire_across_sex(self):
         p1 = create_pet(species='dog', sex='male', dominance_level=8,
@@ -149,7 +149,7 @@ class PetModelTests(TestCase):
         p2 = create_pet(species='dog', sex='female', dominance_level=8,
                         temperament='friendly', size='medium')
         _, reasons = p1.is_compatible_with(p2)
-        self.assertFalse(any('same-species same-sex' in r for r in reasons))
+        self.assertNotIn(Pet.CONFLICT_REASON_SAME_SPECIES_SAME_SEX_HIGHLY_DOMINANT, reasons)
 
     # ── Custom rules: catalog lookup integrated with hardcoded rules ───
 
@@ -189,7 +189,7 @@ class PetModelTests(TestCase):
         )
         ok, reasons = p1.is_compatible_with(p2)
         self.assertFalse(ok)
-        self.assertTrue(any('Aggressive' in r for r in reasons))
+        self.assertIn(Pet.CONFLICT_REASON_AGGRESSIVE, reasons)
         self.assertIn('Custom: vet warning', reasons)
 
     def test_custom_rule_lookup_is_order_independent(self):

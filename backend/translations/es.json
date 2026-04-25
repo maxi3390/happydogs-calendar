@@ -85,6 +85,14 @@
       "description": "{name} ya tiene una reserva para {start} → {end} que se superpone o queda junto a tu selección. Quizás convenga extender la reserva existente en lugar de crear una nueva.",
       "editLink": "Editar la reserva existente"
     },
+    "conflictReasons": {
+      "aggressive": "Las mascotas agresivas no pueden agendarse junto con otras mascotas",
+      "bothHighDominance": "Dos mascotas muy dominantes no pueden agendarse juntas",
+      "sizeAndDominanceDiff": "Una gran diferencia de tamaño con una diferencia significativa de dominancia representa un riesgo",
+      "crossSpeciesIncompatibleTemperaments": "Temperamentos incompatibles entre especies diferentes",
+      "anxiousVsPlayful": "Las mascotas ansiosas pueden estresarse con mascotas muy juguetonas que tienen niveles de dominancia distintos",
+      "sameSpeciesSameSexHighlyDominant": "Dos mascotas de la misma especie y mismo sexo, ambas muy dominantes, no pueden agendarse juntas"
+    },
     "dailyLimitReached": "¡Límite diario de reservas alcanzado!",
     "dailyLimitReachedDetail": "Ya hay {count} reservas para {date} (límite: {limit}). Puedes continuar, pero confirma por favor.",
     "dailyLimitWarning": "Acercándose al límite diario de reservas",
