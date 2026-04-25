@@ -100,6 +100,101 @@ A small set of commands are inherently host-side and remain on the host: `git`, 
 
 ---
 
+## Code style — comments and names
+
+Two rules govern in-source prose so the codebase reads quickly without sacrificing context where it matters.
+
+### 1. Comments scale with complexity
+
+Default to **no comment**. Add one only when the code itself can't tell the next reader what they need to know. Specifically:
+
+- **Trivial code → no comment.** If a function name, variable name, or signature already says it, don't repeat it.
+- **Complex / non-obvious code → a longer comment.** If a choice involves a tradeoff, fixes a non-trivial bug, encodes domain knowledge, or relies on an external invariant (browser quirk, Django ORM behaviour, etc.), explain *why* — not *what*.
+
+Long-form rationale (multi-paragraph history, alternatives considered, etc.) lives in the OpenSpec change folder under `openspec/changes/<slug>/design.md`, not in the source. Source comments link back when needed but stay tight.
+
+#### Examples
+
+Don't:
+
+```ts
+// Increment the counter
+counter++;
+
+// Default to 0 in the component signature so existing call-sites that
+// don't pass the prop keep working.
+refreshTrigger = 0,
+```
+
+Do:
+
+```ts
+counter++;
+
+// Optional so PublicCalendar can omit it.
+refreshTrigger = 0,
+```
+
+Don't:
+
+```ts
+// Counter from the parent page that increments on every schedule
+// mutation (create / edit / delete). Including it in the fetch
+// effect's dep array re-runs the fetch and refreshes the bars
+// without forcing the user to navigate between months. Optional
+// so `PublicCalendar` (and any future read-only consumer) can
+// omit it and keep the fetch driven only by period changes.
+refreshTrigger?: number;
+```
+
+Do:
+
+```ts
+/** Bumps when the parent records a schedule mutation; re-runs the fetch. */
+refreshTrigger?: number;
+```
+
+Do (complex bug fix earns the breadth):
+
+```ts
+// `dayHiddenCounts` counts segments per day that landed at
+// row >= MAX_VISIBLE_BARS. Used directly by the "+N more"
+// indicator: deriving it as `dayBarCounts - MAX` is wrong when
+// overlap on other days pushes a single-day-only segment to a
+// high row (it can go negative).
+```
+
+### 2. Names are short and self-explanatory
+
+- Prefer names that read as their meaning at the call-site, not as their full lifecycle.
+- Cut redundant prefixes when the surrounding context already names them: `showAll` inside the calendar component beats `showAllSchedules`; `t` for translations beats `translate`.
+- A name that's slightly longer is fine when it disambiguates two similar things in the same scope. Don't shorten when shortening creates collisions or ambiguity.
+- Stick with the team's existing names when refactoring nearby code. Renaming for the sake of brevity churns diffs without helping the reader.
+
+#### Examples
+
+Don't:
+
+```ts
+const handleToggleShowAllSchedulesPreference = () => { ... };
+const cellLayoutRowsForCol = (colIdx: number) => { ... };
+const visibleCalendarSegmentsForGroupMode = ...;
+```
+
+Do:
+
+```ts
+const toggleShowAll = () => { ... };
+const rowsForCol = (colIdx: number) => { ... };
+const visibleSegments = ...;
+```
+
+### Pre-existing comments and names
+
+Don't churn nearby code just to apply this rule. Touch what your change touches and leave the rest. The rule applies to NEW prose / NEW names introduced by your change.
+
+---
+
 ## Environment variables
 
 ### Backend (set in `docker-compose.yml`)
