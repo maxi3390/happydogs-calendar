@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, addDays } from 'date-fns';
-import { ChevronLeft, ChevronRight, AlertTriangle, CalendarDays, CalendarRange } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertTriangle, CalendarDays, CalendarRange, Minus } from 'lucide-react';
 import { api, Schedule } from '@/lib/api';
 import ScheduleDetailsPopup from './ScheduleDetailsPopup';
 import { useTranslation } from '@/lib/translations';
@@ -57,6 +57,19 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set());
+
+  // Reset week expansions whenever the visible month changes — a "show
+  // less" link wouldn't make sense across navigation.
+  useEffect(() => { setExpandedWeeks(new Set()); }, [currentMonth]);
+
+  const toggleWeek = (weekIdx: number, expand: boolean) => {
+    setExpandedWeeks(prev => {
+      const next = new Set(prev);
+      if (expand) next.add(weekIdx); else next.delete(weekIdx);
+      return next;
+    });
+  };
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -76,9 +89,6 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
       }
     };
     fetchSchedules();
-    // `refreshTrigger` re-runs the fetch after the parent records a
-    // schedule mutation (create / edit / delete). Keeping it as the
-    // last dep makes intent obvious to the next reader.
   }, [currentMonth, refreshTrigger]);
 
   // Build calendar grid: weeks containing 7 cells (some may be null for padding)
@@ -130,11 +140,16 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
         s.start_date <= lastDayStr && s.end_date >= firstDayStr
       );
 
-      // Sort: longer schedules first, then by start date
+      // Sort by actual range (greater first), then by start date.
+      // The previous `localeCompare` form only distinguished single-day
+      // from multi-day, which let a 4-day Wed-Sat schedule lose its
+      // visible row to a 3-day Wed-Fri schedule that happened to come
+      // first in the API order.
+      const rangeDays = (s: Schedule) =>
+        Math.round((Date.parse(s.end_date) - Date.parse(s.start_date)) / 86400000);
       overlapping.sort((a, b) => {
-        const aLen = a.end_date.localeCompare(a.start_date);
-        const bLen = b.end_date.localeCompare(b.start_date);
-        if (bLen !== aLen) return bLen - aLen;
+        const diff = rangeDays(b) - rangeDays(a);
+        if (diff !== 0) return diff;
         return a.start_date.localeCompare(b.start_date);
       });
 
@@ -188,15 +203,21 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
         segments.push({ schedule: s, startCol, endCol, continuesLeft, continuesRight, row });
       });
 
-      // Count how many bars each day has (for "+N more")
+      // `dayHiddenCounts` counts segments per day that landed at
+      // row >= MAX_VISIBLE_BARS. Used directly by the "+N more"
+      // indicator: deriving it as `dayBarCounts - MAX` is wrong when
+      // overlap on other days pushes a single-day-only segment to a
+      // high row (it can go negative).
       const dayBarCounts = Array(7).fill(0) as number[];
+      const dayHiddenCounts = Array(7).fill(0) as number[];
       segments.forEach(seg => {
         for (let c = seg.startCol; c <= seg.endCol; c++) {
           dayBarCounts[c]++;
+          if (seg.row >= MAX_VISIBLE_BARS) dayHiddenCounts[c]++;
         }
       });
 
-      return { segments, dayBarCounts };
+      return { segments, dayBarCounts, dayHiddenCounts };
     });
   }, [weeks, uniqueSchedules]);
 
@@ -269,9 +290,19 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
 
       {/* Week rows */}
       {weeks.map((week, weekIdx) => {
-        const { segments, dayBarCounts } = weekBars[weekIdx];
-        const visibleSegments = segments.filter(s => s.row < MAX_VISIBLE_BARS);
-        const hiddenSegments = segments.filter(s => s.row >= MAX_VISIBLE_BARS);
+        const { segments, dayBarCounts, dayHiddenCounts } = weekBars[weekIdx];
+        const expanded = expandedWeeks.has(weekIdx);
+        const weekHasHidden = dayHiddenCounts.some(c => c > 0);
+        const visibleSegments = expanded
+          ? segments
+          : segments.filter(s => s.row < MAX_VISIBLE_BARS);
+        // Vertical layout rows for a given day cell. Collapsed: cap at
+        // 3 bars + 1 overflow line. Expanded: real count.
+        const rowsForCol = (colIdx: number) => {
+          if (expanded) return dayBarCounts[colIdx];
+          const visible = Math.min(dayBarCounts[colIdx] - dayHiddenCounts[colIdx], MAX_VISIBLE_BARS);
+          return visible + (dayHiddenCounts[colIdx] > 0 ? 1 : 0);
+        };
 
         return (
           <div key={weekIdx} className="grid grid-cols-7 border-b last:border-b-0 border-gray-100 dark:border-slate-700/50">
@@ -288,7 +319,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                     isSelected ? 'bg-primary/10/50 dark:bg-indigo-900/10' : ''
                   } ${!inMonth && day ? 'opacity-30' : ''}`}
                   onClick={() => day && onDateSelect(day)}
-                  style={{ minHeight: `${28 + Math.min(dayBarCounts[colIdx], MAX_VISIBLE_BARS + 1) * 22}px` }}
+                  style={{ minHeight: `${28 + rowsForCol(colIdx) * 22}px` }}
                 >
                   {day ? (
                     <div className="flex items-center justify-center sm:justify-start">
@@ -361,34 +392,54 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                   );
                 })}
 
-                {/* "+N more" indicators per day */}
-                {week.map((day, colIdx) => {
+                {/* "+N more" indicators (collapsed only). Click expands the
+                    whole week row in place; the day-cell click handler is
+                    suppressed via stopPropagation so we don't also select
+                    the day underneath. */}
+                {!expanded && week.map((day, colIdx) => {
                   if (!day) return null;
-                  const hiddenCount = dayBarCounts[colIdx] - MAX_VISIBLE_BARS;
+                  const hiddenCount = dayHiddenCounts[colIdx];
                   if (hiddenCount <= 0) return null;
 
                   return (
-                    <div
+                    <button
                       key={`more-${colIdx}`}
-                      className="absolute text-[10px] sm:text-xs text-muted-foreground font-medium px-1 sm:px-1.5 cursor-pointer hover:text-primary dark:hover:text-indigo-400"
+                      type="button"
+                      className="absolute text-[10px] sm:text-xs text-muted-foreground font-medium px-1 sm:px-1.5 cursor-pointer hover:text-primary dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-sm"
                       style={{
                         left: `${(colIdx / 7) * 100}%`,
                         top: `${MAX_VISIBLE_BARS * 22}px`,
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        onDateSelect(day);
+                        toggleWeek(weekIdx, true);
                       }}
                     >
                       +{hiddenCount} {t('calendar.more').replace('+{count} ', '').replace('{count} ', '')}
-                    </div>
+                    </button>
                   );
                 })}
 
-                {/* Spacer to give the bars area its height */}
-                <div style={{ height: `${Math.max(...weeks[weekIdx].map((_, colIdx) => Math.min(dayBarCounts[colIdx], MAX_VISIBLE_BARS + 1))) * 22 + 4}px` }} />
+                {/* Spacer sized to the tallest cell in this week. */}
+                <div style={{ height: `${Math.max(0, ...week.map((_, colIdx) => rowsForCol(colIdx))) * 22 + 4}px` }} />
               </div>
             </div>
+
+            {/* Show-less footer when the week is expanded. Only rendered
+                if there was something hidden to expand in the first place,
+                so a week without overflow never sprouts the link. */}
+            {expanded && weekHasHidden && (
+              <div className="col-span-7 flex justify-end px-1 pb-1">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); toggleWeek(weekIdx, false); }}
+                  className="inline-flex items-center gap-1 text-[10px] sm:text-xs text-muted-foreground hover:text-primary dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-sm px-1.5 py-0.5"
+                >
+                  <Minus className="w-3 h-3" />
+                  {t('calendar.showLess')}
+                </button>
+              </div>
+            )}
           </div>
         );
       })}

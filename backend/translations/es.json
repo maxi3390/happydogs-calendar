@@ -43,7 +43,8 @@
       "fri": "V",
       "sat": "S"
     },
-    "more": "+{count} más"
+    "more": "+{count} más",
+    "showLess": "Mostrar menos"
   },
   "schedule": {
     "title": "Horario",
