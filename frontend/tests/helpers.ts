@@ -2,11 +2,19 @@ import { Page } from '@playwright/test';
 
 const EN_TRANSLATIONS = {
   app: { name: 'Happy Pet Nursery', tagline: 'Schedule Management System' },
-  nav: { owners: 'Owners', pets: 'Pets', settings: 'Settings', calendar: 'Calendar' },
+  nav: {
+    owners: 'Owners',
+    pets: 'Pets',
+    settings: 'Settings',
+    calendar: 'Calendar',
+    newSchedule: 'New Schedule',
+  },
   calendar: { month: 'Month', week: 'Week', today: 'Today', thisWeek: 'This Week', weekOf: 'Week of' },
   schedule: {
     title: 'Schedule',
     newSchedule: 'New Schedule',
+    editSchedule: 'Edit Schedule',
+    updateSchedule: 'Update Schedule',
     selectPet: 'Select Pet',
     startDate: 'Start Date',
     endDate: 'End Date',
@@ -15,6 +23,11 @@ const EN_TRANSLATIONS = {
     dailyStartTime: 'Daily Start Time',
     dailyEndTime: 'Daily End Time',
     createSchedule: 'Create Schedule',
+    samePetOverlap: {
+      title: 'This pet is already scheduled',
+      description: '{name} already has a schedule for {start} → {end}.',
+      editLink: 'Edit existing schedule',
+    },
   },
   pet: {
     title: 'Pets',
@@ -257,13 +270,17 @@ export async function createOwnerViaApi(
   }
   const { access } = JSON.parse(tokensRaw);
   const unique = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  // `id_number` is capped at 20 chars in the backend model. Pack a
+  // collision-resistant value into the budget: base36 timestamp (~9
+  // chars) plus a 6-char random suffix.
+  const shortUnique = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
   const body = {
     first_name: overrides.first_name ?? 'OwnerFirst',
     last_name: overrides.last_name ?? `Owner_${unique}`,
     email: overrides.email ?? `owner_${unique}@example.com`,
     phone: overrides.phone ?? '+1-555-0100',
-    id_number: overrides.id_number ?? `ID_${unique}`,
+    id_number: overrides.id_number ?? shortUnique,
   };
 
   const res = await page.request.post(`${apiBase}/owners/`, {
@@ -289,4 +306,83 @@ export async function openAddPetFormForOwner(page: Page, owner: { first_name: st
   await ownerCard.click();
   await page.getByRole('button', { name: /add pet|agregar mascota/i }).first().click();
   return page.locator('.fixed.inset-0 form').first();
+}
+
+async function authedRequest(page: Page) {
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+  const tokensRaw = await page.evaluate(() => localStorage.getItem('auth_tokens'));
+  if (!tokensRaw) throw new Error('No auth tokens; call setupAuthAndLanguage first');
+  const { access } = JSON.parse(tokensRaw);
+  return { apiBase, headers: { Authorization: `Bearer ${access}` } };
+}
+
+/** Create a pet via the REST API for tests that don't care about the form UX. */
+export async function createPetViaApi(
+  page: Page,
+  ownerId: number,
+  overrides: Partial<{
+    name: string;
+    species: string;
+    breed: string;
+    age: number;
+    temperament: string;
+    dominance_level: number;
+    size: string;
+    sex: string;
+    neutered: boolean;
+  }> = {},
+) {
+  const { apiBase, headers } = await authedRequest(page);
+  const unique = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const body = {
+    name: overrides.name ?? `Pet_${unique}`,
+    species: overrides.species ?? 'dog',
+    breed: overrides.breed ?? 'Mixed',
+    age: overrides.age ?? 3,
+    temperament: overrides.temperament ?? 'friendly',
+    dominance_level: overrides.dominance_level ?? 5,
+    size: overrides.size ?? 'medium',
+    sex: overrides.sex ?? 'male',
+    neutered: overrides.neutered ?? true,
+    owner: ownerId,
+  };
+  const res = await page.request.post(`${apiBase}/pets/`, { headers, data: body });
+  if (!res.ok()) throw new Error(`Failed to create pet: ${res.status()} ${await res.text()}`);
+  return res.json() as Promise<{ id: number; name: string }>;
+}
+
+/** Create a schedule via the REST API. Defaults are 09:00–17:00 same-day. */
+export async function createScheduleViaApi(
+  page: Page,
+  petId: number,
+  overrides: Partial<{
+    start_date: string;
+    end_date: string;
+    start_time: string;
+    end_time: string;
+    status: string;
+    notes: string;
+  }> = {},
+) {
+  const { apiBase, headers } = await authedRequest(page);
+  const today = new Date().toISOString().slice(0, 10);
+  const body = {
+    pet: petId,
+    start_date: overrides.start_date ?? today,
+    end_date: overrides.end_date ?? overrides.start_date ?? today,
+    start_time: overrides.start_time ?? '09:00',
+    end_time: overrides.end_time ?? '17:00',
+    status: overrides.status ?? 'scheduled',
+    notes: overrides.notes ?? '',
+  };
+  const res = await page.request.post(`${apiBase}/schedules/`, { headers, data: body });
+  if (!res.ok()) throw new Error(`Failed to create schedule: ${res.status()} ${await res.text()}`);
+  return res.json() as Promise<{ id: number; start_date: string; end_date: string }>;
+}
+
+/** Add `delta` days to an ISO date (`yyyy-MM-dd`). UTC-anchored to avoid TZ drift. */
+export function shiftIsoDate(iso: string, delta: number): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + delta);
+  return d.toISOString().slice(0, 10);
 }
