@@ -56,6 +56,50 @@ Backend mounts `./backend:/app` as a volume so file edits hot-reload.
 
 ---
 
+## Tool execution policy
+
+Every tool that interacts with the project's tech stack — Python, pip, Django, Node, npm, npx, Next.js, Playwright, psql, etc. — SHALL be run **inside a Docker container**, never on the host. This applies to coding agents and humans alike. The host is treated as a thin shell whose only purpose is invoking Docker; build / test / lint / one-off scripts all execute in containers.
+
+Two reasons make this non-negotiable:
+
+1. **Reproducibility.** A test that passes on your laptop must pass on a colleague's laptop and on CI. The compose file pins specific image versions; the host doesn't.
+2. **Environment drift.** macOS Pythons, system Nodes, and locally-installed npm packages routinely shadow the project's pinned versions and produce subtly different output. Running everything in containers eliminates this class of bug at the root.
+
+### Version pinning — match the compose / Dockerfile
+
+When you need to spin up a one-off container (typically `docker run --rm ... <image> sh -c '...'`), the image and tag SHALL match what the project already uses. The current pins are:
+
+| Layer       | Image                                     | Source                                |
+|-------------|-------------------------------------------|---------------------------------------|
+| Backend     | `python:3.12-slim`                        | `backend/Dockerfile`                  |
+| Frontend    | `node:22-alpine`                          | `frontend/Dockerfile`                 |
+| Docs        | `node:20`                                 | `docs/Dockerfile`                     |
+| Database    | `postgres:16-alpine`                      | `docker-compose.yml` (`db` service)   |
+| Reverse proxy | `traefik:v3.6`                          | `docker-compose.yml` (`traefik`)      |
+| Playwright  | `mcr.microsoft.com/playwright:v1.58.2-noble` | `Makefile` (`PLAYWRIGHT_IMAGE`)    |
+
+Always cross-check the source before running an ad-hoc container; the pins above are a snapshot, not a contract. When the source changes, follow the source.
+
+### How to run things — preferred order
+
+1. **Use a Makefile target if one exists.** `make test-backend`, `make test-frontend`, `make lint`, `make migrate`, `make seed-example-data`, etc. all already wrap the right `docker compose exec` / `docker run` invocation with the right version. Read `make help` first; `grep <verb> Makefile` second.
+2. **`docker compose exec <service> <command>`** for anything against a long-running service. The backend, frontend, db, and traefik services are already up after `make up` — exec into them rather than starting a new container. Examples:
+   - Backend: `docker compose exec backend python manage.py test pets.tests.test_vet_api`
+   - Database: `docker compose exec db psql -U nursery -d nursery`
+3. **`docker run --rm -v $(PWD)/<dir>:/app -w /app <image> sh -c '<command>'`** for one-off tooling that doesn't have a long-running service (e.g. `tsc --noEmit`, `next build` against a clean tree, ad-hoc Python scripts). Use the matching image and tag from the table above.
+
+### What NOT to do
+
+- Do **not** run `python`, `pip`, `pytest`, `flake8`, `node`, `npm`, `npx`, `next`, `tsc`, `playwright`, `psql`, etc. directly on the host shell.
+- Do **not** install language toolchains on the host to "make agents go faster". The container is the source of truth.
+- Do **not** change versions in a one-off `docker run` to work around a tooling bug; fix the bug at the source (Dockerfile / compose / Makefile) so every contributor benefits.
+
+### Permitted host commands
+
+A small set of commands are inherently host-side and remain on the host: `git`, `make`, `docker` itself, and read-only file inspection (`ls`, `cat`, `grep`, `find`, etc.). Anything that compiles, executes user code, hits the network on behalf of the project, or reads a project secret runs in a container.
+
+---
+
 ## Environment variables
 
 ### Backend (set in `docker-compose.yml`)
