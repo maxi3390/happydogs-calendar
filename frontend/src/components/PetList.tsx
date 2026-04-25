@@ -511,9 +511,6 @@ export default function PetList({ onEdit, refreshTrigger, onViewOwner }: PetList
                         />
                       )}
 
-                      {/* Deworming dates (flag-gated). Mirrors the
-                          PetDetailsPopup layout so the accordion and
-                          the popup stay in sync. */}
                       {dewormingTrackingEnabled && (
                         <div className="grid grid-cols-2 gap-2">
                           <div className="bg-secondary/30 p-3 rounded-xl">

@@ -264,12 +264,6 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
             </button>
             <button
               onClick={() => {
-                // "Today" snaps both the displayed month AND the
-                // selected day. Without `onDateSelect` here the
-                // day-schedule panel would stay anchored on whatever
-                // the user previously clicked, and downstream actions
-                // (e.g. opening the create-schedule form via the day
-                // panel) would pre-fill that stale date.
                 const today = new Date();
                 setCurrentMonth(today);
                 onDateSelect(today);

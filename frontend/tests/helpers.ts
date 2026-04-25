@@ -270,9 +270,7 @@ export async function createOwnerViaApi(
   }
   const { access } = JSON.parse(tokensRaw);
   const unique = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  // `id_number` is capped at 20 chars in the backend model. Pack a
-  // collision-resistant value into the budget: base36 timestamp (~9
-  // chars) plus a 6-char random suffix.
+  // id_number column max is 20 chars
   const shortUnique = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
   const body = {

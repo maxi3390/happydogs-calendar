@@ -247,10 +247,6 @@ export default function PetDetailsPopup({ petId, onEdit, onClose }: PetDetailsPo
                 </div>
               )}
 
-              {/* Deworming dates (flag-gated). Each cell renders even
-                  when its date is null so the absence is informative
-                  ("not recorded yet") rather than the section
-                  collapsing entirely. */}
               {dewormingTrackingEnabled && (
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-secondary/30 p-3 rounded-xl">

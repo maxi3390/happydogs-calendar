@@ -28,10 +28,7 @@ export default function Home() {
   const [calendarView, setCalendarView] = useState<'month' | 'week'>('month');
   const [showMultiScheduleForm, setShowMultiScheduleForm] = useState(false);
 
-  // The global "New Schedule" nav shortcut routes to /?new=1 from other
-  // pages. Detect it here (via window.location so we don't need a
-  // Suspense boundary the way useSearchParams does), auto-open the
-  // modal, and scrub the query param so reloading doesn't re-open it.
+  // Auto-open the schedule form when arriving via /?new=1, then scrub the param.
   useEffect(() => {
     if (!isAuthenticated) return;
     if (typeof window === 'undefined') return;
@@ -60,9 +57,7 @@ export default function Home() {
     setShowScheduleForm(true);
   };
 
-  // Handoff from the same-pet overlap CTA: close the create modal and
-  // re-open the form in edit mode for the existing schedule, focused
-  // on the date field the operator should adjust.
+  // Same-pet overlap CTA: re-open the form in edit mode for the existing schedule.
   const handleEditExistingFromOverlap = async (id: number, focus: DateField) => {
     try {
       const existing = await api.schedules.get(id);
@@ -285,11 +280,6 @@ export default function Home() {
 
       {showScheduleForm && (
         <ScheduleForm
-          // `key` resets the form's internal state when we swap from a
-          // create flow into an edit flow via the same-pet overlap
-          // CTA — both renders happen back-to-back with the modal
-          // already mounted, so without the key React would reuse the
-          // old state.
           key={editingSchedule ? `edit-${editingSchedule.id}` : 'create'}
           schedule={editingSchedule}
           selectedDate={selectedDate}
