@@ -388,11 +388,17 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                   {batchResult.warnings.map((warning, i) => (
                     <li key={i} className="text-sm text-amber-700 dark:text-amber-300">
                       <span className="font-medium">{warning.pet_name}</span>:
-                      {warning.conflicts.map((c, j) => (
-                        <div key={j} className="ml-2 text-amber-600 dark:text-amber-400">
-                          • {c.reason} with {c.conflicting_pet}
-                        </div>
-                      ))}
+                      {warning.reason_groups && warning.reason_groups.length > 0
+                        ? warning.reason_groups.map((group, j) => (
+                            <div key={j} className="ml-2 text-amber-600 dark:text-amber-400">
+                              • {t(group.reason)} — {group.pets.map(p => p.name).join(', ')}
+                            </div>
+                          ))
+                        : warning.conflicts.map((c, j) => (
+                            <div key={j} className="ml-2 text-amber-600 dark:text-amber-400">
+                              • {t(c.reason)} with {c.conflicting_pet}
+                            </div>
+                          ))}
                     </li>
                   ))}
                 </ul>
@@ -729,13 +735,22 @@ export default function ScheduleForm(props: ScheduleFormProps) {
                     {t('schedule.conflictsDetected')}
                   </div>
                   <ul className="mt-2 space-y-2">
-                    {conflictResult.conflicts.map((conflict, i) => (
-                      <li key={i} className="text-sm text-amber-700">
-                        <span className="font-medium">{conflict.conflicting_pet}</span>
-                        <span className="text-amber-600"> ({conflict.time_slot})</span>
-                        <div className="text-amber-600">{conflict.reason}</div>
-                      </li>
-                    ))}
+                    {conflictResult.reason_groups && conflictResult.reason_groups.length > 0
+                      ? conflictResult.reason_groups.map((group, i) => (
+                          <li key={i} className="text-sm text-amber-700">
+                            <div className="text-amber-700 font-medium">{t(group.reason)}</div>
+                            <div className="text-amber-600">
+                              {group.pets.map(p => p.name).join(', ')}
+                            </div>
+                          </li>
+                        ))
+                      : conflictResult.conflicts.map((conflict, i) => (
+                          <li key={i} className="text-sm text-amber-700">
+                            <span className="font-medium">{conflict.conflicting_pet}</span>
+                            <span className="text-amber-600"> ({conflict.time_slot})</span>
+                            <div className="text-amber-600">{t(conflict.reason)}</div>
+                          </li>
+                        ))}
                   </ul>
                   <p className="text-xs text-amber-600 mt-2">
                     {t('schedule.conflictsWarning')}

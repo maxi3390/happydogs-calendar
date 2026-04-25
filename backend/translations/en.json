@@ -85,6 +85,14 @@
       "description": "{name} already has a schedule for {start} → {end} that overlaps or sits next to your selection. You may want to extend the existing schedule instead of creating a new one.",
       "editLink": "Edit existing schedule"
     },
+    "conflictReasons": {
+      "aggressive": "Aggressive pets cannot be scheduled together with other pets",
+      "bothHighDominance": "Two highly dominant pets cannot be scheduled together",
+      "sizeAndDominanceDiff": "Large size difference with significant dominance difference poses a risk",
+      "crossSpeciesIncompatibleTemperaments": "Incompatible temperaments between different species",
+      "anxiousVsPlayful": "Anxious pets may be stressed by highly playful pets with different dominance levels",
+      "sameSpeciesSameSexHighlyDominant": "Two same-species same-sex highly-dominant pets cannot be scheduled together"
+    },
     "dailyLimitReached": "Daily booking limit reached!",
     "dailyLimitReachedDetail": "There are already {count} bookings for {date} (limit: {limit}). You can still proceed, but please confirm.",
     "dailyLimitWarning": "Approaching daily booking limit",
@@ -309,7 +317,8 @@
     "note": "Note",
     "dom": "Dom",
     "pets": "Pets",
-    "kg": "kg"
+    "kg": "kg",
+    "dismiss": "Dismiss"
   },
   "errors": {
     "fetchFailed": "Failed to fetch data",
@@ -332,6 +341,7 @@
     "title": "Settings",
     "incompatibilities": "Pet Incompatibilities",
     "incompatibilityInfo": "Define custom incompatibility rules between specific pets. These rules will generate warnings when scheduling incompatible pets together.",
+    "incompatibilityMigrationBanner": "Custom incompatibility rules are now stored centrally — any local rules from before this update will need to be re-entered.",
     "addRule": "Add Rule",
     "newRule": "New Incompatibility Rule",
     "pet1": "First Pet",

@@ -41,7 +41,7 @@ class Schedule(models.Model):
     def check_conflicts(self):
         """
         Check for conflicts with other scheduled pets.
-        Returns list of conflicts with details.
+        Returns list of conflicts with details (one entry per overlapping pet).
         """
         conflicts = []
         overlapping = self.get_overlapping_schedules()
@@ -55,6 +55,7 @@ class Schedule(models.Model):
                     else f"{other_schedule.start_date} to {other_schedule.end_date}"
                 )
                 conflicts.append({
+                    'conflicting_pet_id': other_schedule.pet.id,
                     'conflicting_pet': other_schedule.pet.name,
                     'conflicting_schedule_id': other_schedule.id,
                     'reason': reasons[0] if reasons else None,
@@ -64,3 +65,34 @@ class Schedule(models.Model):
                 })
 
         return conflicts
+
+
+def collate_reason_groups(conflicts):
+    """Convert a per-overlap conflicts list into per-reason groups.
+
+    Input: list of dicts as produced by ``Schedule.check_conflicts()`` /
+    ``ScheduleViewSet.check_conflicts``. Each dict carries a ``reasons``
+    list (or a single ``reason`` string) plus the conflicting pet's
+    name, id, time_slot, and date_range.
+
+    Output: list of ``{reason, pets: [{id, name, time_slot, date_range}]}``
+    entries — one row per distinct reason, listing every overlap that
+    triggered it. Insertion order is preserved.
+    """
+    reason_to_pets = {}
+    order = []
+    for c in conflicts:
+        rs = c.get('reasons') or ([c['reason']] if c.get('reason') else [])
+        for reason in rs:
+            if not reason:
+                continue
+            if reason not in reason_to_pets:
+                reason_to_pets[reason] = []
+                order.append(reason)
+            reason_to_pets[reason].append({
+                'id': c.get('conflicting_pet_id'),
+                'name': c.get('conflicting_pet'),
+                'time_slot': c.get('time_slot'),
+                'date_range': c.get('date_range'),
+            })
+    return [{'reason': r, 'pets': reason_to_pets[r]} for r in order]

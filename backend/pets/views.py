@@ -9,7 +9,11 @@ from django.db.models import Q
 from django.conf import settings
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
-from .models import Owner, Pet, Schedule, VaccinationType, Document, MedicalNote, Vet
+from .models import (
+    Owner, Pet, PetIncompatibility, Schedule, VaccinationType,
+    Document, MedicalNote, Vet,
+)
+from domain.schedules.models import collate_reason_groups
 from nursery_settings.models import NurserySetting
 from .serializers import (
     OwnerSerializer,
@@ -17,6 +21,7 @@ from .serializers import (
     OwnerWithPetsSerializer,
     PetSerializer,
     PetListSerializer,
+    PetIncompatibilitySerializer,
     ScheduleSerializer,
     ScheduleCreateSerializer,
     ConflictCheckSerializer,
@@ -382,6 +387,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
 
         if conflicts:
             response_data['warnings'] = conflicts
+            response_data['warning_groups'] = collate_reason_groups(conflicts)
             return Response(response_data, status=status.HTTP_201_CREATED)
 
         return Response(response_data, status=status.HTTP_201_CREATED)
@@ -427,29 +433,34 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         if 'exclude_schedule_id' in data:
             overlapping_query = overlapping_query.exclude(pk=data['exclude_schedule_id'])
 
+        # Per-overlap entries (legacy, deprecated). The new shape
+        # (`reason_groups`) is computed below by collating these.
         conflicts = []
         for schedule in overlapping_query:
             is_compatible, reasons = pet.is_compatible_with(schedule.pet)
-            if not is_compatible:
-                date_range = (
-                    f"{schedule.start_date}"
-                    if schedule.start_date == schedule.end_date
-                    else f"{schedule.start_date} to {schedule.end_date}"
-                )
-                conflicts.append({
-                    'conflicting_pet_id': schedule.pet.id,
-                    'conflicting_pet': schedule.pet.name,
-                    'conflicting_schedule_id': schedule.id,
-                    'reason': reasons[0] if reasons else None,
-                    'reasons': reasons,
-                    'date_range': date_range,
-                    'time_slot': f"{schedule.start_time.strftime('%H:%M')} - {schedule.end_time.strftime('%H:%M')}"
-                })
+            if is_compatible:
+                continue
+            date_range = (
+                f"{schedule.start_date}"
+                if schedule.start_date == schedule.end_date
+                else f"{schedule.start_date} to {schedule.end_date}"
+            )
+            time_slot = f"{schedule.start_time.strftime('%H:%M')} - {schedule.end_time.strftime('%H:%M')}"
+            conflicts.append({
+                'conflicting_pet_id': schedule.pet.id,
+                'conflicting_pet': schedule.pet.name,
+                'conflicting_schedule_id': schedule.id,
+                'reason': reasons[0] if reasons else None,
+                'reasons': reasons,
+                'date_range': date_range,
+                'time_slot': time_slot,
+            })
 
         return Response({
             'has_conflicts': len(conflicts) > 0,
             'conflicts': conflicts,
-            'overlapping_pets_count': overlapping_query.count()
+            'reason_groups': collate_reason_groups(conflicts),
+            'overlapping_pets_count': overlapping_query.count(),
         })
 
     @extend_schema(
@@ -586,7 +597,8 @@ class ScheduleViewSet(viewsets.ModelViewSet):
                     'pet_id': pet.id,
                     'pet_name': pet.name,
                     'schedule_id': schedule.id,
-                    'conflicts': conflicts
+                    'conflicts': conflicts,
+                    'reason_groups': collate_reason_groups(conflicts),
                 })
 
             created_schedules.append(schedule_data)
@@ -836,4 +848,37 @@ class VetViewSet(viewsets.ModelViewSet):
 
     queryset = Vet.objects.all()
     serializer_class = VetSerializer
+    permission_classes = [IsAuthenticated]
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List custom pet-incompatibility rules",
+        description=(
+            "Each row stores a per-pet-pair incompatibility rule with a "
+            "free-text reason. Rules are order-independent: the API "
+            "normalises so the smaller pet id is always pet1."
+        ),
+        tags=['pet-incompatibilities'],
+    ),
+    create=extend_schema(
+        summary="Create a custom pet-incompatibility rule",
+        description="A pet cannot be incompatible with itself; the request will be rejected.",
+        tags=['pet-incompatibilities'],
+    ),
+    retrieve=extend_schema(tags=['pet-incompatibilities']),
+    update=extend_schema(tags=['pet-incompatibilities']),
+    partial_update=extend_schema(tags=['pet-incompatibilities']),
+    destroy=extend_schema(tags=['pet-incompatibilities']),
+)
+class PetIncompatibilityViewSet(viewsets.ModelViewSet):
+    """CRUD for the persisted custom incompatibility-rule catalog.
+
+    The pair is normalised in the serializer (smaller id stored as
+    ``pet1``), and the model's ``unique_together`` enforces the
+    "one rule per unordered pair" invariant.
+    """
+
+    queryset = PetIncompatibility.objects.select_related('pet1', 'pet2').all()
+    serializer_class = PetIncompatibilitySerializer
     permission_classes = [IsAuthenticated]

@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from django.db import transaction
-from .models import Owner, Pet, Schedule, Vaccination, VaccinationType, Document, MedicalNote, Vet
+from .models import (
+    Owner, Pet, PetIncompatibility, Schedule, Vaccination, VaccinationType,
+    Document, MedicalNote, Vet,
+)
 
 
 class VaccinationTypeSerializer(serializers.ModelSerializer):
@@ -202,6 +205,7 @@ class OwnerWithPetsSerializer(serializers.ModelSerializer):
 class ScheduleSerializer(serializers.ModelSerializer):
     pet_details = PetListSerializer(source='pet', read_only=True)
     conflicts = serializers.SerializerMethodField()
+    reason_groups = serializers.SerializerMethodField()
 
     class Meta:
         model = Schedule
@@ -209,7 +213,14 @@ class ScheduleSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'updated_at']
 
     def get_conflicts(self, obj):
-        return obj.check_conflicts()
+        if not hasattr(obj, '_cached_conflicts'):
+            obj._cached_conflicts = obj.check_conflicts()
+        return obj._cached_conflicts
+
+    def get_reason_groups(self, obj):
+        # Import here to avoid a circular import at module load.
+        from domain.schedules.models import collate_reason_groups
+        return collate_reason_groups(self.get_conflicts(obj))
 
 
 class ScheduleCreateSerializer(serializers.ModelSerializer):
@@ -315,3 +326,52 @@ class MedicalNoteSerializer(serializers.ModelSerializer):
         model = MedicalNote
         fields = ['id', 'pet', 'title', 'description', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
+
+
+class PetIncompatibilitySerializer(serializers.ModelSerializer):
+    pet1_name = serializers.CharField(source='pet1.name', read_only=True)
+    pet2_name = serializers.CharField(source='pet2.name', read_only=True)
+
+    class Meta:
+        model = PetIncompatibility
+        fields = ['id', 'pet1', 'pet2', 'pet1_name', 'pet2_name', 'reason',
+                  'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
+        # Disable DRF's auto-generated UniqueTogetherValidator: it would
+        # check the un-normalised (pet1, pet2) and miss reverse-order
+        # collisions. We do the canonical-pair uniqueness check by hand
+        # in validate() below.
+        validators = []
+
+    def validate(self, attrs):
+        pet1 = attrs.get('pet1') or getattr(self.instance, 'pet1', None)
+        pet2 = attrs.get('pet2') or getattr(self.instance, 'pet2', None)
+        if pet1 and pet2 and pet1.pk == pet2.pk:
+            raise serializers.ValidationError(
+                "A pet cannot be incompatible with itself."
+            )
+        # Order-independent uniqueness: collide on the canonical (lo, hi)
+        # pair regardless of which order the client sent.
+        if pet1 and pet2:
+            lo, hi = sorted([pet1.pk, pet2.pk])
+            qs = PetIncompatibility.objects.filter(pet1_id=lo, pet2_id=hi)
+            if self.instance is not None:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError(
+                    "An incompatibility rule already exists for this pet pair."
+                )
+        return attrs
+
+    def create(self, validated_data):
+        pet1, pet2 = validated_data['pet1'], validated_data['pet2']
+        if pet1.pk > pet2.pk:
+            validated_data['pet1'], validated_data['pet2'] = pet2, pet1
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        pet1 = validated_data.get('pet1', instance.pet1)
+        pet2 = validated_data.get('pet2', instance.pet2)
+        if pet1.pk > pet2.pk:
+            validated_data['pet1'], validated_data['pet2'] = pet2, pet1
+        return super().update(instance, validated_data)

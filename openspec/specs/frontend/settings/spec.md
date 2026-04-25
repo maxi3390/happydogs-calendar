@@ -128,21 +128,46 @@ The user SHALL be able to remove existing incompatibility rules. Deleted rules S
 - Then the rules list SHALL become empty
 - And browser local storage SHALL no longer contain any incompatibility rules
 
-### Requirement: Incompatibility Rules Local Persistence
+### Requirement: Pet incompatibility rules SHALL be persisted server-side
 
-All incompatibility rules SHALL be stored exclusively in browser local storage. Rules MUST survive page reloads but are not shared across devices or browsers.
+The Settings page SHALL list, create, update, and delete custom pet-incompatibility rules through the `/api/pet-incompatibilities/` REST endpoints — NOT through `localStorage`. The previous `pet_incompatibilities` localStorage key SHALL no longer be read or written by the application.
 
-#### Scenario: Rules persist after page reload
+The Settings page SHALL display a one-time informational banner stating that rules are now stored centrally and that any rules saved before the change in a single browser need to be re-entered. The banner SHALL be dismissible (per-user, persisted via localStorage so it doesn't recur).
 
-- Given the user has created one or more incompatibility rules
-- When the user reloads the settings page
-- Then all previously created rules SHALL be restored from local storage and displayed
+#### Scenario: Loading the Settings page
 
-#### Scenario: Rules are isolated to the browser
+- WHEN an authenticated user opens `/settings`
+- THEN the Incompatibilities section SHALL fetch its rows from `/api/pet-incompatibilities/`
+- AND no read of `localStorage['pet_incompatibilities']` SHALL occur
 
-- Given the user has created incompatibility rules in one browser
-- When the user opens the settings page in a different browser or device
-- Then the incompatibility rules from the original browser SHALL NOT be present
+#### Scenario: Creating a rule
+
+- GIVEN the user has selected two distinct pets and entered a reason
+- WHEN they submit the rule
+- THEN a POST to `/api/pet-incompatibilities/` SHALL be issued
+- AND the new rule SHALL appear in the list on success
+- AND no write to `localStorage['pet_incompatibilities']` SHALL occur
+
+#### Scenario: Editing a rule's reason
+
+- GIVEN an existing rule
+- WHEN the user changes the `reason` and submits
+- THEN a PATCH to `/api/pet-incompatibilities/{id}/` SHALL be issued
+- AND the new reason SHALL appear in the list
+
+#### Scenario: Deleting a rule
+
+- GIVEN an existing rule
+- WHEN the user activates the delete control and confirms
+- THEN a DELETE to `/api/pet-incompatibilities/{id}/` SHALL be issued
+- AND the rule SHALL be removed from the list
+
+#### Scenario: Migration banner
+
+- WHEN an authenticated user opens `/settings` for the first time after the upgrade
+- THEN a one-time informational banner SHALL display, explaining that previously-local rules need re-entry
+- AND the banner SHALL be dismissible
+- AND a dismissed banner SHALL NOT reappear on subsequent visits in the same browser
 
 ### Requirement: Vaccination Type Creation
 
