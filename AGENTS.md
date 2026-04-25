@@ -250,7 +250,7 @@ Run `make help` inside the repo for the full catalogue. Most-used targets:
 | `make restore`          | Restore the DB from the latest backup (or `BACKUP_FILE=path make restore`) — destructive; requires explicit confirmation |
 | `make destroy-db`       | Irreversibly remove the `happy-calendar_postgres_data` volume — destructive; requires explicit confirmation |
 | `make clean`            | Stop and remove containers; the database volume is preserved              |
-| `make upgrade`          | `backup` → `git pull` → `build` → `up` → `migrate` (use `SKIP_BACKUP=1` to skip step 1) |
+| `make upgrade`          | `backup` → `git pull` → `build` → `up` → `migrate` (use `SKIP_BACKUP=1` to skip step 1, `SKIP_PULL=1` to skip step 2) |
 | `make seed-example-data` | Populate the DB with a deterministic demo dataset (idempotent). Pass `SEED_ARGS="--reset"` to wipe the seeded rows first, or `SEED_ARGS=--allow-production` to bypass the `DEBUG=False` guard on staging/demo stacks. |
 
 ---
@@ -279,7 +279,7 @@ Full per-variable guidance lives as comments in `.env.example` itself; `make env
 
 `make restore` restores from the most recent backup under `backups/`, or from an explicit path when the operator passes `BACKUP_FILE=path/to/file.sql.gz`. Because the restore drops and recreates the database (`DROP DATABASE ... WITH (FORCE)` then loads the gzipped SQL), it **refuses to proceed without explicit confirmation**: interactive runs require `yes` typed at the prompt, non-interactive runs require `RESTORE_I_UNDERSTAND=yes` as an environment variable.
 
-`make upgrade` runs `make backup` as its first of five steps. If the backup fails, the upgrade halts before any mutation. Use `SKIP_BACKUP=1 make upgrade` only when a pre-upgrade backup was taken out-of-band and the step would be redundant.
+`make upgrade` runs `make backup` as its first of five steps. If the backup fails, the upgrade halts before any mutation. Use `SKIP_BACKUP=1 make upgrade` only when a pre-upgrade backup was taken out-of-band and the step would be redundant. The `git pull` (step 2) can likewise be skipped with `SKIP_PULL=1` when the operator has already pulled the latest code by hand or is rebuilding deliberately against the current local tree.
 
 The invariants are tracked in `openspec/specs/tooling/backup/` and (for the `make upgrade` integration) in `openspec/specs/tooling/upgrade/`.
 

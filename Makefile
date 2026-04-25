@@ -249,8 +249,12 @@ upgrade: volume-ensure
 		echo "[1/5] Backing up database..."; \
 		$(MAKE) backup; \
 	fi
-	@echo "[2/5] Pulling latest code..."
-	git pull
+	@if [ "$${SKIP_PULL:-}" = "1" ]; then \
+		echo "[2/5] WARNING: SKIP_PULL=1 set — skipping 'git pull' (using local code)."; \
+	else \
+		echo "[2/5] Pulling latest code..."; \
+		git pull; \
+	fi
 	@echo "[3/5] Rebuilding images..."
 	$(MAKE) build
 	@echo "[4/5] Restarting services..."
