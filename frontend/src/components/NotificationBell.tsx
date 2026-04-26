@@ -50,11 +50,16 @@ export default function NotificationBell() {
       href="/notifications"
       aria-label={t('notifications.page.title')}
       title={t('notifications.page.title')}
+      data-testid="notification-bell"
+      data-unread-count={unread}
       className="relative flex items-center justify-center p-2 text-foreground/70 hover:text-foreground hover:bg-secondary/50 rounded-xl transition-colors"
     >
       <Bell className="w-4 h-4" />
       {unread > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] px-1 inline-flex items-center justify-center text-[10px] font-bold rounded-full bg-destructive text-white">
+        <span
+          data-testid="notification-bell-badge"
+          className="absolute -top-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] px-1 inline-flex items-center justify-center text-[10px] font-bold rounded-full bg-destructive text-white"
+        >
           {unread > 99 ? '99+' : unread}
         </span>
       )}
