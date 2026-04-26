@@ -12,8 +12,20 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'email', 'first_name', 'last_name', 'full_name', 'role',
-                  'is_active', 'created_at', 'updated_at']
+                  'language', 'is_active', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class UserLanguageSerializer(serializers.ModelSerializer):
+    """Serializer for the self-service ``PATCH /api/users/me/language/`` endpoint.
+
+    Only the ``language`` field is editable; everything else is rejected with
+    a serializer-level validation error rather than silently ignored, so a
+    malformed client request fails loudly.
+    """
+    class Meta:
+        model = User
+        fields = ['language']
 
 
 class UserCreateSerializer(serializers.ModelSerializer):

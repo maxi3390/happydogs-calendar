@@ -263,3 +263,62 @@ class ChangePasswordTests(APITestCase):
             'new_password_confirm': 'NewStrong456!',
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class UserLanguageTests(APITestCase):
+    def setUp(self):
+        self.url = reverse('user-language')
+        self.password = 'TestPass123!'
+        self.user = create_user(email='lang@example.com', password=self.password)
+        auth_client(self.client, self.user, self.password)
+
+    def test_default_language_is_spanish(self):
+        # `create_user` doesn't override language → model default is 'es'.
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.language, 'es')
+
+    def test_login_response_includes_language(self):
+        # Hit /api/auth/login/ to confirm the user shape carries the field.
+        login_url = reverse('login')
+        response = self.client.post(
+            login_url,
+            {'email': self.user.email, 'password': self.password},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['user']['language'], 'es')
+
+    def test_register_response_defaults_to_spanish(self):
+        register_url = reverse('register')
+        response = self.client.post(register_url, {
+            'email': 'new.lang@example.com',
+            'password': 'StrongPass123!',
+            'password_confirm': 'StrongPass123!',
+            'first_name': 'X', 'last_name': 'Y',
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['user']['language'], 'es')
+
+    def test_patch_self_succeeds(self):
+        response = self.client.patch(self.url, {'language': 'en'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['language'], 'en')
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.language, 'en')
+
+    def test_patch_self_unknown_value_400(self):
+        response = self.client.patch(self.url, {'language': 'fr'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.language, 'es')
+
+    def test_patch_self_unauthenticated_401(self):
+        self.client.credentials()  # drop auth header
+        response = self.client.patch(self.url, {'language': 'en'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_patch_self_only_affects_caller(self):
+        other = create_user(email='other.lang@example.com')
+        self.client.patch(self.url, {'language': 'en'}, format='json')
+        other.refresh_from_db()
+        self.assertEqual(other.language, 'es')  # unchanged

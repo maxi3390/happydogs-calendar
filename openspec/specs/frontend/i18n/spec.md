@@ -221,3 +221,40 @@ While translations are being fetched from the API, the application SHALL display
 - Given the user switches to a different language
 - When new translations need to be fetched from the API
 - Then a loading state MAY be shown until the new translations are available
+
+### Requirement: TranslationProvider SHALL prefer the authenticated user's `language` over `localStorage`
+
+The `TranslationProvider` SHALL pick the active language by walking the following sources in order, taking the first non-empty value:
+
+1. `useAuth().user?.language` — the authenticated user's stored preference (returned by login / register / profile responses).
+2. `localStorage.getItem('preferred_language')` — the device-wide last choice. Used on login / register / public surfaces where there is no user yet.
+3. The browser's primary language from `navigator.language` (only the `'es'` branch promotes the default; everything else falls through).
+4. The hardcoded default `'es'`.
+
+When the user changes the language via `LanguageSwitcher`:
+
+- The component SHALL update `localStorage.preferred_language`.
+- IF authenticated, the component SHALL also fire `PATCH /api/users/me/language/` with the new value and apply the returned user shape to the auth context. The PATCH is fire-and-forget — its failure must not block the local switch.
+
+#### Scenario: Two staff members on the same device
+
+- GIVEN Alice has `user.language = "en"` server-side
+- AND Bob has `user.language = "es"` server-side
+- AND `localStorage.preferred_language = "en"` (left over from Alice's earlier session)
+- WHEN Bob logs in on the same browser
+- THEN the UI SHALL render in Spanish (Bob's stored preference wins over the stale `localStorage`)
+
+#### Scenario: Pre-auth surface uses localStorage
+
+- GIVEN no user is authenticated
+- AND `localStorage.preferred_language = "en"`
+- WHEN the login page renders
+- THEN the UI SHALL render in English
+
+#### Scenario: Authenticated change persists server-side
+
+- GIVEN Alice is logged in with `language = "es"`
+- WHEN she clicks the EN entry in `LanguageSwitcher`
+- THEN a `PATCH /api/users/me/language/` SHALL be sent with `{"language": "en"}`
+- AND `localStorage.preferred_language` SHALL be `"en"`
+- AND on her next login from any device the UI SHALL render in English

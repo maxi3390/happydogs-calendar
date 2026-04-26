@@ -230,10 +230,26 @@ export async function setupAuth(page: Page, opts?: { admin?: boolean }) {
 /**
  * Set the preferred language in localStorage.
  * Must be called after navigating to the origin (or after setupAuth which does that).
+ *
+ * Also patches the cached ``auth_user`` blob's ``language`` field so the
+ * authenticated-user precedence in TranslationProvider matches the test's
+ * intent. Without this, an authenticated test that wants to start in English
+ * would see Spanish — the user's stored preference (``es`` by default)
+ * outranks the device-wide localStorage value.
  */
 export async function setLanguage(page: Page, lang: 'en' | 'es') {
   await page.evaluate((l) => {
     localStorage.setItem('preferred_language', l);
+    const raw = localStorage.getItem('auth_user');
+    if (raw) {
+      try {
+        const u = JSON.parse(raw);
+        u.language = l;
+        localStorage.setItem('auth_user', JSON.stringify(u));
+      } catch {
+        // ignore — the test helper has best-effort semantics
+      }
+    }
   }, lang);
 }
 

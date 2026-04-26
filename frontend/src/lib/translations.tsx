@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { Language, LanguageInfo, Translations, TranslationValue } from '@/domain/translations/types';
+import { useAuth } from '@/lib/auth';
+import { usersApi } from '@/domain/users/api';
 
 export type { Language, LanguageInfo } from '@/domain/translations/types';
 
@@ -44,6 +46,7 @@ function interpolate(text: string, params?: Record<string, string | number>): st
 }
 
 export function TranslationProvider({ children }: { children: React.ReactNode }) {
+  const { user, applyUser } = useAuth();
   const [language, setLanguageState] = useState<Language>('es');
   const [translations, setTranslations] = useState<Translations>({});
   const [loading, setLoading] = useState(true);
@@ -52,19 +55,31 @@ export function TranslationProvider({ children }: { children: React.ReactNode })
     { code: 'es', name: 'Spanish', nativeName: 'Español' }
   ]);
 
-  // Load saved language preference
+  // Resolve the active language from four sources, in order:
+  //
+  //   1. user.language (the authenticated user's stored preference).
+  //   2. localStorage.preferred_language (per-device fallback used on
+  //      pre-auth surfaces — login / register / public calendar).
+  //   3. navigator.language (browser sniff).
+  //   4. 'es' (the product default).
+  //
+  // The user-bound source takes precedence so a shared kiosk doesn't
+  // flip languages between staff who happen to share a browser.
   useEffect(() => {
+    if (user?.language === 'en' || user?.language === 'es') {
+      setLanguageState(user.language as Language);
+      return;
+    }
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved && (saved === 'en' || saved === 'es')) {
       setLanguageState(saved as Language);
     } else {
-      // Try to detect browser language
       const browserLang = navigator.language.split('-')[0];
       if (browserLang === 'es') {
         setLanguageState('es');
       }
     }
-  }, []);
+  }, [user?.language]);
 
   // Fetch translations when language changes
   useEffect(() => {
@@ -108,7 +123,13 @@ export function TranslationProvider({ children }: { children: React.ReactNode })
   const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem(STORAGE_KEY, lang);
-  }, []);
+    // Persist to the user record when authenticated so the choice
+    // sticks across devices. Fire-and-forget — the failure mode is a
+    // benign "the language flips back on next login," not data loss.
+    if (user) {
+      usersApi.setLanguage(lang).then(applyUser).catch(() => {});
+    }
+  }, [user, applyUser]);
 
   const t = useCallback((key: string, params?: Record<string, string | number>): string => {
     const value = getNestedValue(translations, key);

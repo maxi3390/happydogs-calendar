@@ -16,8 +16,24 @@ test.describe('Language Switching', () => {
   });
 
   test('should default to Spanish when no preference is set', async ({ page }) => {
-    // Clear localStorage language preference
-    await page.evaluate(() => localStorage.removeItem('preferred_language'));
+    // Clear both the per-device localStorage value AND the cached user's
+    // ``language`` field — the latter takes precedence over the former
+    // once a user is logged in (per the per-user-language preference
+    // change). With both gone, the provider falls back to the product
+    // default of Spanish.
+    await page.evaluate(() => {
+      localStorage.removeItem('preferred_language');
+      const raw = localStorage.getItem('auth_user');
+      if (raw) {
+        try {
+          const u = JSON.parse(raw);
+          delete u.language;
+          localStorage.setItem('auth_user', JSON.stringify(u));
+        } catch {
+          // ignore
+        }
+      }
+    });
     await page.reload({ waitUntil: 'networkidle' });
 
     // Default language state is 'es'

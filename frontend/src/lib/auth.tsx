@@ -142,6 +142,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const applyUser = useCallback((nextUser: User) => {
+    saveAuthState(tokens, nextUser);
+  }, [tokens, saveAuthState]);
+
   const value: AuthContextType = {
     user,
     tokens,
@@ -152,6 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     register,
     logout,
     refreshToken,
+    applyUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
