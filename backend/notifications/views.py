@@ -88,6 +88,21 @@ class NotificationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         ).update(dismissed_at=timezone.now())
         return Response({'dismissed': count})
 
+    @extend_schema(
+        summary="Mark all of the user's unread notifications as read",
+        request=None,
+        responses={200: dict},
+        tags=['notifications'],
+    )
+    @action(detail=False, methods=['post'])
+    def mark_all_read(self, request):
+        count = Notification.objects.filter(
+            recipient_user=request.user,
+            dismissed_at__isnull=True,
+            read_at__isnull=True,
+        ).update(read_at=timezone.now())
+        return Response({'marked_read': count})
+
     def _get_owned(self, pk):
         """Look up a notification, returning 404 if it doesn't belong
         to the requesting user. Treating cross-user IDs as 'not found'

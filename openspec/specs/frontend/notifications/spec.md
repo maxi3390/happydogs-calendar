@@ -52,7 +52,12 @@ A row SHALL render forward-to-owner buttons ONLY when its `forward` field is non
 
 The frontend SHALL NOT do any placeholder substitution on the forward block — the API response already contains the rendered text using the operator's templates (or the localised defaults when the operator left a field empty).
 
-A "Dismiss all" button at the top of the page SHALL `POST` to `/api/notifications/dismiss_all/` and clear the list.
+Each row SHALL surface its read state visually: unread rows render a primary-coloured dot indicator next to the title and a subtle border highlight; read rows render neither.
+
+Two top-level bulk-action buttons SHALL appear at the top of the page:
+
+- A **Mark all read** button that `POST`s to `/api/notifications/mark_all_read/`. It SHALL be disabled when no row in the current view is unread.
+- A **Dismiss all** button that `POST`s to `/api/notifications/dismiss_all/` and clears the list.
 
 When the list is empty, the page SHALL render a translated empty-state message (`notifications.page.empty`).
 
@@ -97,6 +102,28 @@ When the master flag is disabled, the page SHALL render an empty-state card so t
 - WHEN the operator clicks Dismiss on one
 - THEN that row SHALL disappear from the list
 - AND the bell badge SHALL decrement on next poll
+
+#### Scenario: Mark all read clears every unread indicator
+
+- GIVEN the page shows 5 rows of which 3 are unread
+- WHEN the operator clicks "Mark all read"
+- THEN the page SHALL refresh the list
+- AND every row's unread dot SHALL disappear
+- AND the "Mark all read" button SHALL become disabled
+- AND the bell badge SHALL drop to 0 on next poll
+
+#### Scenario: Mark all read is disabled when there is nothing to mark
+
+- GIVEN the page shows 5 rows, all already read
+- WHEN it renders
+- THEN the "Mark all read" button SHALL be disabled
+
+#### Scenario: Read state is visible on each row
+
+- GIVEN a notification has `read_at = NULL`
+- WHEN the page renders the row
+- THEN the row SHALL show the unread dot indicator and a primary-coloured border highlight
+- AND when the operator clicks the per-row Check button or the bulk "Mark all read", the indicators SHALL disappear after the next reload
 
 #### Scenario: Empty state
 

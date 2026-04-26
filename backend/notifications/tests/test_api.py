@@ -181,6 +181,56 @@ class NotificationActionsAPITests(_BaseNotificationsTest):
         other_notif.refresh_from_db()
         self.assertIsNone(other_notif.dismissed_at)
 
+    def test_mark_all_read_only_affects_own_unread(self):
+        from django.utils import timezone
+        # Self.notif is unread; create one already-read row, one
+        # dismissed row, and one for the other user — none of them
+        # should be touched by the bulk action.
+        already_read = Notification.objects.create(
+            kind=Notification.KIND_PET_BIRTHDAY,
+            pet=self.pet, event_date=date.today() + timedelta(days=1),
+            recipient_user=self.user, payload={'pet_name': 'Luna'},
+            read_at=timezone.now(),
+        )
+        dismissed = Notification.objects.create(
+            kind=Notification.KIND_PET_BIRTHDAY,
+            pet=self.pet, event_date=date.today() + timedelta(days=2),
+            recipient_user=self.user, payload={'pet_name': 'Luna'},
+            dismissed_at=timezone.now(),
+        )
+        other = Notification.objects.create(
+            kind=Notification.KIND_PET_BIRTHDAY,
+            pet=self.pet, event_date=date.today(),
+            recipient_user=self.other_user, payload={'pet_name': 'Luna'},
+        )
+        url = reverse('notification-mark-all-read')
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['marked_read'], 1)
+
+        self.notif.refresh_from_db()
+        self.assertIsNotNone(self.notif.read_at)
+
+        # The already-read row's read_at SHOULD NOT change.
+        before = already_read.read_at
+        already_read.refresh_from_db()
+        self.assertEqual(already_read.read_at, before)
+
+        # Dismissed rows are excluded.
+        dismissed.refresh_from_db()
+        self.assertIsNone(dismissed.read_at)
+
+        # Other user's notification is untouched.
+        other.refresh_from_db()
+        self.assertIsNone(other.read_at)
+
+    def test_mark_all_read_returns_zero_when_no_unread(self):
+        # The single notification in setUp is unread; mark it first.
+        self.client.post(reverse('notification-mark-all-read'))
+        # Second call should report 0.
+        response = self.client.post(reverse('notification-mark-all-read'))
+        self.assertEqual(response.data['marked_read'], 0)
+
 
 class NotificationPreferenceAPITests(_BaseNotificationsTest):
     def setUp(self):

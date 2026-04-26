@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Bell, Check, Mail, MessageCircle, Trash2, X } from 'lucide-react';
+import { Bell, Check, CheckCheck, Mail, MessageCircle, Trash2, X } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -44,10 +44,16 @@ function NotificationsPage() {
     await api.notifications.dismiss(n.id);
     reload();
   };
+  const handleMarkAllRead = async () => {
+    await api.notifications.markAllRead();
+    reload();
+  };
   const handleDismissAll = async () => {
     await api.notifications.dismissAll();
     reload();
   };
+
+  const hasUnread = rows.some(r => !r.read_at);
 
   if (!enabled) {
     return (
@@ -73,12 +79,20 @@ function NotificationsPage() {
             <Bell className="w-6 h-6" />
             {t('notifications.page.title')}
           </h1>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button
               variant={unreadOnly ? 'primary' : 'secondary'}
               onClick={() => setUnreadOnly(v => !v)}
             >
               {t('notifications.page.filterUnread')}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={handleMarkAllRead}
+              disabled={!hasUnread}
+            >
+              <CheckCheck className="w-4 h-4 mr-1" />
+              {t('notifications.page.markAllRead')}
             </Button>
             <Button variant="secondary" onClick={handleDismissAll}>
               <Trash2 className="w-4 h-4 mr-1" />

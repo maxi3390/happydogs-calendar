@@ -105,6 +105,7 @@ The system SHALL provide REST endpoints under `/api/notifications/`:
 - `GET /api/notifications/` — list undismissed notifications for the logged-in user, ordered by `event_date` descending then `created_at` descending. Optional query: `?unread_only=1` returns only rows where `read_at IS NULL`.
 - `POST /api/notifications/{id}/mark_read/` — set `read_at = now()`. Idempotent.
 - `POST /api/notifications/{id}/dismiss/` — set `dismissed_at = now()`. Idempotent.
+- `POST /api/notifications/mark_all_read/` — set `read_at = now()` on every undismissed and currently unread notification for the logged-in user. Returns `{"marked_read": n}`. Idempotent: a second call with no remaining unread rows returns `marked_read: 0`. Already-read rows SHALL NOT have their `read_at` overwritten.
 - `POST /api/notifications/dismiss_all/` — set `dismissed_at = now()` on every undismissed notification for the logged-in user.
 - `GET /api/notifications/preferences/` — return the logged-in user's `NotificationPreference` (creating it with defaults if absent).
 - `PATCH /api/notifications/preferences/` — update the logged-in user's preferences.
@@ -125,6 +126,23 @@ A user SHALL only ever see and act on their own notifications. Cross-user reads,
 - WHEN Alice `POST /api/notifications/dismiss_all/`
 - THEN Alice's 3 notifications SHALL all have `dismissed_at` set
 - AND Bob's 5 SHALL be untouched
+
+#### Scenario: `mark_all_read` only touches the caller's unread, non-dismissed notifications
+
+- GIVEN Alice has 1 unread + 1 already-read + 1 dismissed notification
+- AND Bob has 1 unread notification
+- WHEN Alice `POST /api/notifications/mark_all_read/`
+- THEN the response SHALL be HTTP 200 with `{"marked_read": 1}`
+- AND Alice's previously-unread row SHALL have a non-null `read_at`
+- AND Alice's already-read row's `read_at` SHALL be unchanged (not overwritten)
+- AND Alice's dismissed row's `read_at` SHALL remain `NULL`
+- AND Bob's row SHALL remain unread
+
+#### Scenario: `mark_all_read` is idempotent
+
+- GIVEN Alice has just called `mark_all_read` and her inbox has no remaining unread rows
+- WHEN she calls `POST /api/notifications/mark_all_read/` again
+- THEN the response SHALL be HTTP 200 with `{"marked_read": 0}`
 
 #### Scenario: GET preferences creates defaults on first call
 
