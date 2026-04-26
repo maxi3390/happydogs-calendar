@@ -35,9 +35,9 @@ class RegisterView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        
+
         refresh = RefreshToken.for_user(user)
-        
+
         return Response({
             'user': UserSerializer(user).data,
             'tokens': {
@@ -62,10 +62,10 @@ class LoginView(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         email = serializer.validated_data['email']
         password = serializer.validated_data['password']
-        
+
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
@@ -73,21 +73,21 @@ class LoginView(APIView):
                 {'error': 'Invalid credentials'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
-        
+
         if not user.check_password(password):
             return Response(
                 {'error': 'Invalid credentials'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
-        
+
         if not user.is_active:
             return Response(
                 {'error': 'Account is disabled'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
-        
+
         refresh = RefreshToken.for_user(user)
-        
+
         return Response({
             'user': UserSerializer(user).data,
             'tokens': {
@@ -171,11 +171,11 @@ class ChangePasswordView(generics.UpdateAPIView):
     def put(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         user = self.get_object()
         user.set_password(serializer.validated_data['new_password'])
         user.save()
-        
+
         return Response({'message': 'Password changed successfully'})
 
 
@@ -210,7 +210,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """Admin-only viewset for managing users."""
     queryset = User.objects.all()
     permission_classes = [IsAdmin]
-    
+
     def get_serializer_class(self):
         if self.action in ['update', 'partial_update']:
             return AdminUserUpdateSerializer

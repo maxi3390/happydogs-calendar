@@ -1,4 +1,4 @@
-from datetime import date, time, timedelta
+from datetime import date, time
 from django.contrib.auth import get_user_model
 from pets.models import Owner, Pet, Schedule, Vaccination, VaccinationType, Vet
 

@@ -22,7 +22,7 @@ urlpatterns = [
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('auth/profile/', ProfileView.as_view(), name='profile'),
     path('auth/change-password/', ChangePasswordView.as_view(), name='change_password'),
-    
+
     # User management (admin only)
     path('', include(router.urls)),
 ]

@@ -174,7 +174,11 @@ class PetWithOwnerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Pet
-        fields = ['id', 'name', 'species', 'breed', 'age', 'temperament', 'dominance_level', 'size', 'neutered', 'sex', 'birth_date', 'special_notes', 'owner', 'owner_details', 'vaccinations']
+        fields = [
+            'id', 'name', 'species', 'breed', 'age', 'temperament',
+            'dominance_level', 'size', 'neutered', 'sex', 'birth_date',
+            'special_notes', 'owner', 'owner_details', 'vaccinations',
+        ]
 
 
 class OwnerWithPetsSerializer(serializers.ModelSerializer):

@@ -4,7 +4,7 @@ from django.db import models
 
 class CustomUserManager(BaseUserManager):
     """Custom user manager for email-based authentication."""
-    
+
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('The Email field must be set')
@@ -29,11 +29,11 @@ class CustomUserManager(BaseUserManager):
 
 class User(AbstractUser):
     """Custom User model with role-based access control."""
-    
+
     class Role(models.TextChoices):
         ADMIN = 'admin', 'Admin'
         USER = 'user', 'User'
-    
+
     username = None  # Remove username field
     email = models.EmailField('email address', unique=True)
     role = models.CharField(

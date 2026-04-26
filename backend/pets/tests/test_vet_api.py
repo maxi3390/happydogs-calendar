@@ -10,7 +10,6 @@ from tests.factories import (
     create_pet,
     create_vet,
 )
-from pets.models import Owner, Pet, Vet
 
 
 class VetModelTests(TestCase):

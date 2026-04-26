@@ -1,4 +1,4 @@
-.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend test-frontend test-frontend-debug lint clean rebuild create-admin seed-example-data env env-check init upgrade backup restore volume-ensure destroy-db notifications-run
+.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend test-frontend test-frontend-debug lint lint-backend clean rebuild create-admin seed-example-data env env-check init upgrade backup restore volume-ensure destroy-db notifications-run
 
 POSTGRES_VOLUME_NAME := happy-calendar_postgres_data
 
@@ -200,9 +200,14 @@ test-coverage:
 	docker compose exec backend coverage html
 
 # Development
-lint:
+# `make lint` runs only the backend lint today; the frontend half is broken
+# upstream because Next 16 removed `next lint` and the package script has
+# not been migrated to ESLint-direct yet (tracked separately). Once that
+# is resolved, append the frontend invocation to this rule.
+lint: lint-backend
+
+lint-backend:
 	docker compose exec backend python -m flake8 .
-	docker compose exec frontend npm run lint
 
 format:
 	docker compose exec backend python -m black .

@@ -147,15 +147,20 @@ class Pet(models.Model):
                 reasons.append(self.CONFLICT_REASON_CROSS_SPECIES_TEMPERAMENTS)
 
         # Rule 5: Anxious pets should not be with playful/energetic pets if dominance diff > 4
-        if ('anxious' in [self.temperament, other_pet.temperament] and
-            'playful' in [self.temperament, other_pet.temperament] and
-            dominance_diff > 4):
+        if (
+            'anxious' in [self.temperament, other_pet.temperament]
+            and 'playful' in [self.temperament, other_pet.temperament]
+            and dominance_diff > 4
+        ):
             reasons.append(self.CONFLICT_REASON_ANXIOUS_VS_PLAYFUL)
 
         # Rule 6: Two same-species same-sex highly-dominant pets (>= 7)
-        if (self.species == other_pet.species and
-            self.sex == other_pet.sex and
-            self.dominance_level >= 7 and other_pet.dominance_level >= 7):
+        if (
+            self.species == other_pet.species
+            and self.sex == other_pet.sex
+            and self.dominance_level >= 7
+            and other_pet.dominance_level >= 7
+        ):
             reasons.append(self.CONFLICT_REASON_SAME_SPECIES_SAME_SEX_HIGHLY_DOMINANT)
 
         # Custom incompatibility rules — order-independent lookup against

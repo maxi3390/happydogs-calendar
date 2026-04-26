@@ -9,7 +9,7 @@ django-q so the deployment stays at "just docker compose". The
 container restart policy supplies the resilience.
 """
 
-from datetime import date, datetime
+from datetime import datetime
 import logging
 import time
 

@@ -1,0 +1,21 @@
+[flake8]
+# Project-level lint config. See openspec/specs/tooling/lint/spec.md for the
+# rationale. Two knobs only:
+#
+#   max-line-length = 120
+#       Matches the actual code style; the default 79 was being universally
+#       ignored, leaving the linter useless. 120 is the modern Python default
+#       (black, pylint, ruff all converge here).
+#
+#   exclude
+#       Auto-generated migrations and vendored / build directories are not
+#       worth linting by hand. Hand-written data migrations live inside
+#       ``migrations/`` too — we accept that those go unlinted; they are
+#       short and not a typical bug surface.
+max-line-length = 120
+exclude =
+    migrations,
+    staticfiles,
+    media,
+    .venv,
+    __pycache__

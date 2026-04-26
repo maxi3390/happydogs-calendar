@@ -13,7 +13,7 @@ import json
 import zipfile
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any, Callable
+from typing import Any
 
 from django.db import models
 
