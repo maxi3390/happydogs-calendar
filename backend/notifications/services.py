@@ -64,7 +64,7 @@ def generate_for_date(today: date) -> GenerationResult:
     settings = NurserySetting.load()
     _auto_dismiss_stale(today)
 
-    recipients = list(User.objects.filter(is_active=True))
+    recipients = list(_recipient_queryset(settings))
     if not recipients:
         return result
 
@@ -100,6 +100,23 @@ def generate_for_date(today: date) -> GenerationResult:
 
 
 _STALE_THRESHOLD_DAYS = 7
+
+
+def _recipient_queryset(settings):
+    """Return the queryset of users that the cron should fan out to.
+
+    Active users are filtered by ``last_login`` to avoid spamming
+    ex-employees and abandoned accounts. Users with ``last_login=NULL``
+    (just-created, never authenticated) are excluded — they cannot see
+    the notification anyway. A lookback of ``0`` disables the filter
+    and reverts to the legacy "every active user" behaviour.
+    """
+    qs = User.objects.filter(is_active=True)
+    lookback = settings.notification_recipient_lookback_days
+    if lookback > 0:
+        cutoff = timezone.now() - timedelta(days=lookback)
+        qs = qs.filter(last_login__gte=cutoff)
+    return qs
 
 
 def _auto_dismiss_stale(today: date) -> int:

@@ -19,6 +19,13 @@ def _next_id():
 def create_user(email=None, password='TestPass123!', **kwargs):
     kwargs.setdefault('first_name', 'Test')
     kwargs.setdefault('last_name', 'User')
+    # Most tests treat the user as "currently active" — without a
+    # ``last_login`` the notifications cron would exclude them under
+    # the new ``notification_recipient_lookback_days`` filter, breaking
+    # tests that pre-date the filter. Tests that need a stale or
+    # never-logged-in user can pass ``last_login=None`` explicitly.
+    from django.utils import timezone
+    kwargs.setdefault('last_login', timezone.now())
     if email is None:
         email = f'user{_next_id()}@example.com'
     return User.objects.create_user(email=email, password=password, **kwargs)

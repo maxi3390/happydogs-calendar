@@ -15,6 +15,7 @@ class NurserySettingSerializer(serializers.ModelSerializer):
             'notifications_egress_enabled',
             'notifications_birthdays_enabled',
             'notifications_deworming_enabled',
+            'notification_recipient_lookback_days',
             'updated_at',
         ]
         read_only_fields = ['updated_at']
