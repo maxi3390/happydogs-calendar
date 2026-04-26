@@ -1,4 +1,4 @@
-from datetime import date, time
+from datetime import date
 from io import BytesIO
 from PIL import Image as PILImage
 from django.core.files.uploadedfile import SimpleUploadedFile

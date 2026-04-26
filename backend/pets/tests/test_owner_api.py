@@ -1,6 +1,5 @@
 from io import BytesIO
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
 from django.urls import reverse
 from PIL import Image as PILImage
 from rest_framework.test import APITestCase

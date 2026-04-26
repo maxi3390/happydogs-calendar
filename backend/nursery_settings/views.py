@@ -44,8 +44,14 @@ def update_nursery_settings(request):
 
 @extend_schema(
     summary="Upload system logo",
-    description="Upload or replace the system logo image. Accepted formats: JPEG, PNG, GIF, WEBP. Max size: 5 MB. Requires admin role.",
-    request={'content': {'multipart/form-data': {'type': 'object', 'properties': {'logo': {'type': 'string', 'format': 'binary'}}}}},
+    description=(
+        "Upload or replace the system logo image. Accepted formats: "
+        "JPEG, PNG, GIF, WEBP. Max size: 5 MB. Requires admin role."
+    ),
+    request={'content': {'multipart/form-data': {
+        'type': 'object',
+        'properties': {'logo': {'type': 'string', 'format': 'binary'}},
+    }}},
     responses={200: NurserySettingSerializer},
     tags=['settings']
 )

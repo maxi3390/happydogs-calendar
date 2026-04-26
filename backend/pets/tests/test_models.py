@@ -1,7 +1,7 @@
 from datetime import date, time, timedelta
 from django.test import TestCase
 from tests.factories import create_owner, create_pet, create_schedule, create_vaccination_type, create_vaccination
-from pets.models import Owner, Pet, PetIncompatibility, Schedule, VaccinationType, Vaccination
+from pets.models import Owner, Pet, PetIncompatibility
 
 
 class OwnerModelTests(TestCase):

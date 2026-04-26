@@ -68,8 +68,16 @@ class DocumentAPITests(APITestCase):
 
     def test_list_documents_filtered_by_owner(self):
         other_owner = create_owner()
-        self.client.post(self.list_url, {'owner': self.owner.id, 'file': _make_test_image('c.png')}, format='multipart')
-        self.client.post(self.list_url, {'owner': other_owner.id, 'file': _make_test_image('d.png')}, format='multipart')
+        self.client.post(
+            self.list_url,
+            {'owner': self.owner.id, 'file': _make_test_image('c.png')},
+            format='multipart',
+        )
+        self.client.post(
+            self.list_url,
+            {'owner': other_owner.id, 'file': _make_test_image('d.png')},
+            format='multipart',
+        )
         response = self.client.get(self.list_url, {'owner_id': self.owner.id})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)

@@ -10,9 +10,15 @@ from domain.vets.models import Vet
 
 @admin.register(Owner)
 class OwnerAdmin(admin.ModelAdmin):
-    list_display = ['first_name', 'last_name', 'email', 'phone', 'city', 'province', 'pet_count', 'primary_vet', 'emergency_vet']
+    list_display = [
+        'first_name', 'last_name', 'email', 'phone', 'city', 'province',
+        'pet_count', 'primary_vet', 'emergency_vet',
+    ]
     list_filter = ['created_at', 'province', 'country']
-    search_fields = ['first_name', 'last_name', 'email', 'phone', 'street', 'city', 'state', 'province', 'country']
+    search_fields = [
+        'first_name', 'last_name', 'email', 'phone', 'street',
+        'city', 'state', 'province', 'country',
+    ]
     raw_id_fields = ['primary_vet', 'emergency_vet']
 
     def pet_count(self, obj):
@@ -27,7 +33,10 @@ class VaccinationInline(admin.TabularInline):
 
 @admin.register(Pet)
 class PetAdmin(admin.ModelAdmin):
-    list_display = ['name', 'species', 'sex', 'neutered', 'birth_date', 'temperament', 'dominance_level', 'size', 'owner', 'vet_override']
+    list_display = [
+        'name', 'species', 'sex', 'neutered', 'birth_date', 'temperament',
+        'dominance_level', 'size', 'owner', 'vet_override',
+    ]
     list_filter = ['species', 'temperament', 'size', 'sex', 'neutered']
     search_fields = ['name', 'owner__first_name', 'owner__last_name']
     inlines = [VaccinationInline]

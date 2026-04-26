@@ -764,8 +764,14 @@ class Command(BaseCommand):
         for data in SEED_OWNERS:
             # Resolve vet FK names into FK ids before composing the payload.
             resolved = dict(data)
-            primary_vet = vets_by_name[resolved.pop('primary_vet_name')] if resolved.get('primary_vet_name') else None
-            emergency_vet = vets_by_name[resolved.pop('emergency_vet_name')] if resolved.get('emergency_vet_name') else None
+            primary_vet = (
+                vets_by_name[resolved.pop('primary_vet_name')]
+                if resolved.get('primary_vet_name') else None
+            )
+            emergency_vet = (
+                vets_by_name[resolved.pop('emergency_vet_name')]
+                if resolved.get('emergency_vet_name') else None
+            )
             # Drop the *_name sentinels (if they came in as falsy) and the email lookup key.
             resolved.pop('primary_vet_name', None)
             resolved.pop('emergency_vet_name', None)
@@ -801,7 +807,10 @@ class Command(BaseCommand):
         for data in SEED_PETS:
             owner = owners_by_email[data['owner_email']]
             resolved = dict(data)
-            vet_override = vets_by_name[resolved.pop('vet_override_name')] if resolved.get('vet_override_name') else None
+            vet_override = (
+                vets_by_name[resolved.pop('vet_override_name')]
+                if resolved.get('vet_override_name') else None
+            )
             resolved.pop('vet_override_name', None)
 
             # Resolve notification-related dynamic fields against today.

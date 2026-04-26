@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from django.conf import settings
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from .models import (
     Owner, Pet, PetIncompatibility, Schedule, VaccinationType,
@@ -20,7 +20,6 @@ from .serializers import (
     OwnerListSerializer,
     OwnerWithPetsSerializer,
     PetSerializer,
-    PetListSerializer,
     PetIncompatibilitySerializer,
     ScheduleSerializer,
     ScheduleCreateSerializer,
@@ -97,7 +96,10 @@ class OwnerViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="Upload owner profile picture",
         description="Upload or replace the profile picture for an owner.",
-        request={'content': {'multipart/form-data': {'type': 'object', 'properties': {'profile_picture': {'type': 'string', 'format': 'binary'}}}}},
+        request={'content': {'multipart/form-data': {
+            'type': 'object',
+            'properties': {'profile_picture': {'type': 'string', 'format': 'binary'}},
+        }}},
         tags=['owners']
     )
     @action(detail=True, methods=['post'], parser_classes=[MultiPartParser, FormParser])
@@ -227,7 +229,10 @@ class PetViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="Upload pet profile picture",
         description="Upload or replace the profile picture for a pet.",
-        request={'content': {'multipart/form-data': {'type': 'object', 'properties': {'profile_picture': {'type': 'string', 'format': 'binary'}}}}},
+        request={'content': {'multipart/form-data': {
+            'type': 'object',
+            'properties': {'profile_picture': {'type': 'string', 'format': 'binary'}},
+        }}},
         tags=['pets']
     )
     @action(detail=True, methods=['post'], parser_classes=[MultiPartParser, FormParser])
@@ -263,7 +268,10 @@ class PetViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Check pet compatibility",
-        description="Check the compatibility of a specific pet with all other registered pets based on temperament, dominance, and size.",
+        description=(
+            "Check the compatibility of a specific pet with all other "
+            "registered pets based on temperament, dominance, and size."
+        ),
         responses={200: {
             'type': 'array',
             'items': {
@@ -303,17 +311,36 @@ class PetViewSet(viewsets.ModelViewSet):
         summary="List schedules",
         description="Retrieve schedules with optional filtering by date, date range, pet, or status.",
         parameters=[
-            OpenApiParameter(name='date', type=OpenApiTypes.DATE, description='Filter schedules that include this specific date'),
-            OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start of date range filter'),
-            OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End of date range filter'),
-            OpenApiParameter(name='pet_id', type=OpenApiTypes.INT, description='Filter by pet ID'),
-            OpenApiParameter(name='status', type=OpenApiTypes.STR, description='Filter by status (scheduled, checked_in, completed, cancelled)'),
+            OpenApiParameter(
+                name='date', type=OpenApiTypes.DATE,
+                description='Filter schedules that include this specific date',
+            ),
+            OpenApiParameter(
+                name='start_date', type=OpenApiTypes.DATE,
+                description='Start of date range filter',
+            ),
+            OpenApiParameter(
+                name='end_date', type=OpenApiTypes.DATE,
+                description='End of date range filter',
+            ),
+            OpenApiParameter(
+                name='pet_id', type=OpenApiTypes.INT,
+                description='Filter by pet ID',
+            ),
+            OpenApiParameter(
+                name='status', type=OpenApiTypes.STR,
+                description='Filter by status (scheduled, checked_in, completed, cancelled)',
+            ),
         ],
         tags=['schedules']
     ),
     create=extend_schema(
         summary="Create a schedule",
-        description="Create a new schedule for a pet. The system will automatically check for conflicts with other scheduled pets and return warnings if any incompatibilities are detected.",
+        description=(
+            "Create a new schedule for a pet. The system will automatically "
+            "check for conflicts with other scheduled pets and return "
+            "warnings if any incompatibilities are detected."
+        ),
         tags=['schedules']
     ),
     retrieve=extend_schema(
@@ -394,7 +421,11 @@ class ScheduleViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Check scheduling conflicts",
-        description="Check for potential conflicts before creating a schedule. Returns a list of incompatible pets that are already scheduled during the specified time slot.",
+        description=(
+            "Check for potential conflicts before creating a schedule. "
+            "Returns a list of incompatible pets that are already scheduled "
+            "during the specified time slot."
+        ),
         request=ConflictCheckSerializer,
         responses={200: {
             'type': 'object',
@@ -467,7 +498,10 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         summary="Get daily booking count and limit",
         description="Get the number of active bookings for a specific date along with the configured daily limit.",
         parameters=[
-            OpenApiParameter(name='date', type=OpenApiTypes.DATE, required=True, description='Date to check (YYYY-MM-DD)')
+            OpenApiParameter(
+                name='date', type=OpenApiTypes.DATE, required=True,
+                description='Date to check (YYYY-MM-DD)',
+            )
         ],
         responses={200: {
             'type': 'object',
@@ -511,7 +545,10 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         summary="Get daily schedule summary",
         description="Get a summary of all schedules for a specific date, including counts by status.",
         parameters=[
-            OpenApiParameter(name='date', type=OpenApiTypes.DATE, required=True, description='Date to get summary for (YYYY-MM-DD)')
+            OpenApiParameter(
+                name='date', type=OpenApiTypes.DATE, required=True,
+                description='Date to get summary for (YYYY-MM-DD)',
+            )
         ],
         responses={200: {
             'type': 'object',
@@ -553,7 +590,11 @@ class ScheduleViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Batch create schedules",
-        description="Create schedules for multiple pets at once with the same time slot. Useful for scheduling group activities. Returns all created schedules and any conflict warnings.",
+        description=(
+            "Create schedules for multiple pets at once with the same time "
+            "slot. Useful for scheduling group activities. Returns all "
+            "created schedules and any conflict warnings."
+        ),
         request=BatchScheduleCreateSerializer,
         responses={201: {
             'type': 'object',
@@ -659,7 +700,11 @@ class VaccinationTypeViewSet(viewsets.ModelViewSet):
     ),
     create=extend_schema(
         summary="Upload a document",
-        description="Upload a document and attach it to a pet or an owner. Supported formats: JPEG, PNG, GIF, WEBP, PDF, DOC, DOCX. Max size: 5 MB.",
+        description=(
+            "Upload a document and attach it to a pet or an owner. "
+            "Supported formats: JPEG, PNG, GIF, WEBP, PDF, DOC, DOCX. "
+            "Max size: 5 MB."
+        ),
         tags=['documents']
     ),
     destroy=extend_schema(
@@ -739,7 +784,11 @@ class MedicalNoteViewSet(viewsets.ModelViewSet):
     summary="Get translations",
     description="Get all translation strings for a specific language. Used for internationalization of the frontend.",
     parameters=[
-        OpenApiParameter(name='language', type=OpenApiTypes.STR, location=OpenApiParameter.PATH, description='Language code (en, es)')
+        OpenApiParameter(
+            name='language', type=OpenApiTypes.STR,
+            location=OpenApiParameter.PATH,
+            description='Language code (en, es)',
+        )
     ],
     responses={200: {
         'type': 'object',
