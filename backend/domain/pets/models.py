@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from simple_history.models import HistoricalRecords
 from domain.files.validators import validate_file_size, validate_image_type
 
 
@@ -76,6 +77,8 @@ class Pet(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    history = HistoricalRecords()
 
     class Meta:
         app_label = 'pets'

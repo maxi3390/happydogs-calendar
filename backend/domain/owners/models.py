@@ -1,4 +1,5 @@
 from django.db import models
+from simple_history.models import HistoricalRecords
 from domain.addresses.models import Address
 from domain.files.validators import validate_file_size, validate_image_type
 
@@ -43,6 +44,8 @@ class Owner(Address):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    history = HistoricalRecords()
 
     class Meta:
         app_label = 'pets'
