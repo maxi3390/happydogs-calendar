@@ -145,9 +145,16 @@ export default function ScheduleForm(props: ScheduleFormProps) {
     }
   }, [preselectedPetIds]);
 
-  // Conflict checking (single mode only)
+  // Conflict checking (single mode only). Short-circuited when the
+  // ``compatibility_warnings`` feature flag is off so we don't fire
+  // pointless requests AND so leftover ``conflictResult`` state can't
+  // bleed into the submit button's variant / label.
   useEffect(() => {
     if (isMulti) return;
+    if (!compatibilityWarningsEnabled) {
+      setConflictResult(null);
+      return;
+    }
 
     const checkConflicts = async () => {
       if (!singlePetId || !startDate || !endDate || !startTime || !endTime) {
@@ -175,7 +182,10 @@ export default function ScheduleForm(props: ScheduleFormProps) {
 
     const timer = setTimeout(checkConflicts, 500);
     return () => clearTimeout(timer);
-  }, [singlePetId, startDate, endDate, startTime, endTime, schedule?.id, isMulti]);
+  }, [
+    singlePetId, startDate, endDate, startTime, endTime,
+    schedule?.id, isMulti, compatibilityWarningsEnabled,
+  ]);
 
   // Same-pet overlap / adjacency detection (single-mode only).
   useEffect(() => {
@@ -431,6 +441,13 @@ export default function ScheduleForm(props: ScheduleFormProps) {
       </div>
     );
   }
+
+  // Treat conflicts as visible (and therefore button-affecting) only
+  // when the warning Card itself would render.
+  const hasVisibleConflicts =
+    compatibilityWarningsEnabled
+    && !isMulti
+    && Boolean(conflictResult?.has_conflicts);
 
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
@@ -849,12 +866,12 @@ export default function ScheduleForm(props: ScheduleFormProps) {
               <Button
                 type="submit"
                 disabled={loading || !singlePetId}
-                variant={dailyCount?.limit_reached || conflictResult?.has_conflicts ? 'danger' : 'primary'}
-                className={dailyCount?.limit_reached ? 'bg-red-600 hover:bg-red-700 text-white' : conflictResult?.has_conflicts ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}
+                variant={dailyCount?.limit_reached || hasVisibleConflicts ? 'danger' : 'primary'}
+                className={dailyCount?.limit_reached ? 'bg-red-600 hover:bg-red-700 text-white' : hasVisibleConflicts ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}
               >
                 {loading ? t('common.saving') : schedule ? t('schedule.updateSchedule') :
                   dailyCount?.limit_reached ? t('schedule.scheduleAnyway') :
-                  conflictResult?.has_conflicts ? t('schedule.scheduleAnyway') : t('schedule.createSchedule')}
+                  hasVisibleConflicts ? t('schedule.scheduleAnyway') : t('schedule.createSchedule')}
               </Button>
             )}
           </div>
