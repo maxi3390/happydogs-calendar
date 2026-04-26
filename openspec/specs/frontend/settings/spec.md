@@ -258,3 +258,15 @@ The general Settings page SHALL expose a "Data Backup" section, visible to every
 
 - GIVEN the operator has typed `RESTORE` but not selected a file
 - THEN the "Restore" button SHALL be disabled
+
+### Requirement: Settings page SHALL embed a Notifications section gated by the master flag
+
+When the `notifications` feature flag is enabled, the Settings page SHALL render a `NotificationsSettings` section. The section's full behaviour (per-kind toggles, run-time picker, deworming default, message templates, per-user preferences) is documented in `frontend/notifications/spec.md`. The Vaccination Type form SHALL gain a `due_after_days` number input (default 365, accepts 0 for non-recurring).
+
+When the master flag is disabled, the section SHALL NOT render.
+
+#### Scenario: Master flag off — section hidden
+
+- GIVEN the `notifications` feature flag is disabled
+- WHEN an operator opens `/settings`
+- THEN the Notifications section SHALL NOT be visible

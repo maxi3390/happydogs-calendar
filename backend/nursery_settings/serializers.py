@@ -7,7 +7,16 @@ class NurserySettingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = NurserySetting
-        fields = ['daily_booking_limit', 'logo_url', 'updated_at']
+        fields = [
+            'daily_booking_limit', 'logo_url',
+            'notifications_run_time', 'deworming_default_due_days',
+            'notifications_vaccination_enabled',
+            'notifications_arrivals_enabled',
+            'notifications_egress_enabled',
+            'notifications_birthdays_enabled',
+            'notifications_deworming_enabled',
+            'updated_at',
+        ]
         read_only_fields = ['updated_at']
 
     def get_logo_url(self, obj):

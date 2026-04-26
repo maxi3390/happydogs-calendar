@@ -1,4 +1,4 @@
-.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend test-frontend test-frontend-debug lint clean rebuild create-admin seed-example-data env env-check init upgrade backup restore volume-ensure destroy-db
+.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend test-frontend test-frontend-debug lint clean rebuild create-admin seed-example-data env env-check init upgrade backup restore volume-ensure destroy-db notifications-run
 
 POSTGRES_VOLUME_NAME := happy-calendar_postgres_data
 
@@ -34,6 +34,9 @@ help:
 	@echo "  make createsuperuser - Create Django admin user (interactive)"
 	@echo "  make create-admin   - Create first admin user (non-interactive)"
 	@echo "  make seed-example-data - Populate DB with demo data (idempotent; SEED_ARGS=\"--reset\" to wipe first)"
+	@echo ""
+	@echo "Notifications:"
+	@echo "  make notifications-run - Run the daily notification cron once (idempotent; NOTIF_ARGS=\"--today YYYY-MM-DD --no-email\" supported)"
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test              - Run all tests (backend + frontend)"
@@ -155,6 +158,13 @@ SEED_ARGS ?=
 
 seed-example-data:
 	docker compose exec -T backend python manage.py seed_example_data $(SEED_ARGS)
+
+# Notifications — fire the daily cron command once. The notification-cron
+# docker service runs this on a polling loop in normal operation; this
+# target is for manual smoke-testing and one-off catch-up runs. Idempotent
+# (the natural-key UniqueConstraint protects against duplicates).
+notifications-run:
+	docker compose exec -T backend python manage.py generate_notifications $(NOTIF_ARGS)
 
 # Testing
 PLAYWRIGHT_IMAGE ?= mcr.microsoft.com/playwright:v1.58.2-noble

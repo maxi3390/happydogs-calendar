@@ -7,6 +7,11 @@ class VaccinationType(models.Model):
     label = models.CharField(max_length=100, help_text="Display label (e.g. Rabies)")
     enabled = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0, help_text="Display order")
+    due_after_days = models.PositiveIntegerField(
+        default=365,
+        help_text="Days after a vaccination of this type before the next is considered due. "
+                  "0 means non-recurring (no notification will fire).",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

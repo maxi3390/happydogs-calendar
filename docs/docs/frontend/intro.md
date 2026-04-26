@@ -93,7 +93,7 @@ frontend/
 
 ## Pages
 
-The application defines **8 pages**:
+The application defines **9 pages**:
 
 | Route | File | Protection | Description |
 |---|---|---|---|
@@ -102,7 +102,8 @@ The application defines **8 pages**:
 | `/register` | `register/page.tsx` | None | Name, email, password + confirmation (min 8 chars). Redirects to `/` if already authenticated |
 | `/pets` | `pets/page.tsx` | `withAuth` | Pet management — `PetList` + `PetForm` modal |
 | `/owners` | `owners/page.tsx` | `withAuth` | Owner management — search, expandable cards, batch and individual scheduling |
-| `/settings` | `settings/page.tsx` | `withAuth` | System logo upload, daily capacity limit, incompatibility rules (localStorage), vaccination types |
+| `/settings` | `settings/page.tsx` | `withAuth` | System logo upload, daily capacity limit, incompatibility rules (localStorage), vaccination types, notifications config |
+| `/notifications` | `notifications/page.tsx` | `withAuth` | Staff inbox of daily reminders. Mark-read / dismiss + forward-to-owner via mailto / WhatsApp deep links. Hidden when the master `notifications` flag is off. |
 | `/admin/users` | `admin/users/page.tsx` | `withAdmin` | Admin user management — stats cards, user table, CRUD modals, role/status badges |
 | `/ui-system` | `ui-system/page.tsx` | None | UI component showcase page |
 

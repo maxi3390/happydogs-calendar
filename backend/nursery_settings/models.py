@@ -1,3 +1,5 @@
+from datetime import time
+
 from django.db import models
 from domain.files.validators import validate_file_size, validate_image_type
 
@@ -15,6 +17,25 @@ class NurserySetting(models.Model):
         validators=[validate_file_size, validate_image_type],
         help_text="System logo (JPEG, PNG, GIF, WEBP — max 5 MB)",
     )
+
+    # Notification system fields. The cron container reads
+    # ``notifications_run_time`` once per minute and fires the
+    # ``generate_notifications`` management command when wall-clock
+    # >= this value AND the command hasn't run today yet.
+    notifications_run_time = models.TimeField(
+        default=time(7, 0),
+        help_text="Time of day the daily notifications cron runs.",
+    )
+    deworming_default_due_days = models.PositiveIntegerField(
+        default=90,
+        help_text="Days after a deworming treatment before it is considered due.",
+    )
+    notifications_vaccination_enabled = models.BooleanField(default=True)
+    notifications_arrivals_enabled = models.BooleanField(default=True)
+    notifications_egress_enabled = models.BooleanField(default=True)
+    notifications_birthdays_enabled = models.BooleanField(default=True)
+    notifications_deworming_enabled = models.BooleanField(default=True)
+
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

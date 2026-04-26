@@ -15,7 +15,8 @@ The system SHALL persist feature flags as rows in a `FeatureFlag` table keyed by
 - GIVEN a fresh database
 - WHEN `migrate` runs
 - THEN the `feature_flags_featureflag` table SHALL exist
-- AND the six canonical flags (`multiday_schedule`, `custom_pet_species`, `vet_management`, `medical_notes`, `data_backup`, `compatibility_warnings`) SHALL be present with their documented defaults
+- AND the canonical flags (`multiday_schedule`, `custom_pet_species`, `vet_management`, `medical_notes`, `data_backup`, `compatibility_warnings`, `deworming_tracking`, `notifications`) SHALL be present with their documented defaults
+- AND the `notifications` flag SHALL be seeded `enabled = False` (off by default)
 
 #### Scenario: Repeated migrate is idempotent
 

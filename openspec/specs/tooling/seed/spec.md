@@ -8,7 +8,7 @@ Give operators a one-command way to populate a development database with a deter
 
 ### Requirement: `make seed-example-data` Populates A Deterministic Demo Dataset
 
-`make seed-example-data` SHALL invoke the Django management command `seed_example_data` inside the `backend` container and populate an empty or partially-empty development database with a small, curated fixture covering every core entity (users, vaccination types, vets, owners, pets, vaccinations, medical notes, schedules).
+`make seed-example-data` SHALL invoke the Django management command `seed_example_data` inside the `backend` container and populate an empty or partially-empty development database with a small, curated fixture covering every core entity (users, vaccination types, vets, owners, pets, vaccinations, medical notes, schedules, notification templates, notification preferences).
 
 The dataset SHALL be deterministic: the same list of names, emails, and counts on every run of the same code revision. Random generators (e.g. Faker) SHALL NOT be used.
 
@@ -19,7 +19,7 @@ The command SHALL wrap all writes in a single database transaction so that a mid
 - GIVEN a database with only the default admin user
 - WHEN the operator runs `make seed-example-data`
 - THEN the command SHALL exit 0
-- AND the database SHALL contain exactly 2 additional `User` rows, 5 `VaccinationType` rows, 5 `Vet` rows, 8 `Owner` rows, 12 `Pet` rows, 10 `Vaccination` rows, 4 `MedicalNote` rows, and 10 `Schedule` rows introduced by the seed
+- AND the database SHALL contain exactly 2 additional `User` rows, 5 `VaccinationType` rows, 5 `Vet` rows, 8 `Owner` rows, 12 `Pet` rows, 10 `Vaccination` rows, 4 `MedicalNote` rows, 10 `Schedule` rows, 2 `NotificationTemplate` rows, and 2 `NotificationPreference` rows introduced by the seed
 - AND the final stdout line SHALL be a summary with per-entity created/updated/unchanged counts
 
 ### Requirement: The Seed Command Is Idempotent
@@ -36,6 +36,8 @@ Natural keys by entity:
 - `Vaccination` → `(pet, vax_type, date)`
 - `MedicalNote` → `(pet, title)`
 - `Schedule` → `(pet, start_date, start_time)`
+- `NotificationTemplate` → `scope`
+- `NotificationPreference` → `user`
 
 #### Scenario: Re-running is a no-op in row count
 
@@ -119,3 +121,39 @@ When invoked with `--reset`, the command SHALL additionally delete every seed-ow
 - WHEN the operator runs `make seed-example-data SEED_ARGS=--reset`
 - THEN the 5 seeded vets SHALL be deleted and re-created with the canonical data
 - AND the summary SHALL show `deleted=5` on the `vets` row
+
+### Requirement: The Seed Provisions Notification-System Demo Data
+
+The command SHALL populate fixtures that exercise the notifications system end-to-end on the day of seed:
+
+- At least one seeded pet's `birth_date` SHALL be set to today's month-day (in a year matching the pet's age) so the next cron run produces a `pet_birthday` notification.
+- At least one seeded pet SHALL have `last_internal_deworming_date` set to a date older than `NurserySetting.deworming_default_due_days` so the next cron run produces a `deworming_internal_due` notification.
+- At least one seeded pet SHALL have `last_external_deworming_date` set to a date older than `NurserySetting.deworming_default_due_days` so the next cron run produces a `deworming_external_due` notification.
+- At least one seeded vaccination SHALL be old enough that the matching `VaccinationType.due_after_days` makes it due as of today.
+- The `NotificationTemplate` rows for both supported scopes (`treatment_due`, `pet_birthday`) SHALL be seeded with non-empty Spanish operator overrides so the forward-to-owner buttons render demo content out of the box.
+- A `NotificationPreference` row SHALL be seeded for every seeded staff user. The seed dataset SHALL include at least one user with `email_enabled = True` and at least one with `email_enabled = False` so the per-user opt-out is exercised.
+
+When the master `notifications` feature flag is enabled at seed time, the command SHALL additionally invoke the notification-generation service for `today` so `Notification` rows are materialised immediately. When the flag is disabled, no `Notification` rows SHALL be created (the operator runs `make notifications-run` after enabling the flag).
+
+#### Scenario: Notifications seed with the master flag off
+
+- GIVEN the `notifications` feature flag is `enabled = False`
+- WHEN the operator runs `make seed-example-data`
+- THEN the seeded `NotificationTemplate` and `NotificationPreference` rows SHALL be created
+- AND zero `Notification` rows SHALL be created
+- AND running `make notifications-run` after flipping the flag on SHALL produce a non-empty set of notifications driven by the seeded fixture
+
+#### Scenario: Notifications seed with the master flag on
+
+- GIVEN the `notifications` feature flag is `enabled = True`
+- WHEN the operator runs `make seed-example-data`
+- THEN the seed SHALL invoke the notification-generation service for today
+- AND `Notification` rows SHALL exist for at least one of each kind that the seeded fixture is known to fire (`pet_birthday`, `deworming_internal_due`, `deworming_external_due`, `vaccination_due`, `pet_arriving_today`)
+
+#### Scenario: `--reset` cleans up seeded notifications data
+
+- GIVEN the seed has been run and seeded notification templates / preferences exist
+- WHEN the operator runs `make seed-example-data SEED_ARGS=--reset`
+- THEN the seeded `NotificationTemplate` rows SHALL be deleted and re-created with their canonical Spanish copy
+- AND the seeded `NotificationPreference` rows SHALL be deleted and re-created
+- AND any `Notification` rows for seed-owned pets SHALL be deleted (other rows untouched)

@@ -552,5 +552,95 @@
     "toggleDisable": "Disabled",
     "saveFailed": "Failed to save the flag",
     "empty": "No feature flags are registered yet."
+  },
+  "notifications": {
+    "page": {
+      "title": "Notifications",
+      "empty": "You're all caught up.",
+      "markAllRead": "Mark all read",
+      "dismissAll": "Dismiss all",
+      "filterUnread": "Unread only",
+      "forwardEmail": "Email owner",
+      "forwardWhatsApp": "WhatsApp owner",
+      "noOwnerEmail": "Owner has no email on file.",
+      "noOwnerPhone": "Owner has no phone on file."
+    },
+    "kind": {
+      "vaccination_due": "Vaccination due: {vax_label} for {pet_name}",
+      "pet_arriving_today": "{pet_name} arrives today",
+      "pet_arriving_tomorrow": "{pet_name} arrives tomorrow",
+      "pet_egress_today": "{pet_name} leaves today",
+      "pet_egress_tomorrow": "{pet_name} leaves tomorrow",
+      "pet_birthday": "{pet_name} turns {age_years} today",
+      "deworming_internal_due": "Internal deworming due: {pet_name}",
+      "deworming_external_due": "External deworming due: {pet_name}"
+    },
+    "staff_email": {
+      "treatment_due": {
+        "subject": "[Happy Calendar] Treatment due for {pet_name}",
+        "body": "Treatment is due for {pet_name}.\n\nUse the forward buttons in the app to notify {owner_first_name} {owner_last_name}."
+      },
+      "pet_birthday": {
+        "subject": "[Happy Calendar] {pet_name} has a birthday today",
+        "body": "{pet_name} turns {age_years} today. You can send a quick note to {owner_first_name} from the app."
+      },
+      "pet_arriving_today": {
+        "subject": "[Happy Calendar] {pet_name} arrives today",
+        "body": "{pet_name} is scheduled to arrive today between {start_time} and {end_time}."
+      },
+      "pet_arriving_tomorrow": {
+        "subject": "[Happy Calendar] {pet_name} arrives tomorrow",
+        "body": "{pet_name} is scheduled to arrive tomorrow between {start_time} and {end_time}."
+      },
+      "pet_egress_today": {
+        "subject": "[Happy Calendar] {pet_name} leaves today",
+        "body": "{pet_name} is scheduled to leave today between {start_time} and {end_time}."
+      },
+      "pet_egress_tomorrow": {
+        "subject": "[Happy Calendar] {pet_name} leaves tomorrow",
+        "body": "{pet_name} is scheduled to leave tomorrow between {start_time} and {end_time}."
+      }
+    },
+    "forward": {
+      "treatment_due": {
+        "email": {
+          "subject": "Treatment reminder for {pet_name}",
+          "body": "Hi {owner_first_name},\n\nThis is a friendly reminder that {pet_name}'s treatment is due. Please get in touch if you'd like to schedule a visit.\n\nThanks,\nHappy Pet Nursery"
+        },
+        "whatsapp": {
+          "text": "Hi {owner_first_name}! Just a quick reminder that {pet_name}'s treatment is due. Let us know if you'd like to schedule a visit. — Happy Pet Nursery"
+        }
+      },
+      "pet_birthday": {
+        "email": {
+          "subject": "Happy birthday, {pet_name}!",
+          "body": "Hi {owner_first_name},\n\n{pet_name} turns {age_years} today — wishing them a wonderful day from all of us at Happy Pet Nursery!"
+        },
+        "whatsapp": {
+          "text": "Hi {owner_first_name}! Happy birthday to {pet_name} — sending lots of treats and tail wags from Happy Pet Nursery!"
+        }
+      }
+    },
+    "settings": {
+      "header": "Notifications",
+      "description": "Configure when the daily notifications cron runs and which kinds are enabled.",
+      "runTime": "Daily run time",
+      "dewormingDueDays": "Deworming default due (days)",
+      "vaccinationEnabled": "Vaccination reminders",
+      "arrivalsEnabled": "Arrival reminders",
+      "egressEnabled": "Egress reminders",
+      "birthdaysEnabled": "Birthday reminders",
+      "dewormingEnabled": "Deworming reminders",
+      "templates": "Message templates",
+      "templateScopeTreatmentDue": "Treatment due (vaccination + deworming)",
+      "templateScopePetBirthday": "Pet birthday",
+      "emailSubject": "Email subject",
+      "emailBody": "Email body",
+      "whatsappText": "WhatsApp text",
+      "preferences": "My preferences",
+      "emailMe": "Send me emails",
+      "saveSuccess": "Saved",
+      "saveFailed": "Failed to save"
+    }
   }
 }

@@ -15,6 +15,13 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from feature_flags.services import is_feature_enabled
+from notifications.models import (
+    Notification,
+    NotificationPreference,
+    NotificationTemplate,
+)
+from notifications.services import generate_for_date
 from pets.models import (
     MedicalNote,
     Owner,
@@ -223,18 +230,27 @@ SEED_OWNERS: list[dict[str, Any]] = [
 # Pets are keyed by (owner_email, name). Temperaments and dominance are
 # chosen so the fixture exercises the compatibility rules (see
 # ``Pet.is_compatible_with`` in ``domain/pets/models.py``).
+#
+# Birthday + deworming dates are picked relative to ``today()`` so the
+# notifications cron fires meaningful events on day-of-seed without
+# requiring manual edits. See ``_seed_pets_dynamic`` below.
 SEED_PETS: list[dict[str, Any]] = [
     {
         'owner_email': 'ana.garcia@seed.example',
         'name': 'Mía', 'species': 'cat', 'breed': 'Siamese',
         'age': 4, 'temperament': 'calm', 'dominance_level': 3,
         'size': 'small', 'sex': 'female', 'neutered': True,
+        # Birthday today → fires ``pet_birthday`` notification.
+        '_birth_date_offset_years': 4,
     },
     {
         'owner_email': 'luis.fernandez@seed.example',
         'name': 'Rocco', 'species': 'dog', 'breed': 'Labrador',
         'age': 6, 'temperament': 'friendly', 'dominance_level': 6,
         'size': 'large', 'sex': 'male', 'neutered': True,
+        # 100 days since last internal deworming (default cadence is 90)
+        # → fires ``deworming_internal_due``.
+        '_internal_deworming_days_ago': 100,
     },
     {
         'owner_email': 'luis.fernandez@seed.example',
@@ -254,6 +270,9 @@ SEED_PETS: list[dict[str, Any]] = [
         'age': 1, 'temperament': 'calm', 'dominance_level': 2,
         'size': 'small', 'sex': 'male', 'neutered': False,
         'vet_override_name': 'Exotic Animals Specialist',
+        # 95 days since last external deworming → fires
+        # ``deworming_external_due``.
+        '_external_deworming_days_ago': 95,
     },
     {
         'owner_email': 'jose.martinez@seed.example',
@@ -440,6 +459,51 @@ def _seed_schedules() -> list[dict[str, Any]]:
     ]
 
 
+# Notification templates — Spanish operator overrides showcasing what
+# the forward-to-owner buttons render. Empty fields fall back to the
+# localised defaults; we provide values for every field so screenshots
+# of the demo dataset show the customised copy.
+SEED_NOTIFICATION_TEMPLATES: list[dict[str, Any]] = [
+    {
+        'scope': NotificationTemplate.SCOPE_TREATMENT_DUE,
+        'email_subject': 'Recordatorio de tratamiento para {pet_name}',
+        'email_body': (
+            'Hola {owner_first_name},\n\n'
+            'Este es un recordatorio amigable: el tratamiento de '
+            '{pet_name} está pendiente. Avisanos si querés agendar una '
+            'visita.\n\n— Happy Pet Nursery'
+        ),
+        'whatsapp_text': (
+            '¡Hola {owner_first_name}! Solo un recordatorio: '
+            '{pet_name} tiene un tratamiento pendiente. Avisanos si '
+            'querés agendar una visita. — Happy Pet Nursery'
+        ),
+    },
+    {
+        'scope': NotificationTemplate.SCOPE_PET_BIRTHDAY,
+        'email_subject': '¡Feliz cumple, {pet_name}!',
+        'email_body': (
+            'Hola {owner_first_name},\n\n'
+            '{pet_name} cumple {age_years} hoy — ¡le deseamos un día '
+            'lleno de premios y mimos desde todo el equipo de Happy '
+            'Pet Nursery!'
+        ),
+        'whatsapp_text': (
+            '¡Hola {owner_first_name}! Hoy {pet_name} cumple '
+            '{age_years} 🎉 ¡Mandanos foto del festejo! — Happy Pet Nursery'
+        ),
+    },
+]
+
+
+# Per-user notification preferences. Sofía wants emails; Carlos prefers
+# in-app only — useful for showcasing the per-user toggle.
+SEED_NOTIFICATION_PREFERENCES: list[dict[str, Any]] = [
+    {'email': 'sofia@happydogs.example',  'email_enabled': True},
+    {'email': 'carlos@happydogs.example', 'email_enabled': False},
+]
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Command implementation
 # ─────────────────────────────────────────────────────────────────────────────
@@ -471,6 +535,9 @@ class _Summary:
     vaccinations: _Tally = field(default_factory=_Tally)
     medical_notes: _Tally = field(default_factory=_Tally)
     schedules: _Tally = field(default_factory=_Tally)
+    notification_templates: _Tally = field(default_factory=_Tally)
+    notification_preferences: _Tally = field(default_factory=_Tally)
+    notifications: _Tally = field(default_factory=_Tally)
 
 
 class Command(BaseCommand):
@@ -510,7 +577,7 @@ class Command(BaseCommand):
             if reset:
                 self._reset(summary)
 
-            self._seed_users(summary.users)
+            users_by_email = self._seed_users(summary.users)
             self._seed_vaccination_types(summary.vaccination_types)
             vets_by_name = self._seed_vets(summary.vets)
             owners_by_email = self._seed_owners(summary.owners, vets_by_name)
@@ -518,6 +585,15 @@ class Command(BaseCommand):
             self._seed_vaccinations(summary.vaccinations, pets_by_key)
             self._seed_medical_notes(summary.medical_notes, pets_by_key)
             self._seed_schedules(summary.schedules, pets_by_key)
+            self._seed_notification_templates(summary.notification_templates)
+            self._seed_notification_preferences(
+                summary.notification_preferences, users_by_email,
+            )
+            # Materialise Notification rows only when the master flag is
+            # enabled — otherwise the system is paused and seeding rows
+            # would be inconsistent with the off-state contract.
+            if is_feature_enabled('notifications'):
+                self._seed_notifications_today(summary.notifications)
 
         if not quiet:
             self._print_summary(summary)
@@ -549,6 +625,29 @@ class Command(BaseCommand):
         def _count(qs, label: str) -> int:
             _, by_model = qs.delete()
             return by_model.get(label, 0)
+
+        # Notifications cascade off pets and users, so they get cleaned
+        # up automatically when those rows go. Templates and per-user
+        # preferences are not pet-bound; we tear them down explicitly.
+        seed_user_emails = [u['email'] for u in SEED_USERS]
+        summary.notifications.deleted = _count(
+            Notification.objects.filter(
+                pet_id__in=seed_pet_ids,
+            ),
+            'notifications.Notification',
+        )
+        summary.notification_preferences.deleted = _count(
+            NotificationPreference.objects.filter(
+                user__email__in=seed_user_emails,
+            ),
+            'notifications.NotificationPreference',
+        )
+        summary.notification_templates.deleted = _count(
+            NotificationTemplate.objects.filter(
+                scope__in=[t['scope'] for t in SEED_NOTIFICATION_TEMPLATES],
+            ),
+            'notifications.NotificationTemplate',
+        )
 
         summary.schedules.deleted = _count(
             Schedule.objects.filter(pet_id__in=seed_pet_ids), 'pets.Schedule',
@@ -588,7 +687,8 @@ class Command(BaseCommand):
 
     # ── Users ──────────────────────────────────────────────────────────────
 
-    def _seed_users(self, tally: _Tally) -> None:
+    def _seed_users(self, tally: _Tally) -> dict[str, Any]:
+        by_email: dict[str, Any] = {}
         for data in SEED_USERS:
             user, created = User.objects.get_or_create(
                 email=data['email'],
@@ -610,7 +710,9 @@ class Command(BaseCommand):
                         updated = True
                 if updated:
                     user.save()
+            by_email[data['email']] = user
             tally.bump(created=created, updated=updated)
+        return by_email
 
     # ── Vaccination types ──────────────────────────────────────────────────
 
@@ -694,12 +796,31 @@ class Command(BaseCommand):
         owners_by_email: dict[str, Owner],
         vets_by_name: dict[str, Vet],
     ) -> dict[tuple[str, str], Pet]:
+        today = _today()
         by_key: dict[tuple[str, str], Pet] = {}
         for data in SEED_PETS:
             owner = owners_by_email[data['owner_email']]
             resolved = dict(data)
             vet_override = vets_by_name[resolved.pop('vet_override_name')] if resolved.get('vet_override_name') else None
             resolved.pop('vet_override_name', None)
+
+            # Resolve notification-related dynamic fields against today.
+            offset_years = resolved.pop('_birth_date_offset_years', None)
+            if offset_years is not None:
+                try:
+                    resolved['birth_date'] = today.replace(year=today.year - offset_years)
+                except ValueError:
+                    # Feb 29 fallback when seeding on a non-leap year.
+                    resolved['birth_date'] = today.replace(
+                        year=today.year - offset_years, day=28,
+                    )
+            internal_offset = resolved.pop('_internal_deworming_days_ago', None)
+            if internal_offset is not None:
+                resolved['last_internal_deworming_date'] = today - timedelta(days=internal_offset)
+            external_offset = resolved.pop('_external_deworming_days_ago', None)
+            if external_offset is not None:
+                resolved['last_external_deworming_date'] = today - timedelta(days=external_offset)
+
             payload = {k: v for k, v in resolved.items() if k not in ('owner_email', 'name')}
             payload['vet_override'] = vet_override
 
@@ -781,6 +902,60 @@ class Command(BaseCommand):
                     obj.save()
             tally.bump(created=created, updated=updated)
 
+    # ── Notification templates ─────────────────────────────────────────────
+
+    def _seed_notification_templates(self, tally: _Tally) -> None:
+        for data in SEED_NOTIFICATION_TEMPLATES:
+            payload = {k: v for k, v in data.items() if k != 'scope'}
+            obj, created = NotificationTemplate.objects.get_or_create(
+                scope=data['scope'], defaults=payload,
+            )
+            updated = False
+            if not created:
+                for field_name, new_value in payload.items():
+                    if getattr(obj, field_name) != new_value:
+                        setattr(obj, field_name, new_value)
+                        updated = True
+                if updated:
+                    obj.save()
+            tally.bump(created=created, updated=updated)
+
+    # ── Notification preferences ───────────────────────────────────────────
+
+    def _seed_notification_preferences(
+        self,
+        tally: _Tally,
+        users_by_email: dict[str, Any],
+    ) -> None:
+        for data in SEED_NOTIFICATION_PREFERENCES:
+            user = users_by_email.get(data['email'])
+            if user is None:
+                continue
+            obj, created = NotificationPreference.objects.get_or_create(
+                user=user,
+                defaults={'email_enabled': data['email_enabled']},
+            )
+            updated = False
+            if not created and obj.email_enabled != data['email_enabled']:
+                obj.email_enabled = data['email_enabled']
+                obj.save(update_fields=['email_enabled', 'updated_at'])
+                updated = True
+            tally.bump(created=created, updated=updated)
+
+    # ── Notifications ──────────────────────────────────────────────────────
+
+    def _seed_notifications_today(self, tally: _Tally) -> None:
+        """Materialise Notification rows for the seeded staff users.
+
+        Idempotent thanks to the natural-key UniqueConstraint on
+        Notification: a re-seed on the same day produces no duplicates.
+        Only runs when the master ``notifications`` feature flag is on
+        — see ``handle()``.
+        """
+        result = generate_for_date(_today())
+        tally.created = result.created_count
+        tally.unchanged = result.existing_count
+
     # ── Summary ────────────────────────────────────────────────────────────
 
     def _print_summary(self, summary: _Summary) -> None:
@@ -793,6 +968,9 @@ class Command(BaseCommand):
             ('vaccinations', summary.vaccinations),
             ('medical notes', summary.medical_notes),
             ('schedules', summary.schedules),
+            ('notif. templates', summary.notification_templates),
+            ('notif. preferences', summary.notification_preferences),
+            ('notifications', summary.notifications),
         ]
         self.stdout.write(self.style.SUCCESS('Seed complete:'))
         for label, tally in rows:

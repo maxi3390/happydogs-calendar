@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import LanguageSwitcher from './LanguageSwitcher';
+import NotificationBell from './NotificationBell';
 import { useTranslation } from '@/lib/translations';
 import { useAuth } from '@/lib/auth';
 import { useFeatureFlag } from '@/lib/feature-flags';
@@ -102,6 +103,7 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
           <div className="hidden md:flex items-center gap-2 lg:gap-3 bg-secondary/30 dark:bg-secondary/10 p-1.5 rounded-2xl border border-border/40 backdrop-blur-md">
             <LanguageSwitcher />
             <ThemeToggle />
+            <NotificationBell />
             <div className="w-px h-6 bg-border/50 mx-1" aria-hidden="true" />
 
             {isAuthenticated && (
@@ -267,6 +269,7 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
           <div className="flex md:hidden items-center gap-2 bg-secondary/50 p-1 rounded-2xl border border-border/50">
             <LanguageSwitcher />
             <ThemeToggle />
+            <NotificationBell />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-expanded={mobileMenuOpen}
