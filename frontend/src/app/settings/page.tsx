@@ -5,6 +5,7 @@ import { Settings, AlertTriangle, Plus, Trash2, Save, Info, Syringe, ToggleLeft,
 import Navigation from '@/components/Navigation';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import DataBackupSection from '@/components/DataBackupSection';
+import NotificationsSettings from '@/components/NotificationsSettings';
 import { useTranslation } from '@/lib/translations';
 import { useFeatureFlag } from '@/lib/feature-flags';
 import { api, Pet, PetIncompatibility, VaccinationType } from '@/lib/api';
@@ -572,6 +573,9 @@ function SettingsPage() {
             )}
           </div>
         </div>
+
+        {/* Notifications */}
+        <NotificationsSettings />
 
         {/* Data Backup / Restore */}
         {dataBackupEnabled && <DataBackupSection />}

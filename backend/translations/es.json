@@ -552,5 +552,95 @@
     "toggleDisable": "Desactivada",
     "saveFailed": "No se pudo guardar la flag",
     "empty": "Todavía no hay feature flags registradas."
+  },
+  "notifications": {
+    "page": {
+      "title": "Notificaciones",
+      "empty": "Estás al día.",
+      "markAllRead": "Marcar todas como leídas",
+      "dismissAll": "Descartar todas",
+      "filterUnread": "Sólo no leídas",
+      "forwardEmail": "Enviar email al dueño",
+      "forwardWhatsApp": "Enviar WhatsApp al dueño",
+      "noOwnerEmail": "El dueño no tiene email registrado.",
+      "noOwnerPhone": "El dueño no tiene teléfono registrado."
+    },
+    "kind": {
+      "vaccination_due": "Vacuna pendiente: {vax_label} para {pet_name}",
+      "pet_arriving_today": "{pet_name} llega hoy",
+      "pet_arriving_tomorrow": "{pet_name} llega mañana",
+      "pet_egress_today": "{pet_name} se va hoy",
+      "pet_egress_tomorrow": "{pet_name} se va mañana",
+      "pet_birthday": "{pet_name} cumple {age_years} hoy",
+      "deworming_internal_due": "Desparasitación interna pendiente: {pet_name}",
+      "deworming_external_due": "Desparasitación externa pendiente: {pet_name}"
+    },
+    "staff_email": {
+      "treatment_due": {
+        "subject": "[Happy Calendar] Tratamiento pendiente para {pet_name}",
+        "body": "El tratamiento de {pet_name} está pendiente.\n\nUsá los botones de reenvío en la app para avisarle a {owner_first_name} {owner_last_name}."
+      },
+      "pet_birthday": {
+        "subject": "[Happy Calendar] {pet_name} cumple años hoy",
+        "body": "{pet_name} cumple {age_years} hoy. Podés mandarle un mensaje rápido a {owner_first_name} desde la app."
+      },
+      "pet_arriving_today": {
+        "subject": "[Happy Calendar] {pet_name} llega hoy",
+        "body": "{pet_name} está agendado para llegar hoy entre las {start_time} y las {end_time}."
+      },
+      "pet_arriving_tomorrow": {
+        "subject": "[Happy Calendar] {pet_name} llega mañana",
+        "body": "{pet_name} está agendado para llegar mañana entre las {start_time} y las {end_time}."
+      },
+      "pet_egress_today": {
+        "subject": "[Happy Calendar] {pet_name} se va hoy",
+        "body": "{pet_name} está agendado para irse hoy entre las {start_time} y las {end_time}."
+      },
+      "pet_egress_tomorrow": {
+        "subject": "[Happy Calendar] {pet_name} se va mañana",
+        "body": "{pet_name} está agendado para irse mañana entre las {start_time} y las {end_time}."
+      }
+    },
+    "forward": {
+      "treatment_due": {
+        "email": {
+          "subject": "Recordatorio de tratamiento para {pet_name}",
+          "body": "Hola {owner_first_name},\n\nTe recordamos que el tratamiento de {pet_name} está pendiente. Avisanos si querés agendar una visita.\n\nGracias,\nHappy Pet Nursery"
+        },
+        "whatsapp": {
+          "text": "Hola {owner_first_name}! Te recordamos que el tratamiento de {pet_name} está pendiente. Avisanos si querés agendar una visita. — Happy Pet Nursery"
+        }
+      },
+      "pet_birthday": {
+        "email": {
+          "subject": "¡Feliz cumple, {pet_name}!",
+          "body": "Hola {owner_first_name},\n\n{pet_name} cumple {age_years} hoy — ¡les deseamos un día genial desde todo el equipo de Happy Pet Nursery!"
+        },
+        "whatsapp": {
+          "text": "¡Hola {owner_first_name}! Feliz cumple para {pet_name} — un montón de premios y movimientos de cola desde Happy Pet Nursery!"
+        }
+      }
+    },
+    "settings": {
+      "header": "Notificaciones",
+      "description": "Configurá cuándo corre el cron diario y qué tipos están activos.",
+      "runTime": "Hora del cron diario",
+      "dewormingDueDays": "Desparasitación: días por defecto",
+      "vaccinationEnabled": "Recordatorios de vacunación",
+      "arrivalsEnabled": "Recordatorios de llegadas",
+      "egressEnabled": "Recordatorios de retiros",
+      "birthdaysEnabled": "Recordatorios de cumpleaños",
+      "dewormingEnabled": "Recordatorios de desparasitación",
+      "templates": "Plantillas de mensajes",
+      "templateScopeTreatmentDue": "Tratamiento pendiente (vacunación + desparasitación)",
+      "templateScopePetBirthday": "Cumpleaños de mascota",
+      "emailSubject": "Asunto del email",
+      "emailBody": "Cuerpo del email",
+      "whatsappText": "Texto de WhatsApp",
+      "preferences": "Mis preferencias",
+      "emailMe": "Mandame emails",
+      "saveSuccess": "Guardado",
+      "saveFailed": "No se pudo guardar"
+    }
   }
 }

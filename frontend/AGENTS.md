@@ -235,6 +235,20 @@ Reusable components: Button, Input, Card, Select, Badge.
 
 Key decisions: Custom library (no shadcn/Material/Chakra). Components extend native HTML element props via forwardRef. Variant/size pattern with Tailwind class maps. Composable Card sub-component pattern.
 
+### 11. Notifications
+
+Bell + unread badge in Navigation, dedicated `/notifications` page with mark-read / dismiss actions, and forward-to-owner affordances (`mailto:` + `wa.me`). Operator templates and per-kind toggles live in the Settings page. Hidden when the master `notifications` feature flag is off.
+
+| Artifact | Path |
+|----------|------|
+| **Spec** | `openspec/specs/frontend/notifications/spec.md` (after archive) |
+| **Design** | `openspec/specs/frontend/notifications/design.md` |
+| **Tests** | TBD (Playwright) |
+| **Docs** | `docs/docs/frontend/intro.md` (Notifications — TBD) |
+| **Code** | `frontend/src/app/notifications/page.tsx`, `frontend/src/components/NotificationBell.tsx`, `frontend/src/components/NotificationsSettings.tsx`, `frontend/src/domain/notifications/` |
+
+Key decisions: Polling at 60s for unread count. Localised one-liners under `notifications.kind.<kind>`. Forward block pre-rendered server-side; frontend only assembles the deep links. Settings UI shows nursery-wide config (admin-write) + per-user email opt-in (any user) + operator templates (admin-write).
+
 ---
 
 ## Change Log (OpenSpec Changes)

@@ -230,6 +230,20 @@ Static JSON translation files served via API for English and Spanish.
 
 Key decisions: Static JSON files (not database-backed). Translation endpoints are AllowAny (public). Supported languages hardcoded in view.
 
+### 11. Notifications
+
+Daily-cron-driven reminders for vaccination/deworming due, pet birthdays, and arrival/egress. Each event materialises one ``Notification`` row per active staff user with independent read / dismissed state. Email delivery is staff-internal (not owner-facing); the forward-to-owner affordance is rendered by the frontend (`mailto:` + `wa.me`). Operator-overridable templates live in ``NotificationTemplate`` (two scopes: ``treatment_due``, ``pet_birthday``).
+
+| Artifact | Path |
+|----------|------|
+| **Spec** | `openspec/specs/backend/notifications/spec.md` (after archive) |
+| **Design** | `openspec/specs/backend/notifications/design.md` |
+| **Tests** | `backend/notifications/tests/test_api.py`, `test_services.py`, `test_email.py`, `test_scheduler.py` |
+| **Docs** | `docs/docs/backend/intro.md` (Notifications section — TBD) |
+| **Code** | `backend/notifications/` (models.py, services.py, email.py, serializers.py, views.py, urls.py, templating.py, management/commands/) |
+
+Key decisions: Polling-loop scheduler (no celery). One notification row per (event × staff user). Idempotent natural key. Master ``notifications`` feature flag, plus per-kind ``NurserySetting.notifications_*_enabled`` toggles. Email templates fall back to localised defaults under ``notifications.staff_email.*`` in the translations files.
+
 ---
 
 ## Change Log (OpenSpec Changes)
