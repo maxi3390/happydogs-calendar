@@ -193,9 +193,13 @@ function ForwardActions({ forward }: ForwardActionsProps) {
       + `?subject=${encodeURIComponent(forward.email.subject)}`
       + `&body=${encodeURIComponent(forward.email.body)}`
     : null;
+  // ``api.whatsapp.com/send`` instead of ``wa.me`` — the latter mangles
+  // some emoji glyphs on iOS / older WhatsApp clients; the official
+  // click-to-chat endpoint preserves them verbatim.
   const wa = forward.whatsapp.phone
-    ? `https://wa.me/${forward.whatsapp.phone.replace(/[^\d]/g, '')}`
-      + `?text=${encodeURIComponent(forward.whatsapp.text)}`
+    ? `https://api.whatsapp.com/send`
+      + `?phone=${forward.whatsapp.phone.replace(/[^\d]/g, '')}`
+      + `&text=${encodeURIComponent(forward.whatsapp.text)}`
     : null;
 
   return (

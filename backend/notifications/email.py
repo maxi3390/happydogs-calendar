@@ -5,7 +5,7 @@ Each ``Notification`` row is one staff user's copy of one event. When
 email summarising the event. The email is *staff-internal*: it is
 addressed to the staff member's account email, not the owner's. The
 owner-facing forwarding affordance is rendered by the frontend and
-fired by the staff member themselves (mailto: + wa.me).
+fired by the staff member themselves (mailto: + api.whatsapp.com/send).
 
 Subject and body are derived from the operator's ``NotificationTemplate``
 when present, falling back to localised defaults under

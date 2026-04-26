@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Surface staff-facing notifications (vaccination/deworming/birthday/arrival/egress) in the navigation bar and on a dedicated `/notifications` page. Render forward-to-owner affordances (mailto: + wa.me) when the row carries owner-bound contact info. Hidden completely when the master `notifications` feature flag is off.
+Surface staff-facing notifications (vaccination/deworming/birthday/arrival/egress) in the navigation bar and on a dedicated `/notifications` page. Render forward-to-owner affordances (`mailto:` + `api.whatsapp.com/send`) when the row carries owner-bound contact info. Hidden completely when the master `notifications` feature flag is off.
 
 ## Requirements
 
@@ -48,7 +48,7 @@ The `/notifications` page SHALL list each undismissed notification for the logge
 A row SHALL render forward-to-owner buttons ONLY when its `forward` field is non-null (the row's kind maps to a template scope: `vaccination_due`, `deworming_internal_due`, `deworming_external_due`, `pet_birthday`):
 
 - A **Forward by email** button (rendered only when `forward.email.to` is non-null) that opens `mailto:<forward.email.to>?subject=<subject>&body=<body>` using the pre-rendered `forward.email.subject` and `forward.email.body` from the API response (URL-encoded).
-- A **Forward by WhatsApp** button (rendered only when `forward.whatsapp.phone` is non-null) that opens `https://wa.me/<phone>?text=<text>` using the pre-rendered `forward.whatsapp.text`.
+- A **Forward by WhatsApp** button (rendered only when `forward.whatsapp.phone` is non-null) that opens `https://api.whatsapp.com/send?phone=<phone>&text=<text>` using the pre-rendered `forward.whatsapp.text`. The `api.whatsapp.com/send` endpoint is preferred over `wa.me` because it preserves emoji glyphs verbatim across iOS, Android, and desktop WhatsApp clients (some `wa.me` redirects mangle higher-plane code points).
 
 The frontend SHALL NOT do any placeholder substitution on the forward block — the API response already contains the rendered text using the operator's templates (or the localised defaults when the operator left a field empty).
 
@@ -80,7 +80,8 @@ When the master flag is disabled, the page SHALL render an empty-state card so t
 
 - GIVEN a `pet_birthday` notification whose API row has `forward.whatsapp = { text: "Happy birthday Luna!", phone: "+5491165432109" }`
 - WHEN the operator clicks "WhatsApp owner"
-- THEN the browser SHALL open `https://wa.me/5491165432109?text=Happy%20birthday%20Luna%21` (non-digit characters stripped from the phone)
+- THEN the browser SHALL open `https://api.whatsapp.com/send?phone=5491165432109&text=Happy%20birthday%20Luna%21` (non-digit characters stripped from the phone)
+- AND the URL SHALL NOT use the `wa.me` short-link form, because some `wa.me` redirects mangle multi-byte emoji
 
 #### Scenario: Internal-only kinds have no forward buttons
 

@@ -232,7 +232,7 @@ Key decisions: Static JSON files (not database-backed). Translation endpoints ar
 
 ### 11. Notifications
 
-Daily-cron-driven reminders for vaccination/deworming due, pet birthdays, and arrival/egress. Each event materialises one ``Notification`` row per active staff user with independent read / dismissed state. Email delivery is staff-internal (not owner-facing); the forward-to-owner affordance is rendered by the frontend (`mailto:` + `wa.me`). Operator-overridable templates live in ``NotificationTemplate`` (two scopes: ``treatment_due``, ``pet_birthday``).
+Daily-cron-driven reminders for vaccination/deworming due, pet birthdays, and arrival/egress. Each event materialises one ``Notification`` row per active staff user with independent read / dismissed state. Email delivery is staff-internal (not owner-facing); the forward-to-owner affordance is rendered by the frontend (`mailto:` + `api.whatsapp.com/send`). Operator-overridable templates live in ``NotificationTemplate`` (two scopes: ``treatment_due``, ``pet_birthday``).
 
 | Artifact | Path |
 |----------|------|

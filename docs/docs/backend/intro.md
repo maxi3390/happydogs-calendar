@@ -560,7 +560,7 @@ The `notifications/` app generates daily reminders for staff:
 
 Each event materialises one `Notification` row per active staff user. A natural-key `UniqueConstraint` keeps the daily run idempotent; staff users can mark rows read or dismissed independently. The master `notifications` feature flag and per-kind `NurserySetting.notifications_*_enabled` toggles let operators turn the system on or off (or filter to a subset of kinds) at runtime.
 
-Email delivery is staff-internal only. The forward-to-owner affordance is rendered by the frontend via `mailto:` and `wa.me` deep links; subjects, bodies, and WhatsApp text come from operator-overridable `NotificationTemplate` rows (two scopes: `treatment_due`, `pet_birthday`) with localised defaults under `notifications.staff_email.*` in the translation files.
+Email delivery is staff-internal only. The forward-to-owner affordance is rendered by the frontend via `mailto:` and `api.whatsapp.com/send` deep links (the `api.whatsapp.com` endpoint is preferred over `wa.me` because it preserves emoji glyphs verbatim across iOS, Android, and desktop WhatsApp clients); subjects, bodies, and WhatsApp text come from operator-overridable `NotificationTemplate` rows (two scopes: `treatment_due`, `pet_birthday`) with localised defaults under `notifications.staff_email.*` in the translation files.
 
 The `run_notification_scheduler` management command runs in its own `notification-cron` Docker Compose service. It polls every minute and calls `generate_notifications` exactly once per day, when wall-clock >= `NurserySetting.notifications_run_time`.
 

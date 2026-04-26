@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Daily-cron-driven reminders for staff. Surface upcoming or due events (vaccination, deworming, pet birthdays, schedule arrivals/egresses) as one in-app row per active staff user with independent read / dismissed state, and optionally one staff-internal email per row. The forward-to-owner affordance (mailto: + wa.me) is rendered by the frontend; operator-overridable templates fill its content.
+Daily-cron-driven reminders for staff. Surface upcoming or due events (vaccination, deworming, pet birthdays, schedule arrivals/egresses) as one in-app row per active staff user with independent read / dismissed state, and optionally one staff-internal email per row. The forward-to-owner affordance (`mailto:` + `api.whatsapp.com/send`) is rendered by the frontend; operator-overridable templates fill its content.
 
 The system is gated by the master `notifications` feature flag (off by default). Per-kind toggles in `NurserySetting` further filter which event families fire.
 

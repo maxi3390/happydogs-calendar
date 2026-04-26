@@ -237,7 +237,7 @@ Key decisions: Custom library (no shadcn/Material/Chakra). Components extend nat
 
 ### 11. Notifications
 
-Bell + unread badge in Navigation, dedicated `/notifications` page with mark-read / dismiss actions, and forward-to-owner affordances (`mailto:` + `wa.me`). Operator templates and per-kind toggles live in the Settings page. Hidden when the master `notifications` feature flag is off.
+Bell + unread badge in Navigation, dedicated `/notifications` page with mark-read / dismiss actions, and forward-to-owner affordances (`mailto:` + `api.whatsapp.com/send`). Operator templates and per-kind toggles live in the Settings page. Hidden when the master `notifications` feature flag is off.
 
 | Artifact | Path |
 |----------|------|
