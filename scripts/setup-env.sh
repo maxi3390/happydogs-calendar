@@ -71,7 +71,19 @@ flush_block() {
   printf 'Value: '
 
   local user_value
-  IFS= read -r user_value < /dev/tty
+  case "$key" in
+    # Password-bearing variables: read silently so the value does not
+    # echo to the screen (and therefore does not enter `script` /
+    # terminal-recording transcripts) and do not leak into shell
+    # history.
+    *PASSWORD*|*SECRET*|*TOKEN*)
+      IFS= read -rs user_value < /dev/tty
+      printf '\n'
+      ;;
+    *)
+      IFS= read -r user_value < /dev/tty
+      ;;
+  esac
   local final_value="${user_value:-$default}"
 
   # Emit the original comment block into the generated .env so manual

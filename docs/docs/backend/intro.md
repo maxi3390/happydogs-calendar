@@ -564,6 +564,12 @@ Email delivery is staff-internal only. The forward-to-owner affordance is render
 
 The `run_notification_scheduler` management command runs in its own `notification-cron` Docker Compose service. It polls every minute and calls `generate_notifications` exactly once per day, when wall-clock >= `NurserySetting.notifications_run_time`.
 
+### Email delivery configuration
+
+Real email delivery requires SMTP variables to be set in `.env`. The relevant variables — `EMAIL_BACKEND`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL` — are documented inline in `.env.example` and prompted by `make env`. Defaults keep dev stacks on Django's stdout-only console backend so contributors can exercise the notifications flow without standing up an SMTP relay.
+
+To avoid the silent-failure mode where a production deployment turns the `notifications` flag on but forgets to switch off the console backend, the cron container emits a one-shot WARNING-level log line at startup whenever `EMAIL_BACKEND` ends with `.console.EmailBackend` AND the master `notifications` flag is enabled. Observability tooling can grep for that line as an alert.
+
 ---
 
 ## Testing

@@ -13,14 +13,40 @@ from datetime import datetime
 import logging
 import time
 
+from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+from feature_flags.services import is_feature_enabled
 from notifications.models import Notification
 from nursery_settings.models import NurserySetting
 
 logger = logging.getLogger(__name__)
+
+CONSOLE_BACKEND_WARNING = (
+    "WARNING: notifications flag is on but EMAIL_BACKEND is the dev "
+    "console backend; staff emails are being printed to stdout, not "
+    "sent. Set EMAIL_BACKEND / EMAIL_HOST / EMAIL_HOST_USER / "
+    "EMAIL_HOST_PASSWORD in your .env to enable real delivery."
+)
+
+
+def _maybe_warn_about_console_backend():
+    """One-shot startup warning for the prod-stack-with-default-mailbackend footgun.
+
+    When the master ``notifications`` flag is enabled but
+    ``EMAIL_BACKEND`` still points at the console backend, the cron
+    will fan emails out to stdout and the operator will only learn
+    about the silent failure when staff complain weeks later. Surface
+    it loudly at boot so observability tooling can catch it.
+    """
+    backend = settings.EMAIL_BACKEND or ''
+    if not backend.endswith('.console.EmailBackend'):
+        return
+    if not is_feature_enabled('notifications'):
+        return
+    logger.warning(CONSOLE_BACKEND_WARNING)
 
 
 class Command(BaseCommand):
@@ -42,6 +68,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f"Notification scheduler running (interval={interval}s)."
         ))
+        _maybe_warn_about_console_backend()
         while True:
             try:
                 self._tick()

@@ -6,6 +6,9 @@ from django.core.management import call_command
 from django.test import TestCase, override_settings
 
 from feature_flags.models import FeatureFlag
+from notifications.management.commands.run_notification_scheduler import (
+    CONSOLE_BACKEND_WARNING,
+)
 from notifications.models import Notification
 from nursery_settings.models import NurserySetting
 from tests.factories import create_owner, create_pet, create_user
@@ -71,3 +74,44 @@ class SchedulerTests(TestCase):
             stdout=out,
         )
         self.assertIn('firing generate_notifications', out.getvalue())
+
+
+# Cron-startup warnings are independent of any actual scheduling, so
+# the tests below skip the time-mocking the suite above relies on and
+# just verify the warning fires (or doesn't) under each combination of
+# EMAIL_BACKEND × `notifications` flag.
+class ConsoleBackendStartupWarningTests(TestCase):
+    LOGGER = (
+        'notifications.management.commands.run_notification_scheduler'
+    )
+
+    def _set_flag(self, enabled: bool) -> None:
+        FeatureFlag.objects.update_or_create(
+            key='notifications', defaults={'enabled': enabled},
+        )
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.console.EmailBackend')
+    def test_warns_when_console_backend_and_flag_on(self):
+        self._set_flag(True)
+        with self.assertLogs(self.LOGGER, level='WARNING') as cm:
+            call_command(
+                'run_notification_scheduler', '--once', '--interval', '0',
+            )
+        joined = '\n'.join(cm.output)
+        self.assertIn(CONSOLE_BACKEND_WARNING, joined)
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.console.EmailBackend')
+    def test_silent_when_console_backend_but_flag_off(self):
+        self._set_flag(False)
+        with self.assertNoLogs(self.LOGGER, level='WARNING'):
+            call_command(
+                'run_notification_scheduler', '--once', '--interval', '0',
+            )
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend')
+    def test_silent_when_real_backend_even_with_flag_on(self):
+        self._set_flag(True)
+        with self.assertNoLogs(self.LOGGER, level='WARNING'):
+            call_command(
+                'run_notification_scheduler', '--once', '--interval', '0',
+            )
