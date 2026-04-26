@@ -660,6 +660,8 @@
       "description": "Configurá cuándo corre el cron diario y qué tipos están activos.",
       "runTime": "Hora del cron diario",
       "dewormingDueDays": "Desparasitación: días por defecto",
+      "recipientLookbackDays": "Ventana de actividad del destinatario (días)",
+      "recipientLookbackHint": "Sólo enviá notificaciones al personal que inició sesión dentro de esta ventana. 0 desactiva el filtro (todos los usuarios activos reciben notificaciones).",
       "vaccinationEnabled": "Recordatorios de vacunación",
       "arrivalsEnabled": "Recordatorios de llegadas",
       "egressEnabled": "Recordatorios de retiros",

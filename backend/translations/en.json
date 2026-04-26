@@ -660,6 +660,8 @@
       "description": "Configure when the daily notifications cron runs and which kinds are enabled.",
       "runTime": "Daily run time",
       "dewormingDueDays": "Deworming default due (days)",
+      "recipientLookbackDays": "Recipient lookback (days)",
+      "recipientLookbackHint": "Only fan notifications out to staff who logged in within this window. 0 disables the filter (every active user receives notifications).",
       "vaccinationEnabled": "Vaccination reminders",
       "arrivalsEnabled": "Arrival reminders",
       "egressEnabled": "Egress reminders",

@@ -317,6 +317,7 @@ The singleton `NurserySetting` model SHALL expose the following fields, all edit
 | `notifications_egress_enabled` | `BooleanField` | `True` | Per-kind toggle: pet-egress-today / -tomorrow notifications. |
 | `notifications_birthdays_enabled` | `BooleanField` | `True` | Per-kind toggle: pet birthday notifications. |
 | `notifications_deworming_enabled` | `BooleanField` | `True` | Per-kind toggle: deworming-due notifications (both sides). |
+| `notification_recipient_lookback_days` | `PositiveIntegerField` | `30` | Only fan notifications out to users whose `last_login >= now - timedelta(days=N)`. `0` disables the filter. |
 
 The per-kind booleans default to `True` so that flipping the master `notifications` feature flag on activates every kind unless the operator explicitly disabled one. The serializer exposes all of these fields under the same `/api/settings/` endpoints used for `daily_booking_limit`, with admin-only writes.
 
@@ -333,3 +334,16 @@ The per-kind booleans default to `True` so that flipping the master `notificatio
 - THEN `NurserySetting.notifications_birthdays_enabled` SHALL be `False`
 - AND the next cron run SHALL skip birthday notifications
 - AND every other kind SHALL still fire if its toggle remains True
+
+#### Scenario: Operator widens the recipient lookback
+
+- GIVEN an admin opens Settings
+- WHEN they change `notification_recipient_lookback_days` to `90` and save
+- THEN `NurserySetting.notification_recipient_lookback_days` SHALL be `90`
+- AND the next cron run SHALL include staff users whose `last_login` is between 30 and 90 days ago
+
+#### Scenario: Operator disables the recipient filter
+
+- GIVEN an admin opens Settings
+- WHEN they change `notification_recipient_lookback_days` to `0` and save
+- THEN every active user SHALL receive notifications regardless of `last_login`, including users who have never authenticated

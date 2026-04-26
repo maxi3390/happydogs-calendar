@@ -35,6 +35,14 @@ class NurserySetting(models.Model):
     notifications_egress_enabled = models.BooleanField(default=True)
     notifications_birthdays_enabled = models.BooleanField(default=True)
     notifications_deworming_enabled = models.BooleanField(default=True)
+    notification_recipient_lookback_days = models.PositiveIntegerField(
+        default=30,
+        help_text=(
+            "Only fan notifications out to users whose ``last_login`` is "
+            "within this many days. 0 disables the filter (every active "
+            "user receives notifications, regardless of last_login)."
+        ),
+    )
 
     updated_at = models.DateTimeField(auto_now=True)
 

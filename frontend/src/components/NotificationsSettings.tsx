@@ -97,6 +97,7 @@ export default function NotificationsSettings() {
         calls.push(api.nurserySettings.update({
           notifications_run_time: settings.notifications_run_time,
           deworming_default_due_days: settings.deworming_default_due_days,
+          notification_recipient_lookback_days: settings.notification_recipient_lookback_days,
           notifications_vaccination_enabled: settings.notifications_vaccination_enabled,
           notifications_arrivals_enabled: settings.notifications_arrivals_enabled,
           notifications_egress_enabled: settings.notifications_egress_enabled,
@@ -175,6 +176,26 @@ export default function NotificationsSettings() {
                     }
                     className="w-full px-3 py-2 bg-background border border-border/50 rounded-lg"
                   />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-sm font-medium">
+                    {t('notifications.settings.recipientLookbackDays')}
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={settings.notification_recipient_lookback_days}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        notification_recipient_lookback_days: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-3 py-2 bg-background border border-border/50 rounded-lg"
+                  />
+                  <span className="block text-xs text-muted-foreground">
+                    {t('notifications.settings.recipientLookbackHint')}
+                  </span>
                 </label>
               </div>
 

@@ -8,5 +8,6 @@ export interface NurserySetting {
   notifications_egress_enabled: boolean;
   notifications_birthdays_enabled: boolean;
   notifications_deworming_enabled: boolean;
+  notification_recipient_lookback_days: number;
   updated_at: string;
 }

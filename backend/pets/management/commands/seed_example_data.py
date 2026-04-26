@@ -688,6 +688,13 @@ class Command(BaseCommand):
     # ── Users ──────────────────────────────────────────────────────────────
 
     def _seed_users(self, tally: _Tally) -> dict[str, Any]:
+        from django.utils import timezone
+        # Seeded staff are "actively using the app" in the demo dataset,
+        # so we stamp ``last_login = now()``. Without this the new
+        # ``notification_recipient_lookback_days`` filter (default 30
+        # days, ``last_login=NULL`` excluded) would skip them when the
+        # cron runs against the seed.
+        now = timezone.now()
         by_email: dict[str, Any] = {}
         for data in SEED_USERS:
             user, created = User.objects.get_or_create(
@@ -696,6 +703,7 @@ class Command(BaseCommand):
                     'first_name': data['first_name'],
                     'last_name': data['last_name'],
                     'role': data.get('role', 'user'),
+                    'last_login': now,
                 },
             )
             updated = False
@@ -708,6 +716,11 @@ class Command(BaseCommand):
                     if getattr(user, field_name) != new_value:
                         setattr(user, field_name, new_value)
                         updated = True
+                # Refresh last_login on every reseed so the demo data
+                # stays inside the lookback window.
+                if user.last_login is None or user.last_login < now - timedelta(days=1):
+                    user.last_login = now
+                    updated = True
                 if updated:
                     user.save()
             by_email[data['email']] = user

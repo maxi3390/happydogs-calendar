@@ -334,6 +334,93 @@ class FanOutTests(_BaseGenerateTest):
         )
 
 
+class RecipientLookbackTests(_BaseGenerateTest):
+    """Cover ``NurserySetting.notification_recipient_lookback_days``."""
+
+    def _birthday_pet(self):
+        return create_pet(
+            owner=self.owner,
+            birth_date=date(TODAY.year - 1, TODAY.month, TODAY.day),
+        )
+
+    def test_default_is_30_days(self):
+        s = NurserySetting.load()
+        self.assertEqual(s.notification_recipient_lookback_days, 30)
+
+    def test_recent_login_included(self):
+        from django.utils import timezone
+        self.alice.last_login = timezone.now() - timedelta(days=5)
+        self.alice.save()
+        self.bob.last_login = timezone.now() - timedelta(days=29)
+        self.bob.save()
+        self._birthday_pet()
+        result = generate_for_date(TODAY)
+        # Both Alice and Bob receive a row.
+        self.assertEqual(result.created_count, 2)
+
+    def test_stale_login_excluded(self):
+        from django.utils import timezone
+        self.alice.last_login = timezone.now() - timedelta(days=5)
+        self.alice.save()
+        self.bob.last_login = timezone.now() - timedelta(days=31)
+        self.bob.save()
+        self._birthday_pet()
+        result = generate_for_date(TODAY)
+        # Only Alice (recent login) gets a row.
+        self.assertEqual(result.created_count, 1)
+        self.assertEqual(
+            Notification.objects.values_list('recipient_user_id', flat=True).first(),
+            self.alice.id,
+        )
+
+    def test_null_last_login_excluded(self):
+        # Carol is just-created, never authenticated.
+        carol = create_user(email='carol@example.com', last_login=None)
+        # Make Alice and Bob also stale so only never-logged-in users
+        # could be a recipient — and verify they aren't.
+        from django.utils import timezone
+        for u in [self.alice, self.bob]:
+            u.last_login = timezone.now() - timedelta(days=90)
+            u.save()
+        self._birthday_pet()
+        result = generate_for_date(TODAY)
+        self.assertEqual(result.created_count, 0)
+        # Sanity: the never-logged-in user did not receive a row even
+        # though carol.is_active is True.
+        self.assertFalse(
+            Notification.objects.filter(recipient_user=carol).exists()
+        )
+
+    def test_lookback_zero_includes_everyone(self):
+        # A lookback of 0 reverts to the legacy "every active user" rule.
+        s = NurserySetting.load()
+        s.notification_recipient_lookback_days = 0
+        s.save()
+        from django.utils import timezone
+        self.alice.last_login = timezone.now() - timedelta(days=400)
+        self.alice.save()
+        self.bob.last_login = None
+        self.bob.save()
+        self._birthday_pet()
+        result = generate_for_date(TODAY)
+        # Both Alice (very stale) AND Bob (never-logged-in) receive a row.
+        self.assertEqual(result.created_count, 2)
+
+    def test_custom_lookback_window(self):
+        s = NurserySetting.load()
+        s.notification_recipient_lookback_days = 7
+        s.save()
+        from django.utils import timezone
+        self.alice.last_login = timezone.now() - timedelta(days=3)
+        self.alice.save()
+        self.bob.last_login = timezone.now() - timedelta(days=8)
+        self.bob.save()
+        self._birthday_pet()
+        result = generate_for_date(TODAY)
+        # Only Alice (within 7 days) gets a row.
+        self.assertEqual(result.created_count, 1)
+
+
 class CommandTests(_BaseGenerateTest):
     def test_handles_today_override(self):
         create_pet(

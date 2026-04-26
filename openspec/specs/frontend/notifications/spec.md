@@ -137,7 +137,7 @@ When the master flag is disabled, the page SHALL render an empty-state card so t
 
 The `/settings` page SHALL include a `NotificationsSettings` section, hidden when the master `notifications` flag is disabled. The section SHALL provide:
 
-- **Nursery-wide** controls (admin-write): daily run time, deworming default-due-days, and the five per-kind toggles.
+- **Nursery-wide** controls (admin-write): daily run time, deworming default-due-days, recipient lookback (days), and the five per-kind toggles.
 - **My preferences** (any authenticated user): the per-user `email_enabled` opt-in.
 - **Message templates** (admin-write): two cards (`treatment_due`, `pet_birthday`) each with `email_subject`, `email_body`, `whatsapp_text` text fields. Empty fields fall back to localised defaults.
 

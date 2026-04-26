@@ -39,7 +39,17 @@ The combination `(kind, pet, event_date, recipient_user, schedule, vaccination)`
 
 ### Requirement: `generate_notifications` management command SHALL produce per-user rows for every relevant event
 
-When the `notifications` feature flag is enabled, the command SHALL, for every active staff user, materialise notifications for:
+When the `notifications` feature flag is enabled, the command SHALL materialise notifications for every recipient user matching the **lookback filter** described below:
+
+```
+recipients = User.objects.filter(is_active=True).filter(
+    last_login__gte=now - timedelta(days=N)
+)
+```
+
+…where `N = NurserySetting.notification_recipient_lookback_days` (default `30`). When `N = 0`, the second filter is dropped and the recipient set reverts to every active user. Users with `last_login IS NULL` (never authenticated) are excluded from the lookback window.
+
+For every recipient, the command SHALL materialise notifications for:
 
 1. Every `Vaccination` whose latest `date + VaccinationType.due_after_days` is `<= today`, when the matching `VaccinationType.due_after_days` is greater than 0 AND `NurserySetting.notifications_vaccination_enabled` is True.
 2. Every `Schedule` with `start_date == today` (kind `pet_arriving_today`) or `start_date == today + 1` (kind `pet_arriving_tomorrow`) whose `status` is `scheduled` or `checked_in`, when `NurserySetting.notifications_arrivals_enabled` is True.
@@ -97,6 +107,36 @@ When the `notifications` feature flag is disabled, the command SHALL exit immedi
 - GIVEN a notification with `event_date = today - 8 days` and `dismissed_at = NULL`
 - WHEN the management command runs today
 - THEN the row's `dismissed_at` SHALL be set to `now()`
+
+#### Scenario: User with recent login receives notifications
+
+- GIVEN `notification_recipient_lookback_days = 30`
+- AND user Alice has `is_active = True` and `last_login = today - 5 days`
+- WHEN the management command runs today
+- THEN Alice SHALL receive a row for every event the cron fires today
+
+#### Scenario: User with stale login is excluded
+
+- GIVEN `notification_recipient_lookback_days = 30`
+- AND user Bob has `is_active = True` and `last_login = today - 31 days`
+- WHEN the management command runs today
+- THEN Bob SHALL NOT receive any notifications
+- AND no email SHALL be sent to Bob
+
+#### Scenario: Never-logged-in user is excluded
+
+- GIVEN `notification_recipient_lookback_days = 30`
+- AND user Carol is just-created with `last_login = NULL`
+- WHEN the management command runs today
+- THEN Carol SHALL NOT receive any notifications
+
+#### Scenario: Lookback of 0 includes everyone
+
+- GIVEN `notification_recipient_lookback_days = 0`
+- AND user Dave has `is_active = True` and `last_login = today - 365 days`
+- AND user Eve has `is_active = True` and `last_login = NULL`
+- WHEN the management command runs today
+- THEN both Dave AND Eve SHALL receive notifications (the lookback is disabled)
 
 ### Requirement: REST API SHALL expose the user's notifications
 
