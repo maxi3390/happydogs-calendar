@@ -19,7 +19,9 @@ The system SHALL provide a `Notification` model storing one row per `(kind, pet,
 - `event_date` — the day the event happens (arrival, egress, birthday, due date).
 - `recipient_user` (FK to `User`) — the staff user this notification is for.
 - `payload` — JSON of per-kind extras (time slot, vax type, deworming side, …).
-- `created_at`, `read_at`, `dismissed_at`.
+- `created_at`, `read_at`, `dismissed_at`, `forwarded_at`.
+
+The three "user took action on this row" timestamps (`read_at`, `dismissed_at`, `forwarded_at`) are independent: a row can be read but not forwarded, forwarded but not dismissed, etc. Each is set once and is idempotent — re-firing the action on a row whose timestamp is already non-null leaves the timestamp unchanged.
 
 The combination `(kind, pet, event_date, recipient_user, schedule, vaccination)` SHALL be unique. The management command MUST use `get_or_create()` keyed on this combination so re-running on the same day produces no duplicates.
 
@@ -145,6 +147,7 @@ The system SHALL provide REST endpoints under `/api/notifications/`:
 - `GET /api/notifications/` — list undismissed notifications for the logged-in user, ordered by `event_date` descending then `created_at` descending. Optional query: `?unread_only=1` returns only rows where `read_at IS NULL`.
 - `POST /api/notifications/{id}/mark_read/` — set `read_at = now()`. Idempotent.
 - `POST /api/notifications/{id}/dismiss/` — set `dismissed_at = now()`. Idempotent.
+- `POST /api/notifications/{id}/forward/` — set `forwarded_at = now()` if it is currently `NULL`. Idempotent: subsequent calls leave the timestamp unchanged. Returns the updated notification row.
 - `POST /api/notifications/mark_all_read/` — set `read_at = now()` on every undismissed and currently unread notification for the logged-in user. Returns `{"marked_read": n}`. Idempotent: a second call with no remaining unread rows returns `marked_read: 0`. Already-read rows SHALL NOT have their `read_at` overwritten.
 - `POST /api/notifications/dismiss_all/` — set `dismissed_at = now()` on every undismissed notification for the logged-in user.
 - `GET /api/notifications/preferences/` — return the logged-in user's `NotificationPreference` (creating it with defaults if absent).
@@ -159,6 +162,28 @@ A user SHALL only ever see and act on their own notifications. Cross-user reads,
 - WHEN Bob `POST /api/notifications/42/dismiss/`
 - THEN the response SHALL be HTTP 404
 - AND notification 42's `dismissed_at` SHALL remain `NULL`
+
+#### Scenario: First forward sets `forwarded_at`
+
+- GIVEN a notification owned by Alice with `forwarded_at = NULL`
+- WHEN Alice `POST /api/notifications/{id}/forward/`
+- THEN the response SHALL be HTTP 200 with the updated row
+- AND the row's `forwarded_at` SHALL be set to a timestamp ≈ `now()`
+
+#### Scenario: Subsequent forward is idempotent
+
+- GIVEN a notification owned by Alice whose `forwarded_at` was set yesterday
+- WHEN Alice `POST /api/notifications/{id}/forward/` again
+- THEN the response SHALL be HTTP 200
+- AND the row's `forwarded_at` SHALL be unchanged (still the original yesterday timestamp)
+
+#### Scenario: Cross-user forward is 404
+
+- GIVEN user Alice owns notification id 42
+- AND user Bob is logged in
+- WHEN Bob `POST /api/notifications/42/forward/`
+- THEN the response SHALL be HTTP 404
+- AND notification 42's `forwarded_at` SHALL remain `NULL`
 
 #### Scenario: `dismiss_all` only affects the caller's notifications
 

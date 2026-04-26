@@ -89,6 +89,20 @@ class NotificationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         return Response({'dismissed': count})
 
     @extend_schema(
+        summary="Record that the staff has forwarded a notification to the owner",
+        request=None,
+        responses={200: NotificationSerializer},
+        tags=['notifications'],
+    )
+    @action(detail=True, methods=['post'])
+    def forward(self, request, pk=None):
+        notif = self._get_owned(pk)
+        if notif.forwarded_at is None:
+            notif.forwarded_at = timezone.now()
+            notif.save(update_fields=['forwarded_at'])
+        return Response(self.get_serializer(notif).data)
+
+    @extend_schema(
         summary="Mark all of the user's unread notifications as read",
         request=None,
         responses={200: dict},

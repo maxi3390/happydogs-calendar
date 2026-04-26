@@ -18,6 +18,8 @@ export const notificationsApi = {
     fetchApi<{ dismissed: number }>('/notifications/dismiss_all/', { method: 'POST' }),
   markAllRead: () =>
     fetchApi<{ marked_read: number }>('/notifications/mark_all_read/', { method: 'POST' }),
+  forward: (id: number) =>
+    fetchApi<Notification>(`/notifications/${id}/forward/`, { method: 'POST' }),
 
   getPreferences: () =>
     fetchApi<NotificationPreference>('/notifications/preferences/'),

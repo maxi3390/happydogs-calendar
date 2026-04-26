@@ -52,7 +52,9 @@ A row SHALL render forward-to-owner buttons ONLY when its `forward` field is non
 
 The frontend SHALL NOT do any placeholder substitution on the forward block — the API response already contains the rendered text using the operator's templates (or the localised defaults when the operator left a field empty).
 
-Each row SHALL surface its read state visually: unread rows render a primary-coloured dot indicator next to the title and a subtle border highlight; read rows render neither.
+When the staff member clicks either forward button, the page SHALL fire a fire-and-forget `POST /api/notifications/{id}/forward/` to record the action — the click handler MUST NOT await the response or block the deep-link navigation. Failures SHALL be silent. When the row's `forwarded_at` is non-null, a small "Forwarded ✓" pill (`data-testid="forwarded-pill"`) SHALL render in the row's right-hand column, and both forward anchors SHALL get a `title` tooltip indicating "Already forwarded {when}". The forward buttons remain clickable on already-forwarded rows so a staff member can intentionally re-forward; the API's idempotency keeps `forwarded_at` stable.
+
+Each row SHALL surface its read state visually: unread rows render a primary-coloured dot indicator next to the title and a subtle border highlight; read rows render neither. Each row SHALL also expose `data-forwarded="true|false"` so tests and styles can target forwarded rows.
 
 Two top-level bulk-action buttons SHALL appear at the top of the page:
 
@@ -132,6 +134,29 @@ When the master flag is disabled, the page SHALL render an empty-state card so t
 - WHEN they open `/notifications`
 - THEN the page SHALL render the localised empty-state message
 - AND no rows SHALL be rendered
+
+#### Scenario: Forward click fires tracking call
+
+- GIVEN a row whose `forwarded_at` is `NULL`
+- WHEN the staff member clicks the **Forward by email** anchor
+- THEN a `POST /api/notifications/{id}/forward/` request SHALL be dispatched
+- AND the browser SHALL still navigate to the `mailto:` deep link without waiting for the response
+
+#### Scenario: Forwarded pill renders on a previously-forwarded row
+
+- GIVEN a row whose `forwarded_at` is non-null
+- WHEN the page renders the row
+- THEN a `data-testid="forwarded-pill"` element SHALL be present in the row
+- AND the row's `data-forwarded` attribute SHALL be `"true"`
+- AND both forward anchors SHALL include a `title` tooltip indicating "Already forwarded {when}"
+
+#### Scenario: Forward call fails — deep link still opens
+
+- GIVEN a row whose `forwarded_at` is `NULL`
+- AND the API endpoint is unreachable
+- WHEN the staff member clicks the **Forward by WhatsApp** anchor
+- THEN the browser SHALL still navigate to the WhatsApp deep link
+- AND no exception SHALL be visible to the user
 
 ### Requirement: Settings page SHALL surface notification controls when the master flag is enabled
 

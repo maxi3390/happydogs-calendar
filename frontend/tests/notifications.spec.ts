@@ -23,6 +23,7 @@ interface StubNotification {
   created_at: string;
   read_at: string | null;
   dismissed_at: string | null;
+  forwarded_at: string | null;
   forward: {
     email: { subject: string; body: string; to: string | null };
     whatsapp: { text: string; phone: string | null };
@@ -40,6 +41,7 @@ const BIRTHDAY_ROW: StubNotification = {
   created_at: `${TODAY}T07:00:00Z`,
   read_at: null,
   dismissed_at: null,
+  forwarded_at: null,
   forward: {
     email: {
       subject: '¡Feliz cumple, Luna!',
@@ -64,6 +66,7 @@ const TREATMENT_ROW: StubNotification = {
   created_at: `${TODAY}T07:00:00Z`,
   read_at: null,
   dismissed_at: null,
+  forwarded_at: null,
   forward: {
     email: {
       subject: 'Recordatorio de tratamiento para Rocco',
@@ -86,6 +89,7 @@ const ARRIVAL_ROW: StubNotification = {
   created_at: `${TODAY}T07:00:00Z`,
   read_at: null,
   dismissed_at: null,
+  forwarded_at: null,
   // Internal-only kind — no forward block by design.
   forward: null,
 };
@@ -99,6 +103,7 @@ const READ_DEWORMING_ROW: StubNotification = {
   created_at: `${TODAY}T07:00:00Z`,
   read_at: `${TODAY}T08:00:00Z`,
   dismissed_at: null,
+  forwarded_at: null,
   forward: {
     email: {
       subject: 'Recordatorio de tratamiento para Bugs',

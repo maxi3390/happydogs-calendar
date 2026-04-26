@@ -145,6 +145,7 @@ function NotificationRow({ notification, onMarkRead, onDismiss }: RowProps) {
   const { t } = useTranslation();
   const headline = renderKind(t, notification.kind, notification.payload);
   const isUnread = !notification.read_at;
+  const isForwarded = !!notification.forwarded_at;
 
   return (
     <Card
@@ -152,19 +153,35 @@ function NotificationRow({ notification, onMarkRead, onDismiss }: RowProps) {
       data-testid="notification-row"
       data-kind={notification.kind}
       data-unread={isUnread ? 'true' : 'false'}
+      data-forwarded={isForwarded ? 'true' : 'false'}
     >
       <CardContent className="py-4 flex items-start gap-3">
         <div className={`mt-1 w-2 h-2 rounded-full ${isUnread ? 'bg-primary' : 'bg-transparent'}`} aria-hidden="true" />
         <div className="flex-1 space-y-2">
           <div className="flex items-center justify-between gap-2">
             <p className="font-medium">{headline}</p>
-            <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {notification.event_date}
-            </span>
+            <div className="flex items-center gap-2 whitespace-nowrap">
+              {isForwarded && (
+                <span
+                  data-testid="forwarded-pill"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                >
+                  <Check className="w-3 h-3" />
+                  {t('notifications.page.forwardedPill')}
+                </span>
+              )}
+              <span className="text-xs text-muted-foreground">
+                {notification.event_date}
+              </span>
+            </div>
           </div>
 
           {notification.forward && (
-            <ForwardActions forward={notification.forward} />
+            <ForwardActions
+              notificationId={notification.id}
+              forward={notification.forward}
+              forwardedAt={notification.forwarded_at}
+            />
           )}
         </div>
         <div className="flex flex-col gap-1">
@@ -193,10 +210,12 @@ function NotificationRow({ notification, onMarkRead, onDismiss }: RowProps) {
 }
 
 interface ForwardActionsProps {
+  notificationId: number;
   forward: NonNullable<Notification['forward']>;
+  forwardedAt: string | null;
 }
 
-function ForwardActions({ forward }: ForwardActionsProps) {
+function ForwardActions({ notificationId, forward, forwardedAt }: ForwardActionsProps) {
   const { t } = useTranslation();
   const mailto = forward.email.to
     ? `mailto:${encodeURIComponent(forward.email.to)}`
@@ -212,13 +231,33 @@ function ForwardActions({ forward }: ForwardActionsProps) {
       + `&text=${encodeURIComponent(forward.whatsapp.text)}`
     : null;
 
+  // Fire-and-forget tracking on click. Order matters: dispatch the
+  // tracking POST first, then let the anchor's default navigation
+  // hand control over to the OS / browser. We do NOT await — a slow
+  // network must not block the deep-link open. Failures are silent;
+  // the user-visible action is still the deep link.
+  const trackForward = () => {
+    api.notifications.forward(notificationId).catch(() => {});
+  };
+
+  const tooltip = forwardedAt
+    ? t('notifications.page.alreadyForwardedTooltip', {
+        when: new Date(forwardedAt).toLocaleString(),
+      })
+    : undefined;
+  const mutedClass = forwardedAt
+    ? 'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-secondary/30 hover:bg-secondary/60 rounded-lg transition-colors text-muted-foreground'
+    : 'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-secondary/50 hover:bg-secondary rounded-lg transition-colors';
+
   return (
     <div className="flex flex-wrap gap-2">
       {mailto ? (
         <a
           href={mailto}
           data-testid="forward-email"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-secondary/50 hover:bg-secondary rounded-lg transition-colors"
+          title={tooltip}
+          onClick={trackForward}
+          className={mutedClass}
         >
           <Mail className="w-3.5 h-3.5" />
           {t('notifications.page.forwardEmail')}
@@ -232,7 +271,9 @@ function ForwardActions({ forward }: ForwardActionsProps) {
           data-testid="forward-whatsapp"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-secondary/50 hover:bg-secondary rounded-lg transition-colors"
+          title={tooltip}
+          onClick={trackForward}
+          className={mutedClass}
         >
           <MessageCircle className="w-3.5 h-3.5" />
           {t('notifications.page.forwardWhatsApp')}
