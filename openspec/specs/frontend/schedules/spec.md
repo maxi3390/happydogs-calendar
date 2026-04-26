@@ -110,6 +110,16 @@ The system SHALL detect scheduling conflicts in real time as the user fills in t
 - When the debounce period elapses
 - Then the system SHALL NOT trigger a conflict detection query
 
+#### Scenario: `compatibility_warnings` flag disabled suppresses both detection and visible side-effects
+
+- Given the `compatibility_warnings` feature flag is `enabled = False`
+- When the user fills in the schedule form
+- Then the system SHALL NOT issue a conflict-detection query
+- And the conflict warning Card SHALL NOT render
+- And the submit button label SHALL be the regular "Schedule" / "Save" copy (never "Schedule Anyway") regardless of any underlying conflict the backend would otherwise have flagged
+- And the submit button styling SHALL be the regular `primary` variant (never `danger` / amber)
+- And submitting the form SHALL save the schedule without prompting for conflict acknowledgement
+
 ---
 
 ### Requirement: Daily Limit Check
