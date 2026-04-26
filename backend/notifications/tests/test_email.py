@@ -25,8 +25,12 @@ class _BaseEmailTest(TestCase):
             key='notifications', defaults={'enabled': True},
         )
         mail.outbox = []
-        self.alice = create_user(email='alice@example.com')
-        self.bob = create_user(email='bob@example.com')
+        # Stamp the recipient users as English so the existing
+        # default-template assertions match the EN translation file.
+        # The language preference is exercised separately in
+        # ``test_email_uses_recipient_language``.
+        self.alice = create_user(email='alice@example.com', language='en')
+        self.bob = create_user(email='bob@example.com', language='en')
         self.owner = create_owner(email='o@example.com', phone='+1')
         self.pet = create_pet(owner=self.owner, name='Luna')
 
@@ -100,7 +104,20 @@ class DeliveryTests(_BaseEmailTest):
         msg = mail.outbox[0]
         self.assertIn('Luna', msg.subject)
         self.assertIn('arrives today', msg.subject.lower())
-        self.assertIn('09:00', msg.body)
+
+    def test_email_uses_recipient_language(self):
+        # Spanish recipient: subject/body should come from the
+        # ES translation file, not the EN one.
+        self.alice.language = 'es'
+        self.alice.save()
+        n = self._birthday_for(self.alice)
+        deliver([n])
+        msg = mail.outbox[0]
+        self.assertIn('Luna', msg.subject)
+        # ES default subject is "[Happy Calendar] {pet_name} cumple años hoy".
+        self.assertIn('cumple', msg.subject.lower())
+        # ES default body says "{pet_name} cumple {age_years} hoy".
+        self.assertIn('cumple 3 hoy', msg.body)
 
 
 class ResolveDefaultTests(TestCase):

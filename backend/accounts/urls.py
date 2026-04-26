@@ -8,6 +8,7 @@ from .views import (
     LogoutView,
     ProfileView,
     ChangePasswordView,
+    UserLanguageView,
     UserViewSet,
 )
 
@@ -22,6 +23,11 @@ urlpatterns = [
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('auth/profile/', ProfileView.as_view(), name='profile'),
     path('auth/change-password/', ChangePasswordView.as_view(), name='change_password'),
+
+    # Self-service language preference (any authenticated user).
+    # Distinct from the admin user-management endpoints below so the
+    # write surface for "user changes their own language" is narrow.
+    path('users/me/language/', UserLanguageView.as_view(), name='user-language'),
 
     # User management (admin only)
     path('', include(router.urls)),

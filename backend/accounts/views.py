@@ -11,6 +11,7 @@ from .serializers import (
     UserSerializer,
     UserCreateSerializer,
     UserUpdateSerializer,
+    UserLanguageSerializer,
     AdminUserUpdateSerializer,
     ChangePasswordSerializer,
     LoginSerializer,
@@ -153,6 +154,35 @@ class ProfileView(generics.RetrieveUpdateAPIView):
     )
     def patch(self, request, *args, **kwargs):
         return super().patch(request, *args, **kwargs)
+
+
+class UserLanguageView(generics.UpdateAPIView):
+    """Self-service endpoint for the authenticated user to change their
+    UI language preference. Narrowly-scoped on purpose: the existing
+    admin user-update endpoints stay where they were.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserLanguageSerializer
+
+    def get_object(self):
+        return self.request.user
+
+    @extend_schema(
+        summary="Update current user's language",
+        description=(
+            "Update the authenticated user's UI language preference. "
+            "Body: {\"language\": \"<en|es>\"}. Returns the updated "
+            "user shape."
+        ),
+        tags=['auth'],
+        responses={200: UserSerializer},
+    )
+    def patch(self, request, *args, **kwargs):
+        # Run the validate-and-save flow, then return the full user
+        # shape so the frontend doesn't need a second round-trip to
+        # refresh its auth context.
+        super().patch(request, *args, **kwargs)
+        return Response(UserSerializer(self.get_object()).data)
 
 
 class ChangePasswordView(generics.UpdateAPIView):

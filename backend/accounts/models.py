@@ -34,12 +34,27 @@ class User(AbstractUser):
         ADMIN = 'admin', 'Admin'
         USER = 'user', 'User'
 
+    class Language(models.TextChoices):
+        ENGLISH = 'en', 'English'
+        SPANISH = 'es', 'Español'
+
     username = None  # Remove username field
     email = models.EmailField('email address', unique=True)
     role = models.CharField(
         max_length=10,
         choices=Role.choices,
         default=Role.USER,
+    )
+    language = models.CharField(
+        max_length=8,
+        choices=Language.choices,
+        default=Language.SPANISH,
+        help_text=(
+            "Preferred UI language. Authoritative over the per-device "
+            "``localStorage.preferred_language`` value once a user is "
+            "logged in. Spanish-first because the product is "
+            "Spanish-language-first."
+        ),
     )
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)

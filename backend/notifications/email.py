@@ -48,7 +48,7 @@ def _send_one(notif: Notification) -> bool:
     if not prefs.email_enabled:
         return False
 
-    subject, body = _render(notif)
+    subject, body = _render(notif, _user_language(user))
     if not subject and not body:
         return False
 
@@ -62,8 +62,17 @@ def _send_one(notif: Notification) -> bool:
     return True
 
 
-def _render(notif: Notification) -> tuple[str, str]:
-    """Resolve the subject + body to send for ``notif``.
+def _user_language(user) -> str:
+    """Return the user's preferred language, defaulting to ``'es'`` (the
+    product's primary language) when the field is missing or empty.
+    Pre-migration rows that predate the ``language`` field will resolve
+    to the same default.
+    """
+    return getattr(user, 'language', None) or 'es'
+
+
+def _render(notif: Notification, lang: str = 'es') -> tuple[str, str]:
+    """Resolve the subject + body to send for ``notif`` in ``lang``.
 
     For kinds that map to a NotificationTemplate scope (treatment_due,
     pet_birthday) the operator's template wins; an empty operator field
@@ -78,29 +87,29 @@ def _render(notif: Notification) -> tuple[str, str]:
             render(template.email_subject, payload)
             if template.email_subject
             else _resolve_default(
-                f'notifications.staff_email.{scope}.subject', payload,
+                f'notifications.staff_email.{scope}.subject', payload, lang,
             )
         )
         body = (
             render(template.email_body, payload)
             if template.email_body
             else _resolve_default(
-                f'notifications.staff_email.{scope}.body', payload,
+                f'notifications.staff_email.{scope}.body', payload, lang,
             )
         )
         return subject, body
 
     # Internal-only kinds — no operator template; lookup by kind.
     subject = _resolve_default(
-        f'notifications.staff_email.{notif.kind}.subject', payload,
+        f'notifications.staff_email.{notif.kind}.subject', payload, lang,
     )
     body = _resolve_default(
-        f'notifications.staff_email.{notif.kind}.body', payload,
+        f'notifications.staff_email.{notif.kind}.body', payload, lang,
     )
     return subject, body
 
 
-def _resolve_default(key: str, payload: dict, lang: str = 'en') -> str:
+def _resolve_default(key: str, payload: dict, lang: str = 'es') -> str:
     """Look up a localised default string in ``backend/translations/``.
 
     Mirrors the logic in ``serializers._resolve_default`` but lives in

@@ -14,4 +14,8 @@ export const usersApi = {
   }),
   delete: (id: number) => fetchApi<void>(`/users/${id}/`, { method: 'DELETE' }),
   me: () => fetchApi<User>('/users/me/'),
+  setLanguage: (language: 'en' | 'es') => fetchApi<User>('/users/me/language/', {
+    method: 'PATCH',
+    body: JSON.stringify({ language }),
+  }),
 };
