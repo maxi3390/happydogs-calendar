@@ -110,3 +110,38 @@ The repository-level setup and maintenance targets SHALL cooperate with the env-
 - WHEN an operator runs `make upgrade`
 - THEN the target SHALL print a warning pointing the operator at `make env`
 - AND the `git pull → build → up → migrate` sequence SHALL still execute
+
+### Requirement: `.env.example` And `make env` SHALL Cover Email-Delivery Variables
+
+The notification cron sends staff-internal emails when the master `notifications` flag is on. The system SHALL expose every SMTP-related variable read by `nursery/settings.py` through both `.env.example` and the `make env` interactive prompt so a production deployment cannot silently end up on Django's stdout-only console backend.
+
+The covered variables SHALL be:
+
+- `EMAIL_BACKEND` — Django mail backend dotted path. Default: `django.core.mail.backends.console.EmailBackend`.
+- `EMAIL_HOST` — SMTP host. Default: `localhost`.
+- `EMAIL_PORT` — SMTP port. Default: `25`.
+- `EMAIL_HOST_USER` — SMTP authentication username. Default: empty.
+- `EMAIL_HOST_PASSWORD` — SMTP authentication password. Default: empty. The `make env` prompt SHALL read this value silently (no terminal echo) so it does not leak into shell-history files or terminal-recording transcripts.
+- `EMAIL_USE_TLS` — STARTTLS toggle. Default: `False`.
+- `DEFAULT_FROM_EMAIL` — The from-address staff emails are sent as. Default: `happy-calendar@localhost`.
+
+The `.env.example` block SHALL document, in a comment, that the dev defaults keep emails on the console backend (printed to stdout) and that production deployments expecting real delivery SHALL set `EMAIL_BACKEND` to an SMTP backend along with the relevant credentials.
+
+The same silent-input rule SHALL apply to any future variable whose name contains `PASSWORD`, `SECRET`, or `TOKEN` (so secrets added later don't have to be one-off-cased).
+
+#### Scenario: All email variables are present after `make env`
+
+- GIVEN no `.env` file exists
+- WHEN the operator runs `make env` and accepts every default
+- THEN the resulting `.env` SHALL contain `EMAIL_BACKEND`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, and `DEFAULT_FROM_EMAIL` lines
+
+#### Scenario: Password input is silent
+
+- GIVEN the operator is at the `EMAIL_HOST_PASSWORD` prompt
+- WHEN they type their password
+- THEN the typed characters SHALL NOT echo to the terminal
+
+#### Scenario: Non-TTY fallback still includes the email variables
+
+- WHEN `make env` runs without a controlling TTY
+- THEN the resulting `.env` SHALL still contain every email variable populated with its documented default

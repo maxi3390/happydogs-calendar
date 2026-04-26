@@ -310,3 +310,33 @@ Operators changing `notifications_run_time` in Settings SHALL see the change tak
 - WHEN an operator changes the value to `09:00` at 06:55
 - THEN the cron SHALL NOT fire at 07:00
 - AND it SHALL fire at 09:00 (or the first iteration thereafter)
+
+### Requirement: Cron startup SHALL warn loudly when configured to send mail to stdout in production
+
+The polling loop SHALL emit a single WARNING-level log line at startup when ALL of the following are true:
+
+- `EMAIL_BACKEND` ends with `.console.EmailBackend` (Django's stdout-only backend, the local-dev default).
+- The master `notifications` feature flag is enabled.
+
+The warning SHALL surface the silent-failure mode where an operator deploys to production with the notifications flag on but forgot to set `EMAIL_BACKEND` / `EMAIL_HOST` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD`. The warning SHALL be emitted exactly once per process so log noise stays bounded.
+
+#### Scenario: Console backend with notifications enabled emits the warning
+
+- GIVEN `EMAIL_BACKEND = django.core.mail.backends.console.EmailBackend`
+- AND the `notifications` flag is enabled
+- WHEN the cron container starts
+- THEN exactly one WARNING-level log line SHALL be emitted from the `run_notification_scheduler` logger naming the misconfiguration
+
+#### Scenario: Console backend with notifications disabled is silent
+
+- GIVEN `EMAIL_BACKEND = django.core.mail.backends.console.EmailBackend`
+- AND the `notifications` flag is disabled
+- WHEN the cron container starts
+- THEN no startup warning SHALL be emitted
+
+#### Scenario: SMTP backend even with notifications enabled is silent
+
+- GIVEN `EMAIL_BACKEND = django.core.mail.backends.smtp.EmailBackend`
+- AND the `notifications` flag is enabled
+- WHEN the cron container starts
+- THEN no startup warning SHALL be emitted
