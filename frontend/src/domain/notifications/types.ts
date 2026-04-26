@@ -38,6 +38,7 @@ export interface Notification {
   created_at: string;
   read_at: string | null;
   dismissed_at: string | null;
+  forwarded_at: string | null;
   forward: NotificationForward | null;
 }
 

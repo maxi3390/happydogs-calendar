@@ -596,6 +596,8 @@
       "filterUnread": "Sólo no leídas",
       "forwardEmail": "Enviar email al dueño",
       "forwardWhatsApp": "Enviar WhatsApp al dueño",
+      "forwardedPill": "Reenviado",
+      "alreadyForwardedTooltip": "Ya reenviado {when}",
       "noOwnerEmail": "El dueño no tiene email registrado.",
       "noOwnerPhone": "El dueño no tiene teléfono registrado."
     },

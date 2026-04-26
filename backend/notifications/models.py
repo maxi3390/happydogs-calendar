@@ -66,6 +66,15 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     read_at = models.DateTimeField(null=True, blank=True)
     dismissed_at = models.DateTimeField(null=True, blank=True)
+    forwarded_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text=(
+            "First time a staff member triggered an owner-forward "
+            "(email or WhatsApp) action on this row. Set once on first "
+            "click; subsequent clicks are no-ops so the timestamp "
+            "stays stable."
+        ),
+    )
 
     class Meta:
         constraints = [

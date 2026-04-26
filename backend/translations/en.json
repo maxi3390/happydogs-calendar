@@ -596,6 +596,8 @@
       "filterUnread": "Unread only",
       "forwardEmail": "Email owner",
       "forwardWhatsApp": "WhatsApp owner",
+      "forwardedPill": "Forwarded",
+      "alreadyForwardedTooltip": "Already forwarded {when}",
       "noOwnerEmail": "Owner has no email on file.",
       "noOwnerPhone": "Owner has no phone on file."
     },

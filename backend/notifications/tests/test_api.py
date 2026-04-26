@@ -231,6 +231,36 @@ class NotificationActionsAPITests(_BaseNotificationsTest):
         response = self.client.post(reverse('notification-mark-all-read'))
         self.assertEqual(response.data['marked_read'], 0)
 
+    def test_forward_sets_forwarded_at(self):
+        url = reverse('notification-forward', args=[self.notif.id])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.notif.refresh_from_db()
+        self.assertIsNotNone(self.notif.forwarded_at)
+        self.assertIsNotNone(response.data['forwarded_at'])
+
+    def test_forward_is_idempotent(self):
+        url = reverse('notification-forward', args=[self.notif.id])
+        self.client.post(url)
+        first = Notification.objects.get(pk=self.notif.id).forwarded_at
+        self.client.post(url)
+        second = Notification.objects.get(pk=self.notif.id).forwarded_at
+        self.assertEqual(first, second)
+
+    def test_cross_user_forward_is_404(self):
+        other_notif = Notification.objects.create(
+            kind=Notification.KIND_PET_BIRTHDAY,
+            pet=self.pet,
+            event_date=date.today(),
+            recipient_user=self.other_user,
+            payload={'pet_name': 'Luna'},
+        )
+        url = reverse('notification-forward', args=[other_notif.id])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        other_notif.refresh_from_db()
+        self.assertIsNone(other_notif.forwarded_at)
+
 
 class NotificationPreferenceAPITests(_BaseNotificationsTest):
     def setUp(self):
