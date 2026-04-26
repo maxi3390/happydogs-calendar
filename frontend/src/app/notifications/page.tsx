@@ -90,11 +90,16 @@ function NotificationsPage() {
               variant="secondary"
               onClick={handleMarkAllRead}
               disabled={!hasUnread}
+              data-testid="mark-all-read"
             >
               <CheckCheck className="w-4 h-4 mr-1" />
               {t('notifications.page.markAllRead')}
             </Button>
-            <Button variant="secondary" onClick={handleDismissAll}>
+            <Button
+              variant="secondary"
+              onClick={handleDismissAll}
+              data-testid="dismiss-all"
+            >
               <Trash2 className="w-4 h-4 mr-1" />
               {t('notifications.page.dismissAll')}
             </Button>
@@ -142,7 +147,12 @@ function NotificationRow({ notification, onMarkRead, onDismiss }: RowProps) {
   const isUnread = !notification.read_at;
 
   return (
-    <Card className={isUnread ? 'border-primary/40' : ''}>
+    <Card
+      className={isUnread ? 'border-primary/40' : ''}
+      data-testid="notification-row"
+      data-kind={notification.kind}
+      data-unread={isUnread ? 'true' : 'false'}
+    >
       <CardContent className="py-4 flex items-start gap-3">
         <div className={`mt-1 w-2 h-2 rounded-full ${isUnread ? 'bg-primary' : 'bg-transparent'}`} aria-hidden="true" />
         <div className="flex-1 space-y-2">
@@ -207,6 +217,7 @@ function ForwardActions({ forward }: ForwardActionsProps) {
       {mailto ? (
         <a
           href={mailto}
+          data-testid="forward-email"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-secondary/50 hover:bg-secondary rounded-lg transition-colors"
         >
           <Mail className="w-3.5 h-3.5" />
@@ -218,6 +229,7 @@ function ForwardActions({ forward }: ForwardActionsProps) {
       {wa ? (
         <a
           href={wa}
+          data-testid="forward-whatsapp"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-secondary/50 hover:bg-secondary rounded-lg transition-colors"

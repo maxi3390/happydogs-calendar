@@ -150,3 +150,50 @@ Non-admin users SHALL see the nursery-wide controls in a disabled state and the 
 - THEN the My-preferences subsection SHALL be editable
 - AND the nursery-wide controls SHALL be disabled
 - AND the Message templates subsection SHALL NOT render
+
+### Requirement: Playwright suite SHALL cover the bell, the `/notifications` page, and the forward deep-links
+
+The frontend Playwright suite SHALL include `frontend/tests/notifications.spec.ts` providing end-to-end coverage of the notification bell, the `/notifications` page, and the forward-to-owner buttons. The spec SHALL stub the `GET /api/feature-flags/` and `GET|POST /api/notifications/*` endpoints via Playwright's `page.route()` so it does not depend on driving the real cron from inside the Playwright container — the underlying API contract is verified separately by the backend test suite.
+
+The components under test SHALL expose stable `data-testid` attributes for selection: `notification-bell` (with `data-unread-count`), `notification-bell-badge`, `notification-row` (with `data-kind` and `data-unread`), `forward-email`, `forward-whatsapp`, `mark-all-read`, and `dismiss-all`.
+
+#### Scenario: Bell hidden when the master flag is disabled
+
+- GIVEN the stubbed `GET /api/feature-flags/` returns `notifications.enabled = false`
+- WHEN any authenticated page loads
+- THEN no element with `data-testid="notification-bell"` SHALL render
+
+#### Scenario: Bell renders with the unread count
+
+- GIVEN the stubbed `GET /api/notifications/?unread_only=1` returns 3 rows
+- WHEN any authenticated page loads
+- THEN `data-testid="notification-bell"` SHALL be visible
+- AND its `data-unread-count` attribute SHALL be `"3"`
+- AND `data-testid="notification-bell-badge"` SHALL render the text `"3"`
+
+#### Scenario: Forward email deep-link
+
+- GIVEN a `pet_birthday` row whose `forward.email.to = "ana.garcia@seed.example"`
+- WHEN the `/notifications` page renders
+- THEN the row's `data-testid="forward-email"` anchor SHALL have an `href` matching `^mailto:ana\.garcia%40seed\.example`
+
+#### Scenario: Forward WhatsApp deep-link uses the official endpoint
+
+- GIVEN a `pet_birthday` row whose `forward.whatsapp.phone = "+54 11 4000 0001"`
+- WHEN the `/notifications` page renders
+- THEN the row's `data-testid="forward-whatsapp"` anchor SHALL have an `href` matching `^https://api\.whatsapp\.com/send\?phone=541140000001`
+- AND the `href` SHALL NOT contain the substring `wa.me`
+
+#### Scenario: Internal-only row hides forward buttons
+
+- GIVEN a `pet_arriving_today` row whose `forward` is `null`
+- WHEN the `/notifications` page renders
+- THEN the row SHALL contain no `forward-email` anchor
+- AND the row SHALL contain no `forward-whatsapp` anchor
+
+#### Scenario: Mark-all-read disables itself when nothing is unread
+
+- GIVEN every visible row already has a non-null `read_at`
+- WHEN the `/notifications` page renders
+- THEN `data-testid="mark-all-read"` SHALL have its `disabled` attribute set
+- AND `data-testid="dismiss-all"` SHALL remain enabled
