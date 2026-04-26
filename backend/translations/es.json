@@ -551,7 +551,41 @@
     "toggleEnable": "Activada",
     "toggleDisable": "Desactivada",
     "saveFailed": "No se pudo guardar la flag",
-    "empty": "Todavía no hay feature flags registradas."
+    "empty": "Todavía no hay feature flags registradas.",
+    "flags": {
+      "multiday_schedule": {
+        "label": "Estadías de varios días",
+        "description": "Cuando está activa, los turnos pueden abarcar varios días (el formulario muestra un campo separado para la fecha de fin). Cuando está desactivada, cada turno es de un solo día y la fecha de fin se fuerza a coincidir con la de inicio."
+      },
+      "custom_pet_species": {
+        "label": "Especies personalizadas",
+        "description": "Cuando está activa, el formulario de Mascota muestra un campo de texto libre junto al desplegable por defecto para registrar especies exóticas o poco comunes (reptiles, cerdos, etc.) sin tocar el código. Cuando está desactivada, solo está disponible el desplegable canónico (perro / gato / pájaro / conejo / otro)."
+      },
+      "vet_management": {
+        "label": "Gestión de veterinarios",
+        "description": "Controla la visibilidad de la página de Veterinarios, los desplegables en el formulario de Dueño (veterinario primario, de emergencia) y la sobreescritura en el formulario de Mascota. Los endpoints del backend siguen accesibles aunque esté desactivada para preservar las relaciones existentes."
+      },
+      "medical_notes": {
+        "label": "Notas médicas",
+        "description": "Cuando está activa, el formulario de Mascota incluye la sección de Notas Médicas para registrar alergias, observaciones de comportamiento y seguimientos. Cuando está desactivada, la sección queda oculta pero los registros existentes permanecen en la base de datos."
+      },
+      "data_backup": {
+        "label": "Respaldo de datos",
+        "description": "Controla la visibilidad de la tarjeta de Respaldo en Configuración (exportar a JSON / CSV e importar desde archivo). Desactivarla solo oculta la interfaz; los endpoints /api/data-portability siguen disponibles para automatización."
+      },
+      "compatibility_warnings": {
+        "label": "Avisos de compatibilidad",
+        "description": "Cuando está activa, el formulario de Turno muestra avisos de compatibilidad entre mascotas (por ejemplo, mascota agresiva superpuesta con otra) tras la creación. Cuando está desactivada, los turnos se siguen creando con datos de superposición pero el cartel de aviso se suprime."
+      },
+      "deworming_tracking": {
+        "label": "Seguimiento de desparasitación",
+        "description": "Cuando está activa, el formulario de Mascota expone los campos de última desparasitación interna / externa y el cron diario dispara recordatorios contra esas fechas. Desactivar para ocultar los campos por completo."
+      },
+      "notifications": {
+        "label": "Notificaciones",
+        "description": "Interruptor maestro del sistema de notificaciones. Cuando está activa, el cron diario genera recordatorios in-app (vacunación / desparasitación pendientes, cumpleaños de mascotas, llegadas y salidas) y se renderizan la campanita y la página /notifications. Cuando está desactivada, todas las superficies de notificación quedan ocultas y el cron es un no-op."
+      }
+    }
   },
   "notifications": {
     "page": {

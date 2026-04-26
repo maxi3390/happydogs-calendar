@@ -27,6 +27,23 @@ function FeatureFlagsAdminPage() {
     }
   };
 
+  // ``label`` and ``description`` come from the seed migration in
+  // English. We prefer a localised override under
+  // ``featureFlags.flags.<key>.{label,description}`` when one exists,
+  // falling back to the DB value when the key is missing from the
+  // current language file. ``t()`` returns the lookup key verbatim on
+  // a miss, so the equality check below is enough to detect that.
+  const localised = (flag: { key: string; label: string; description: string }) => {
+    const labelKey = `featureFlags.flags.${flag.key}.label`;
+    const descKey = `featureFlags.flags.${flag.key}.description`;
+    const label = t(labelKey);
+    const description = t(descKey);
+    return {
+      label: label === labelKey ? flag.label : label,
+      description: description === descKey ? flag.description : description,
+    };
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navigation />
@@ -66,6 +83,7 @@ function FeatureFlagsAdminPage() {
           <div className="space-y-3">
             {flags.map(flag => {
               const busy = togglingKey === flag.key;
+              const { label, description } = localised(flag);
               return (
                 <div
                   key={flag.key}
@@ -73,10 +91,10 @@ function FeatureFlagsAdminPage() {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2 mb-1 flex-wrap">
-                      <h3 className="text-base font-semibold">{flag.label}</h3>
+                      <h3 className="text-base font-semibold">{label}</h3>
                       <code className="text-xs text-muted-foreground font-mono">{flag.key}</code>
                     </div>
-                    <p className="text-sm text-muted-foreground">{flag.description}</p>
+                    <p className="text-sm text-muted-foreground">{description}</p>
                   </div>
 
                   <label className="flex items-center gap-2 cursor-pointer select-none">

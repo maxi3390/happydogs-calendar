@@ -551,7 +551,41 @@
     "toggleEnable": "Enabled",
     "toggleDisable": "Disabled",
     "saveFailed": "Failed to save the flag",
-    "empty": "No feature flags are registered yet."
+    "empty": "No feature flags are registered yet.",
+    "flags": {
+      "multiday_schedule": {
+        "label": "Multi-day schedule",
+        "description": "When enabled, schedules may span multiple days (the Schedule form shows a separate end-date input). When disabled, every schedule is a single-day stay and the end date is forced to match the start date."
+      },
+      "custom_pet_species": {
+        "label": "Custom pet species",
+        "description": "When enabled, the Pet form shows a free-text species input next to the default dropdown so staff can record exotic or rare species (reptiles, pigs, etc.) without a code change. When disabled, only the canonical dropdown (dog / cat / bird / rabbit / other) is available."
+      },
+      "vet_management": {
+        "label": "Vet management",
+        "description": "Controls the visibility of the Vets page, the vet dropdowns in the Owner form (primary vet, emergency vet), and the vet override in the Pet form. The backend endpoints remain reachable when disabled so existing FK data is preserved."
+      },
+      "medical_notes": {
+        "label": "Medical notes",
+        "description": "When enabled, the Pet form includes the Medical Notes section for recording allergies, behavioral notes, and follow-ups. When disabled, the section is hidden but existing records remain in the database."
+      },
+      "data_backup": {
+        "label": "Data backup",
+        "description": "Controls the visibility of the Data Backup card in Settings (export to JSON / CSV and import from file). Disabling this flag only hides the UI; the /api/data-portability endpoints stay available for automation."
+      },
+      "compatibility_warnings": {
+        "label": "Compatibility warnings",
+        "description": "When enabled, the Schedule form surfaces pet-compatibility warnings (e.g. aggressive pet overlapping with another pet) after creation. When disabled, schedules are still created with overlap data but the warning banner is suppressed."
+      },
+      "deworming_tracking": {
+        "label": "Deworming tracking",
+        "description": "When enabled, the Pet form exposes the last internal / external deworming date inputs and the daily notification cron fires deworming reminders against them. Disable to hide the inputs entirely."
+      },
+      "notifications": {
+        "label": "Notifications",
+        "description": "Master switch for the notifications system. When enabled, the daily cron generates in-app reminders (vaccination/deworming due, pet birthdays, schedule arrivals/egress) and the bell + /notifications page render. When disabled, every notification surface is hidden and the cron is a no-op."
+      }
+    }
   },
   "notifications": {
     "page": {
