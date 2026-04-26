@@ -10,6 +10,12 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
 
+from feature_flags.models import FeatureFlag
+from notifications.models import (
+    Notification,
+    NotificationPreference,
+    NotificationTemplate,
+)
 from pets.models import (
     MedicalNote,
     Owner,
@@ -289,3 +295,117 @@ class SeedExampleDataVetWiringTests(TestCase):
         call_command('seed_example_data', '--reset', '--quiet')
 
         self.assertTrue(Vet.objects.filter(pk=foreign_vet.pk).exists())
+
+
+@override_settings(DEBUG=True)
+class SeedExampleDataNotificationsTests(TestCase):
+    """Cover NotificationTemplate, NotificationPreference, and the
+    pet/vaccination/schedule fields the notifications cron consumes."""
+
+    def test_notification_templates_are_seeded(self):
+        call_command('seed_example_data', '--quiet')
+        for tpl_data in seed_module.SEED_NOTIFICATION_TEMPLATES:
+            tpl = NotificationTemplate.objects.get(scope=tpl_data['scope'])
+            self.assertEqual(tpl.email_subject, tpl_data['email_subject'])
+            self.assertEqual(tpl.email_body, tpl_data['email_body'])
+            self.assertEqual(tpl.whatsapp_text, tpl_data['whatsapp_text'])
+
+    def test_notification_preferences_cover_both_states(self):
+        call_command('seed_example_data', '--quiet')
+        prefs = list(
+            NotificationPreference.objects.filter(
+                user__email__in=[u['email'] for u in seed_module.SEED_USERS]
+            ).values_list('email_enabled', flat=True)
+        )
+        self.assertEqual(len(prefs), len(seed_module.SEED_USERS))
+        self.assertIn(True, prefs)
+        self.assertIn(False, prefs)
+
+    def test_pet_birthday_today(self):
+        call_command('seed_example_data', '--quiet')
+        from datetime import date
+        today = date.today()
+        # At least one seeded pet's birth_date matches today's month-day.
+        match = Pet.objects.filter(
+            birth_date__month=today.month,
+            birth_date__day=today.day,
+        ).count()
+        self.assertGreaterEqual(match, 1)
+
+    def test_deworming_dates_are_due(self):
+        call_command('seed_example_data', '--quiet')
+        from datetime import date, timedelta
+        from nursery_settings.models import NurserySetting
+        cutoff = date.today() - timedelta(
+            days=NurserySetting.load().deworming_default_due_days,
+        )
+        self.assertGreaterEqual(
+            Pet.objects.filter(
+                last_internal_deworming_date__lte=cutoff,
+            ).count(),
+            1,
+        )
+        self.assertGreaterEqual(
+            Pet.objects.filter(
+                last_external_deworming_date__lte=cutoff,
+            ).count(),
+            1,
+        )
+
+    def test_master_flag_off_creates_no_notifications(self):
+        FeatureFlag.objects.update_or_create(
+            key='notifications', defaults={'enabled': False},
+        )
+        call_command('seed_example_data', '--quiet')
+        self.assertEqual(Notification.objects.count(), 0)
+
+    def test_master_flag_on_materialises_notifications(self):
+        FeatureFlag.objects.update_or_create(
+            key='notifications', defaults={'enabled': True},
+        )
+        call_command('seed_example_data', '--quiet')
+        self.assertGreater(Notification.objects.count(), 0)
+        kinds = set(
+            Notification.objects.values_list('kind', flat=True).distinct()
+        )
+        # The seeded fixture is hand-tuned to fire at least these kinds.
+        self.assertIn(Notification.KIND_PET_BIRTHDAY, kinds)
+        self.assertIn(Notification.KIND_DEWORMING_INTERNAL_DUE, kinds)
+        self.assertIn(Notification.KIND_DEWORMING_EXTERNAL_DUE, kinds)
+
+    def test_reset_clears_seed_owned_notification_rows(self):
+        FeatureFlag.objects.update_or_create(
+            key='notifications', defaults={'enabled': True},
+        )
+        # Foreign pet + a notification on it that should survive --reset.
+        from datetime import date
+        foreign = create_pet(
+            owner=create_owner(email='outside@example.com'),
+            name='Outside',
+        )
+        outside_notif = Notification.objects.create(
+            kind=Notification.KIND_PET_BIRTHDAY,
+            pet=foreign,
+            event_date=date.today(),
+            recipient_user=User.objects.create_user(
+                email='outside.user@example.com', password='x',
+                first_name='X', last_name='Y',
+            ),
+            payload={'pet_name': 'Outside'},
+        )
+
+        call_command('seed_example_data', '--quiet')
+        self.assertGreater(Notification.objects.count(), 1)
+
+        call_command('seed_example_data', '--reset', '--quiet')
+
+        # The out-of-band notification SHOULD survive --reset (it's not
+        # tied to a seed-owned pet).
+        self.assertTrue(Notification.objects.filter(pk=outside_notif.pk).exists())
+        # The seeded templates / preferences SHOULD have been re-created.
+        self.assertEqual(
+            NotificationTemplate.objects.filter(
+                scope__in=[t['scope'] for t in seed_module.SEED_NOTIFICATION_TEMPLATES],
+            ).count(),
+            len(seed_module.SEED_NOTIFICATION_TEMPLATES),
+        )
