@@ -244,6 +244,23 @@ Daily-cron-driven reminders for vaccination/deworming due, pet birthdays, and ar
 
 Key decisions: Polling-loop scheduler (no celery). One notification row per (event × staff user). Idempotent natural key. Master ``notifications`` feature flag, plus per-kind ``NurserySetting.notifications_*_enabled`` toggles. Email templates fall back to localised defaults under ``notifications.staff_email.*`` in the translations files.
 
+### 12. Audit Log
+
+Per-row history for ``Pet``, ``Owner``, ``MedicalNote``, and ``Vaccination`` via ``django-simple-history``. Every insert / update / delete that goes through ``.save()`` (including the API layer) creates a row in the corresponding ``historical*`` shadow table with timestamp, change type, and the calling user (resolved from the request middleware). Admins can read the trail per entity through:
+
+- ``GET /api/pets/<id>/history/``
+- ``GET /api/owners/<id>/history/``
+- ``GET /api/pets/<pet_id>/medical-notes/<id>/history/``
+- ``GET /api/pets/<pet_id>/vaccinations/<id>/history/``
+
+| Artifact | Path |
+|----------|------|
+| **Spec** | `openspec/specs/backend/audit-log/spec.md` |
+| **Tests** | `backend/audit_log/tests/test_history_tracking.py`, `test_history_endpoints.py` |
+| **Code** | `backend/audit_log/` (serializers.py, views.py, urls.py); ``HistoricalRecords()`` on the four tracked models in ``backend/domain/`` |
+
+**Caveat — bulk operations.** ``django-simple-history`` records changes per ``.save()`` call. ``QuerySet.update()`` / ``QuerySet.bulk_update()`` / raw SQL bypass the signal and DO NOT produce history rows. Avoid those operations on the tracked models (Pet / Owner / MedicalNote / Vaccination) unless the change is intentionally untracked. The seed command's ``update_or_create`` calls each save individually, so they are tracked.
+
 ---
 
 ## Change Log (OpenSpec Changes)

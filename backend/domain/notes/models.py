@@ -1,4 +1,5 @@
 from django.db import models
+from simple_history.models import HistoricalRecords
 
 
 class Note(models.Model):
@@ -13,6 +14,8 @@ class Note(models.Model):
 
 class MedicalNote(Note):
     pet = models.ForeignKey('pets.Pet', on_delete=models.CASCADE, related_name='medical_notes')
+
+    history = HistoricalRecords()
 
     class Meta:
         app_label = 'pets'

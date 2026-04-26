@@ -1,4 +1,5 @@
 from django.db import models
+from simple_history.models import HistoricalRecords
 
 
 class VaccinationType(models.Model):
@@ -29,6 +30,8 @@ class Vaccination(models.Model):
     vax_type = models.CharField(max_length=50)
     date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+    history = HistoricalRecords()
 
     class Meta:
         app_label = 'pets'

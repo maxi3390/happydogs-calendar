@@ -22,12 +22,14 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'drf_spectacular',
+    'simple_history',
     'accounts',
     'pets',
     'nursery_settings',
     'data_portability',
     'feature_flags',
     'notifications',
+    'audit_log',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -41,6 +43,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'simple_history.middleware.HistoryRequestMiddleware',
 ]
 
 ROOT_URLCONF = 'nursery.urls'
