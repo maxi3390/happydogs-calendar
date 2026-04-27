@@ -272,7 +272,7 @@ Per-row history for ``Pet``, ``Owner``, ``MedicalNote``, and ``Vaccination`` via
 | **Bandit config** | `backend/bandit.yaml` |
 | **Orchestrator** | `scripts/security/run-scans.sh` |
 | **Aggregator** | `scripts/security/generate-report.py` |
-| **Report** | `security-reports/REPORT.md` (generated; gitignored) |
+| **Report** | `security-reports/<timestamp>/REPORT.md` per run; `security-reports/latest/REPORT.md` always points at the most recent. Generated artefacts are gitignored; `security-reports/.gitkeep` is tracked. |
 
 When you add a new ViewSet or modify an existing one's `permission_classes`, also update the URL inventory in `security_tests/tests/test_a01_access_control.py` so the access-control walk covers the new surface.
 

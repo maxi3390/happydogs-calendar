@@ -246,7 +246,7 @@ Run `make help` inside the repo for the full catalogue. Most-used targets:
 | `make test-backend`     | Backend tests (SQLite in-memory)                                          |
 | `make test-frontend`    | Playwright E2E tests (headless Chrome)                                    |
 | `make lint`             | `flake8` on backend, `next lint` on frontend                              |
-| `make security`         | OWASP-Top-10 suite (bandit + pip-audit + npm audit + `check --deploy` + custom Django tests). Aggregated report at `security-reports/REPORT.md`; exits non-zero on any `critical` finding. |
+| `make security`         | OWASP-Top-10 suite (bandit + pip-audit + npm audit + `check --deploy` + custom Django tests). Per-run report at `security-reports/<timestamp>/REPORT.md`; `security-reports/latest/REPORT.md` always points at the most recent. Exits non-zero on any `critical` finding. Override retention via `SECURITY_REPORT_KEEP` (default 10). |
 | `make backup`           | Full gzipped `pg_dump` → `backups/nursery-<timestamp>.sql.gz`             |
 | `make restore`          | Restore the DB from the latest backup (or `BACKUP_FILE=path make restore`) — destructive; requires explicit confirmation |
 | `make destroy-db`       | Irreversibly remove the `happy-calendar_postgres_data` volume — destructive; requires explicit confirmation |

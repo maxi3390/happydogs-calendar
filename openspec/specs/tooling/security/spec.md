@@ -18,14 +18,42 @@ The target SHALL execute, in order:
 4. `python manage.py check --deploy` with `DEBUG=False` — Django framework misconfiguration check.
 5. `python manage.py test security_tests` — custom Django test suite asserting access control (A01), auth posture (A07), and audit-log coverage (A09).
 
-The report SHALL be written to `security-reports/REPORT.md`. The directory SHALL be tracked via a `.gitkeep`; per-run artefacts (the JSON / text outputs of each tool plus the regenerated Markdown) SHALL be gitignored so a fresh clone always has a place for the report to land but the report itself is never committed.
+Each invocation SHALL create a timestamped run directory at `security-reports/YYYY-MM-DD-HHMMSS/` and write every per-tool artefact (`bandit.json`, `pip-audit.json`, `npm-audit.json`, `django-check.txt`, `owasp-tests.txt`) plus the aggregated `REPORT.md` into that subdirectory, so multiple runs co-exist without overwriting each other. The orchestrator SHALL maintain a `security-reports/latest` symlink pointing at the most recent run so `cat security-reports/latest/REPORT.md` is stable across runs.
+
+The orchestrator SHALL trim old runs to keep the most recent N (default 10). The retention count SHALL be overridable via the `SECURITY_REPORT_KEEP` environment variable; setting `SECURITY_REPORT_KEEP=0` SHALL disable trimming.
+
+`security-reports/` itself SHALL be tracked via `.gitkeep`; per-run subdirectories and their contents SHALL be gitignored so the report history is local-only and a fresh clone always has a place for the next run to land.
 
 #### Scenario: Operator runs `make security` on a clean tree
 
 - GIVEN a checkout where every tool runs cleanly
 - WHEN the operator runs `make security`
-- THEN every artefact SHALL appear under `security-reports/` (`bandit.json`, `pip-audit.json`, `npm-audit.json`, `django-check.txt`, `owasp-tests.txt`, `REPORT.md`)
+- THEN a new directory `security-reports/<timestamp>/` SHALL be created
+- AND every artefact (`bandit.json`, `pip-audit.json`, `npm-audit.json`, `django-check.txt`, `owasp-tests.txt`, `REPORT.md`) SHALL appear inside that directory
+- AND `security-reports/latest` SHALL be a symlink pointing at the new run directory
 - AND `REPORT.md` SHALL contain a section per OWASP category (A01 through A10)
+
+#### Scenario: Multiple runs co-exist
+
+- GIVEN one run has already produced `security-reports/2026-04-27-085851/`
+- WHEN the operator runs `make security` a second time
+- THEN a new sibling directory (`security-reports/2026-04-27-085922/` or similar) SHALL be created alongside the previous one
+- AND `security-reports/latest` SHALL now point at the newer directory
+- AND the previous run directory SHALL still be readable
+
+#### Scenario: Old runs are auto-trimmed
+
+- GIVEN `security-reports/` already contains 11 timestamped run directories
+- WHEN the operator runs `make security` with the default retention
+- THEN the orchestrator SHALL retain the 10 most recent runs (including the new one)
+- AND the oldest excess run directory SHALL be removed
+- AND `security-reports/latest` SHALL point at the most recent run
+
+#### Scenario: Trimming is disabled when SECURITY_REPORT_KEEP=0
+
+- GIVEN `security-reports/` already contains many run directories
+- WHEN the operator runs `SECURITY_REPORT_KEEP=0 make security`
+- THEN no run directory SHALL be deleted, regardless of how many already exist
 
 #### Scenario: One tool fails individually
 

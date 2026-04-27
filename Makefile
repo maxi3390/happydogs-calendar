@@ -48,7 +48,7 @@ help:
 	@echo "Development:"
 	@echo "  make lint           - Run linters"
 	@echo "  make format         - Format code"
-	@echo "  make security       - Run OWASP-Top-10 security suite (writes security-reports/REPORT.md)"
+	@echo "  make security       - Run OWASP-Top-10 security suite (writes security-reports/<timestamp>/REPORT.md; latest/ symlinks the most recent)"
 	@echo ""
 	@echo "Maintenance:"
 	@echo "  make env            - Create .env interactively from .env.example (idempotent)"
