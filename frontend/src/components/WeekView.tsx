@@ -274,12 +274,17 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
                             <button
                               key={bar.schedule.id}
                               onClick={() => setSelectedSchedule(bar.schedule)}
-                              className={`h-7 flex items-center gap-1.5 px-2.5 text-xs font-medium truncate border transition-colors cursor-pointer ${roundedLeft} ${roundedRight} ${color.bg} ${color.text} ${color.border} ${color.hover}`}
+                              className={`h-7 flex items-center justify-center gap-1.5 px-2.5 text-xs font-medium border transition-colors cursor-pointer ${roundedLeft} ${roundedRight} ${color.bg} ${color.text} ${color.border} ${color.hover}`}
                               style={{ gridColumn: `${bar.startCol + 1} / ${bar.endCol + 2}` }}
                               title={`${bar.schedule.pet_details.name} — ${bar.schedule.start_date} to ${bar.schedule.end_date} (${bar.schedule.start_time.slice(0, 5)}–${bar.schedule.end_time.slice(0, 5)})`}
                             >
-                              <span className="truncate">{bar.schedule.pet_details.name}</span>
-                              <span className="opacity-60 whitespace-nowrap text-[10px]">
+                              {/* Pet name lives in the row label on the
+                                  left of the week view; repeating it on
+                                  every pill is redundant. The pill keeps
+                                  the time range (the only per-bar info
+                                  the row label can't carry) plus the
+                                  conflict icon. */}
+                              <span className="whitespace-nowrap">
                                 {bar.schedule.start_time.slice(0, 5)}–{bar.schedule.end_time.slice(0, 5)}
                               </span>
                               {hasConflicts && (
