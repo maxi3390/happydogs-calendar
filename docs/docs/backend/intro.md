@@ -572,6 +572,30 @@ To avoid the silent-failure mode where a production deployment turns the `notifi
 
 ---
 
+## Security testing (`make security`)
+
+The repo ships an OWASP-Top-10-aligned security suite at `make security`. It runs five scanners in sequence and aggregates their output into a single Markdown report at `security-reports/REPORT.md`:
+
+| Tool | Scope | OWASP categories |
+|---|---|---|
+| `bandit` | Python static analysis on `backend/` | A02 (weak crypto), A03 (injection), A05 (misconfig), A08 (deserialisation), A10 (SSRF — partial) |
+| `pip-audit` | CVE check on `backend/requirements.txt` | A06 (vulnerable deps) |
+| `npm audit` | CVE check on `frontend/package.json` | A06 (vulnerable deps) |
+| `manage.py check --deploy` | Django framework misconfiguration with `DEBUG=False` | A02 (cookie/SSL flags), A05 (HSTS, debug, etc.) |
+| `python manage.py test security_tests` | Custom Django suite walking every viewset and asserting auth/integrity invariants | A01 (access control), A07 (auth posture), A08 (file upload validators), A09 (audit log), A10 (no outbound HTTP without an allowlist) |
+
+Findings are normalised to one of three severities — `critical`, `warning`, `info` — and grouped by OWASP category in the report. The target exits non-zero when any finding is `critical`, so it can gate releases or CI runs.
+
+Each invocation creates a timestamped subdirectory under `security-reports/` (e.g. `security-reports/2026-04-27-114740/`) and writes every per-tool artefact plus the aggregated `REPORT.md` into it, so multiple runs co-exist for diffing. A `security-reports/latest` symlink always points at the most recent run, so `cat security-reports/latest/REPORT.md` is stable across runs.
+
+The most recent 10 runs are retained by default; older runs are auto-trimmed at the end of each scan. Override via the `SECURITY_REPORT_KEEP` environment variable (e.g. `SECURITY_REPORT_KEEP=30 make security`); set `SECURITY_REPORT_KEEP=0` to disable trimming entirely.
+
+The `security-reports/` directory itself is tracked via `.gitkeep`; per-run subdirectories and their contents are gitignored so the report history is local-only and a fresh clone always has a place for the next run to land.
+
+A04 (Insecure Design) has no automated coverage in this suite — it's a process discipline that lives outside the scanner. The report's A04 section explicitly names this gap so silent acceptance can't be inferred.
+
+---
+
 ## Testing
 
 Tests are organized per-app:

@@ -261,6 +261,21 @@ Per-row history for ``Pet``, ``Owner``, ``MedicalNote``, and ``Vaccination`` via
 
 **Caveat — bulk operations.** ``django-simple-history`` records changes per ``.save()`` call. ``QuerySet.update()`` / ``QuerySet.bulk_update()`` / raw SQL bypass the signal and DO NOT produce history rows. Avoid those operations on the tracked models (Pet / Owner / MedicalNote / Vaccination) unless the change is intentionally untracked. The seed command's ``update_or_create`` calls each save individually, so they are tracked.
 
+### 13. Security Testing
+
+`make security` runs an OWASP-Top-10-aligned suite covering bandit (Python static analysis), pip-audit (Python dep CVEs), npm audit (Node dep CVEs), `manage.py check --deploy` (Django framework misconfiguration), and a custom Django test suite under `backend/security_tests/` that asserts per-route authorisation, JWT posture, audit-log coverage, and a no-outbound-HTTP allowlist. Findings are aggregated into `security-reports/REPORT.md` and grouped by OWASP category. The target exits non-zero when any finding has severity `critical` so it's suitable for CI gating.
+
+| Artifact | Path |
+|----------|------|
+| **Spec** | `openspec/specs/tooling/security/spec.md` |
+| **Custom tests** | `backend/security_tests/tests/test_a01_*.py` … `test_a10_*.py` |
+| **Bandit config** | `backend/bandit.yaml` |
+| **Orchestrator** | `scripts/security/run-scans.sh` |
+| **Aggregator** | `scripts/security/generate-report.py` |
+| **Report** | `security-reports/<timestamp>/REPORT.md` per run; `security-reports/latest/REPORT.md` always points at the most recent. Generated artefacts are gitignored; `security-reports/.gitkeep` is tracked. |
+
+When you add a new ViewSet or modify an existing one's `permission_classes`, also update the URL inventory in `security_tests/tests/test_a01_access_control.py` so the access-control walk covers the new surface.
+
 ---
 
 ## Change Log (OpenSpec Changes)

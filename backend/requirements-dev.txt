@@ -1,0 +1,18 @@
+-r requirements.txt
+
+# Lint + format tooling. Installed into the backend image so
+# `make lint-backend` and `make format` work via
+# `docker compose exec backend python -m {flake8,black,isort}` without
+# any host-side toolchain. Pinning these like the runtime deps so a
+# rebuild is reproducible across machines.
+flake8==7.3.0
+black==26.3.1
+isort==8.0.1
+
+# Security tooling used by `make security`:
+#  - bandit  : Python static analysis for common security mistakes
+#              (weak crypto, SQL injection patterns, hardcoded secrets,
+#              shell=True, pickle on untrusted data, etc.).
+#  - pip-audit: PyPA-maintained CVE auditor for Python deps.
+bandit==1.9.4
+pip-audit==2.10.0
