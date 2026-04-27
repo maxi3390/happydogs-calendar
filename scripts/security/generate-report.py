@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """Aggregate security-suite artefacts into one Markdown report.
 
-Reads:
-  - security-reports/bandit.json
-  - security-reports/pip-audit.json
-  - security-reports/npm-audit.json
-  - security-reports/django-check.txt
-  - security-reports/owasp-tests.txt
+Reads (inside the per-run directory passed as argv[1]):
+  - bandit.json
+  - pip-audit.json
+  - npm-audit.json
+  - django-check.txt
+  - owasp-tests.txt
 
 Writes:
-  - security-reports/REPORT.md
+  - REPORT.md (in the same per-run directory)
 
 Exits non-zero when at least one finding has severity ``critical``,
 zero otherwise. The orchestrator (`run-scans.sh`) propagates the exit
@@ -445,8 +445,12 @@ def render_report(tools: list[ToolStatus]) -> tuple[str, int]:
     for t in tools:
         ok = 'ok' if t.ok else 'failed'
         note = t.note.replace('|', '/') if t.note else ''
+        # Artefact paths are relative to REPORT.md, which now lives
+        # inside the per-run subdirectory next to the JSON / text
+        # outputs. A bare filename keeps the link valid regardless of
+        # which run the operator is reading.
         out.append(
-            f'| {t.name} | `security-reports/{t.artefact}` | {ok} | {note} |'
+            f'| {t.name} | `{t.artefact}` | {ok} | {note} |'
         )
     out.append('')
 
