@@ -1,0 +1,28 @@
+# Bandit configuration for the Happy Pet Nursery backend.
+#
+# Used by `make security` (orchestrator at scripts/security/run-scans.sh).
+# The `make security` target invokes bandit as
+# `bandit -r . -c bandit.yaml`. CLI invocations of bandit will inherit
+# the same excludes.
+
+exclude_dirs:
+  # Test files use hardcoded passwords intentionally and would
+  # otherwise dominate the report with B105/B106/B107 false positives.
+  - ./accounts/tests
+  - ./pets/tests
+  - ./notifications/tests
+  - ./nursery_settings/tests.py
+  - ./feature_flags/tests.py
+  - ./audit_log/tests
+  - ./tests
+  - ./security_tests
+
+  # Auto-generated migrations are not a typical bug surface; matches
+  # the .flake8 exclude policy.
+  - ./accounts/migrations
+  - ./pets/migrations
+  - ./notifications/migrations
+  - ./nursery_settings/migrations
+  - ./feature_flags/migrations
+  - ./audit_log/migrations
+  - ./data_portability/migrations

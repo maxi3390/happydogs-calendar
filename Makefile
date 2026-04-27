@@ -48,6 +48,7 @@ help:
 	@echo "Development:"
 	@echo "  make lint           - Run linters"
 	@echo "  make format         - Format code"
+	@echo "  make security       - Run OWASP-Top-10 security suite (writes security-reports/REPORT.md)"
 	@echo ""
 	@echo "Maintenance:"
 	@echo "  make env            - Create .env interactively from .env.example (idempotent)"
@@ -208,6 +209,14 @@ lint: lint-backend
 
 lint-backend:
 	docker compose exec backend python -m flake8 .
+
+# Security suite. Runs bandit + pip-audit + npm audit + Django
+# check --deploy + a custom OWASP-aligned Django test suite, then
+# aggregates everything into security-reports/REPORT.md. Exits non-zero
+# when any finding has severity `critical`, so the target is suitable
+# for CI gating. See openspec/specs/tooling/security/spec.md.
+security:
+	@bash scripts/security/run-scans.sh
 
 format:
 	docker compose exec backend python -m black .

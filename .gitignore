@@ -24,6 +24,12 @@ backups/*.sql
 backups/*.sql.gz
 !backups/.gitkeep
 
+# Security suite (`make security`) — per-run artefacts; the directory
+# itself is tracked via .gitkeep so a fresh clone has somewhere for
+# the report to land.
+security-reports/*
+!security-reports/.gitkeep
+
 # Environment
 .env
 .env.local

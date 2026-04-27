@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'feature_flags',
     'notifications',
     'audit_log',
+    'security_tests',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'

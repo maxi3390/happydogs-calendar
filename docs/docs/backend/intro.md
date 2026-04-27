@@ -572,6 +572,26 @@ To avoid the silent-failure mode where a production deployment turns the `notifi
 
 ---
 
+## Security testing (`make security`)
+
+The repo ships an OWASP-Top-10-aligned security suite at `make security`. It runs five scanners in sequence and aggregates their output into a single Markdown report at `security-reports/REPORT.md`:
+
+| Tool | Scope | OWASP categories |
+|---|---|---|
+| `bandit` | Python static analysis on `backend/` | A02 (weak crypto), A03 (injection), A05 (misconfig), A08 (deserialisation), A10 (SSRF — partial) |
+| `pip-audit` | CVE check on `backend/requirements.txt` | A06 (vulnerable deps) |
+| `npm audit` | CVE check on `frontend/package.json` | A06 (vulnerable deps) |
+| `manage.py check --deploy` | Django framework misconfiguration with `DEBUG=False` | A02 (cookie/SSL flags), A05 (HSTS, debug, etc.) |
+| `python manage.py test security_tests` | Custom Django suite walking every viewset and asserting auth/integrity invariants | A01 (access control), A07 (auth posture), A08 (file upload validators), A09 (audit log), A10 (no outbound HTTP without an allowlist) |
+
+Findings are normalised to one of three severities — `critical`, `warning`, `info` — and grouped by OWASP category in the report. The target exits non-zero when any finding is `critical`, so it can gate releases or CI runs.
+
+Per-run artefacts (the JSON / text output of each tool plus the regenerated Markdown) are written to `security-reports/` and gitignored except for `.gitkeep`. The directory itself is tracked so a fresh clone has somewhere for the report to land.
+
+A04 (Insecure Design) has no automated coverage in this suite — it's a process discipline that lives outside the scanner. The report's A04 section explicitly names this gap so silent acceptance can't be inferred.
+
+---
+
 ## Testing
 
 Tests are organized per-app:
