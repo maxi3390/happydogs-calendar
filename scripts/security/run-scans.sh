@@ -23,6 +23,30 @@ mkdir -p "$REPORT_DIR"
 find "$REPORT_DIR" -mindepth 1 ! -name '.gitkeep' -exec rm -rf {} +
 
 echo "[security] Reports will be written to $REPORT_DIR"
+
+# Several scanners run via `docker compose exec backend …`, which
+# requires the backend service to be up. We don't want a silent run
+# where every tool falls back to its empty-JSON placeholder because
+# the operator forgot `make up` — that produces a clean-looking
+# REPORT.md that's actually meaningless.
+echo "[security] Ensuring the backend service is up..."
+if ! docker compose up -d backend >/dev/null 2>&1; then
+  echo "[security] ERROR: failed to start the backend service via docker compose." >&2
+  echo "[security] Run \`make up\` manually and re-try, or inspect \`docker compose logs backend\`." >&2
+  exit 1
+fi
+
+# Wait briefly for the container to be ready to exec into. A fresh
+# `up -d` returns as soon as the container is created, but a
+# `migrate && runserver` startup needs a couple of seconds before
+# `exec` will work cleanly.
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  if docker compose exec -T backend python -c 'pass' >/dev/null 2>&1; then
+    break
+  fi
+  sleep 1
+done
+
 echo
 
 # 1. Bandit — Python static analysis on the backend.
