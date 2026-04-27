@@ -128,7 +128,26 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
       petId,
       ...group,
     }));
-    result.sort((a, b) => a.petName.localeCompare(b.petName));
+
+    // Sort pet rows by their earliest schedule's entry time across the
+    // visible week. Pets that arrive earlier appear higher in the
+    // list, matching the day side-panel's start_time order. Ties fall
+    // back to the pet name so the order is fully deterministic and a
+    // re-render with the same data doesn't shuffle rows.
+    const earliestSlot = (group: { bars: BarLayout[] }) => {
+      let best: string | null = null;
+      for (const bar of group.bars) {
+        const slot = `${bar.schedule.start_date}T${bar.schedule.start_time}`;
+        if (best === null || slot < best) best = slot;
+      }
+      return best ?? '';
+    };
+    result.sort((a, b) => {
+      const aSlot = earliestSlot(a);
+      const bSlot = earliestSlot(b);
+      if (aSlot !== bSlot) return aSlot.localeCompare(bSlot);
+      return a.petName.localeCompare(b.petName);
+    });
     return result;
   }, [schedules, currentWeekStart, weekEnd, weekDays]);
 
