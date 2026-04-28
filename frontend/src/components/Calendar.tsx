@@ -347,14 +347,17 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
             })}
 
             {/* Schedule bar overlay row.
-                7 per-column backdrops own the row's height, the
-                bottom borders, the hover-state, AND the clicks for
-                the bar area below the day-number row. A transparent
-                absolute overlay above them carries the actual bars
-                and "+N more" buttons; pointer-events-none lets clicks
-                in the empty space pass through to the backdrops, and
-                each interactive child re-enables pointer-events-auto
-                so it gets the click first. */}
+                Layout is intentionally flat:
+                  - 7 in-flow backdrop divs (one per column) own the
+                    row's height, the right borders, the hover/select
+                    tint, and the click handler that selects the day.
+                  - Schedule bars are absolute siblings positioned by
+                    percentage across the grid container.
+                  - "+N more" indicators are also absolute siblings.
+                Keeping bars / indicators as direct siblings of the
+                backdrops (instead of nested in a pointer-events-none
+                wrapper) keeps clicks reliable on every interactive
+                child without relying on event-pass-through tricks. */}
             <div className="col-span-7 grid grid-cols-7 relative">
               {week.map((day, colIdx) => {
                 const isSelected = day ? isSameDay(day, selectedDate) : false;
@@ -373,74 +376,68 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                 );
               })}
 
-              {/* Bars + "+N more" overlay. Sits absolutely on top of
-                  the backdrops; itself is pointer-events-none so the
-                  empty space between bars passes clicks through. Each
-                  interactive child re-enables pointer-events-auto. */}
-              <div className="absolute inset-0 col-span-7 pb-1 pointer-events-none">
-                {visibleSegments.map(seg => {
-                  const hasConflicts = seg.schedule.conflicts && seg.schedule.conflicts.length > 0;
-                  const colorIdx = petColorMap.get(seg.schedule.pet) ?? 0;
-                  const color = hasConflicts ? CONFLICT_COLOR : BAR_COLORS[colorIdx];
+              {visibleSegments.map(seg => {
+                const hasConflicts = seg.schedule.conflicts && seg.schedule.conflicts.length > 0;
+                const colorIdx = petColorMap.get(seg.schedule.pet) ?? 0;
+                const color = hasConflicts ? CONFLICT_COLOR : BAR_COLORS[colorIdx];
 
-                  const roundedLeft = seg.continuesLeft ? 'rounded-l-none' : 'rounded-l-md';
-                  const roundedRight = seg.continuesRight ? 'rounded-r-none' : 'rounded-r-md';
+                const roundedLeft = seg.continuesLeft ? 'rounded-l-none' : 'rounded-l-md';
+                const roundedRight = seg.continuesRight ? 'rounded-r-none' : 'rounded-r-md';
 
-                  const left = `${(seg.startCol / 7) * 100}%`;
-                  const width = `${((seg.endCol - seg.startCol + 1) / 7) * 100}%`;
-                  const top = seg.row * 22;
+                const left = `${(seg.startCol / 7) * 100}%`;
+                const width = `${((seg.endCol - seg.startCol + 1) / 7) * 100}%`;
+                const top = seg.row * 22;
 
-                  return (
-                    <button
-                      key={`${seg.schedule.id}-${weekIdx}-${seg.startCol}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedSchedule(seg.schedule);
-                      }}
-                      className={`pointer-events-auto absolute h-[18px] flex items-center px-1 sm:px-1.5 text-[10px] sm:text-xs font-medium truncate transition-colors cursor-pointer ${roundedLeft} ${roundedRight} ${color.bg} ${color.text} ${color.hover}`}
-                      style={{
-                        left: `calc(${left} + ${seg.continuesLeft ? 0 : 2}px)`,
-                        width: `calc(${width} - ${(seg.continuesLeft ? 0 : 2) + (seg.continuesRight ? 0 : 2)}px)`,
-                        top: `${top}px`,
-                      }}
-                      title={`${seg.schedule.pet_details.name} — ${seg.schedule.start_date} to ${seg.schedule.end_date}`}
-                    >
-                      {hasConflicts && (
-                        <AlertTriangle className="w-2.5 h-2.5 mr-0.5 flex-shrink-0" />
-                      )}
-                      <span className="truncate">{seg.schedule.pet_details.name}</span>
-                    </button>
-                  );
-                })}
+                return (
+                  <button
+                    key={`${seg.schedule.id}-${weekIdx}-${seg.startCol}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedSchedule(seg.schedule);
+                    }}
+                    className={`absolute h-[18px] flex items-center px-1 sm:px-1.5 text-[10px] sm:text-xs font-medium truncate transition-colors cursor-pointer ${roundedLeft} ${roundedRight} ${color.bg} ${color.text} ${color.hover}`}
+                    style={{
+                      left: `calc(${left} + ${seg.continuesLeft ? 0 : 2}px)`,
+                      width: `calc(${width} - ${(seg.continuesLeft ? 0 : 2) + (seg.continuesRight ? 0 : 2)}px)`,
+                      top: `${top}px`,
+                    }}
+                    title={`${seg.schedule.pet_details.name} — ${seg.schedule.start_date} to ${seg.schedule.end_date}`}
+                  >
+                    {hasConflicts && (
+                      <AlertTriangle className="w-2.5 h-2.5 mr-0.5 flex-shrink-0" />
+                    )}
+                    <span className="truncate">{seg.schedule.pet_details.name}</span>
+                  </button>
+                );
+              })}
 
-                {/* "+N more" indicator. Clicking selects the day so
-                    the side day-panel can list every schedule on it
-                    in time order — the cell itself never grows past
-                    its constant 4-row height. */}
-                {week.map((day, colIdx) => {
-                  if (!day) return null;
-                  const hiddenCount = dayHiddenCounts[colIdx];
-                  if (hiddenCount <= 0) return null;
+              {/* "+N more" indicator. Clicking selects the day so the
+                  side day-panel can list every schedule on it in time
+                  order — the cell itself never grows past its
+                  constant 4-row height. */}
+              {week.map((day, colIdx) => {
+                if (!day) return null;
+                const hiddenCount = dayHiddenCounts[colIdx];
+                if (hiddenCount <= 0) return null;
 
-                  return (
-                    <button
-                      key={`more-${colIdx}`}
-                      type="button"
-                      className="pointer-events-auto absolute text-[10px] sm:text-xs text-muted-foreground font-medium px-1 sm:px-1.5 cursor-pointer hover:text-primary dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-sm"
-                      style={{
-                        left: `${(colIdx / 7) * 100}%`,
-                        top: `${MAX_VISIBLE_BARS * 22}px`,
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDateSelect(day);
-                      }}
-                    >
-                      +{hiddenCount} {t('calendar.more').replace('+{count} ', '').replace('{count} ', '')}
-                    </button>
-                  );
-                })}
-              </div>
+                return (
+                  <button
+                    key={`more-${colIdx}`}
+                    type="button"
+                    className="absolute text-[10px] sm:text-xs text-muted-foreground font-medium px-1 sm:px-1.5 cursor-pointer hover:text-primary dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-sm bg-card dark:bg-slate-800"
+                    style={{
+                      left: `${(colIdx / 7) * 100}%`,
+                      top: `${MAX_VISIBLE_BARS * 22}px`,
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDateSelect(day);
+                    }}
+                  >
+                    +{hiddenCount} {t('calendar.more').replace('+{count} ', '').replace('{count} ', '')}
+                  </button>
+                );
+              })}
             </div>
           </div>
         );
