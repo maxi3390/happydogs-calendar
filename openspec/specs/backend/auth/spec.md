@@ -418,3 +418,172 @@ The endpoint SHALL NOT blacklist the target user's outstanding refresh tokens. A
 - WHEN admin Alice POSTs `/api/users/<alice_id>/set_password/` with valid values
 - THEN the response SHALL be HTTP 200
 - AND Alice SHALL be able to log in with the new password without supplying the old one
+
+### Requirement: Admin SHALL be able to drive lifecycle actions on a user
+
+The system SHALL expose per-user lifecycle actions on `UserViewSet`,
+each gated by `IsAdmin`:
+
+- `POST /api/users/<id>/deactivate/` — sets `is_active=False`.
+- `POST /api/users/<id>/activate/` — sets `is_active=True`.
+- `POST /api/users/<id>/promote/` — sets `role='admin'`.
+- `POST /api/users/<id>/demote/` — sets `role='user'`.
+
+Each action SHALL return HTTP 200 with the updated user shape.
+
+#### Scenario: Admin deactivates a regular user
+
+- WHEN admin Alice POSTs `/api/users/<bob_id>/deactivate/`
+- THEN the response SHALL be HTTP 200
+- AND Bob's `is_active` SHALL be `False`
+- AND Bob SHALL NOT be able to log in afterwards (per existing login spec)
+
+#### Scenario: Admin reactivates an inactive user
+
+- GIVEN Bob has `is_active=False`
+- WHEN admin Alice POSTs `/api/users/<bob_id>/activate/`
+- THEN the response SHALL be HTTP 200
+- AND Bob's `is_active` SHALL be `True`
+
+#### Scenario: Admin promotes a user to admin
+
+- WHEN admin Alice POSTs `/api/users/<bob_id>/promote/`
+- THEN the response SHALL be HTTP 200
+- AND Bob's `role` SHALL be `'admin'`
+
+#### Scenario: Admin demotes another admin to user
+
+- WHEN admin Alice POSTs `/api/users/<charlie_id>/demote/`
+- THEN the response SHALL be HTTP 200
+- AND Charlie's `role` SHALL be `'user'`
+
+### Requirement: Admin SHALL NOT be able to deactivate / demote / delete themselves
+
+Self-protection guards apply to the per-user destructive actions
+(`deactivate`, `demote`, `destroy`) and to bulk actions that include
+the requester. Each SHALL return HTTP 400 with a `detail` field
+explaining the rejection.
+
+#### Scenario: Admin tries to deactivate self
+
+- WHEN admin Alice POSTs `/api/users/<alice_id>/deactivate/`
+- THEN the response SHALL be HTTP 400
+- AND Alice's `is_active` SHALL remain `True`
+
+#### Scenario: Admin tries to delete themselves
+
+- WHEN admin Alice DELETEs `/api/users/<alice_id>/` (after deactivating via the database)
+- THEN the response SHALL be HTTP 400
+- AND Alice's record SHALL still exist
+
+### Requirement: The system SHALL refuse actions that leave zero active admins
+
+The lifecycle actions and their bulk counterparts SHALL refuse, with
+HTTP 400 and `{ "detail": "Cannot remove the last active admin." }`,
+any operation that would drop the count of active-admin users
+(`role='admin' AND is_active=True`) to zero.
+
+This applies to `deactivate`, `demote`, `destroy`, and the `bulk_*`
+analogues.
+
+#### Scenario: Demoting the last active admin is refused
+
+- GIVEN Alice (active admin) and Bob (active admin) are the only two active admins, and Alice's `is_active` is set to `False` via direct DB write
+- WHEN a request authenticated as Alice POSTs `/api/users/<bob_id>/demote/`
+- THEN the response SHALL be HTTP 400
+- AND Bob's `role` SHALL remain `'admin'`
+
+### Requirement: `DELETE /api/users/<id>/` SHALL refuse active users
+
+The `destroy` endpoint SHALL refuse, with HTTP 400 and
+`{ "detail": "User must be deactivated before deletion." }`, any
+attempt to delete a user whose `is_active=True`. Operators must
+deactivate the user first.
+
+#### Scenario: Active user cannot be deleted
+
+- GIVEN Bob has `is_active=True`
+- WHEN admin Alice DELETEs `/api/users/<bob_id>/`
+- THEN the response SHALL be HTTP 400
+- AND Bob's record SHALL still exist
+
+#### Scenario: Inactive user can be deleted
+
+- GIVEN Bob has `is_active=False`
+- WHEN admin Alice DELETEs `/api/users/<bob_id>/`
+- THEN the response SHALL be HTTP 204
+- AND Bob's record SHALL no longer exist
+
+### Requirement: `GET /api/users/<id>/deletion_impact/` SHALL return side-effect counts
+
+The deletion-impact endpoint SHALL return the side-effect counts for
+deleting the target user, so the frontend can show what will be
+discarded / anonymized before the operator confirms. Response shape:
+
+```json
+{ "notifications": <int>, "audit_log_entries": <int> }
+```
+
+`notifications` counts rows whose `recipient_user` is the target
+(CASCADE-deleted on user delete). `audit_log_entries` sums the
+historical-records rows whose `history_user` is the target across
+the tracked entities (Pet, Owner, MedicalNote); their `history_user`
+is `SET_NULL` on user delete (rows survive, anonymized).
+
+#### Scenario: User with no related rows reports zeroes
+
+- GIVEN Bob has no notifications and no audit-log entries
+- WHEN admin Alice GETs `/api/users/<bob_id>/deletion_impact/`
+- THEN the response SHALL be HTTP 200
+- AND the body SHALL be `{ "notifications": 0, "audit_log_entries": 0 }`
+
+### Requirement: Bulk endpoints SHALL operate on lists of user ids
+
+The viewset SHALL expose `bulk_deactivate`, `bulk_activate`,
+`bulk_delete`, and `bulk_set_role` actions, all admin-only and all
+accepting `{ "ids": [int, ...] }` in the JSON body. `bulk_set_role`
+also accepts a `role` field (`'admin' | 'user'`).
+
+Each runs in a single `transaction.atomic` block. Bulk-delete
+SHALL refuse if any target is still active. Bulk-set-role to
+`'user'` SHALL refuse if the action would leave zero active
+admins. The self-protection guard SHALL apply (the requesting
+admin's id MUST NOT appear in `ids` for `bulk_deactivate`,
+`bulk_delete`, or `bulk_set_role` with `role='user'`).
+
+#### Scenario: bulk_deactivate succeeds for multiple ids
+
+- WHEN admin Alice POSTs `/api/users/bulk_deactivate/` with `{"ids": [b_id, c_id]}`
+- THEN the response SHALL be HTTP 200 and the body SHALL include `{"updated": 2}`
+- AND both target users SHALL have `is_active=False`
+
+#### Scenario: bulk_delete refuses while any target is still active
+
+- GIVEN Bob is active and Charlie is inactive
+- WHEN admin Alice POSTs `/api/users/bulk_delete/` with `{"ids": [b_id, c_id]}`
+- THEN the response SHALL be HTTP 400
+- AND neither user SHALL be deleted
+
+### Requirement: `GET /api/users/` SHALL accept role / status / last-login filters
+
+The list endpoint SHALL apply server-side filters from query params:
+
+- `role=admin|user`
+- `is_active=true|false`
+- `last_login_within_days=<int>` — match users whose `last_login` is within the last N days
+- `last_login_never=true` — match users whose `last_login IS NULL`
+
+The two `last_login_*` params are mutually exclusive (the server
+honours `last_login_within_days` if both are provided).
+
+#### Scenario: Filter by role returns matching users only
+
+- GIVEN three users in the system: 2 admins and 1 regular user
+- WHEN admin Alice GETs `/api/users/?role=admin`
+- THEN the response SHALL contain exactly the 2 admin users
+
+#### Scenario: Filter by status
+
+- GIVEN one active and one inactive user
+- WHEN admin Alice GETs `/api/users/?is_active=false`
+- THEN the response SHALL contain exactly the inactive user

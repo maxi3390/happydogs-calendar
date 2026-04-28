@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -5,6 +7,8 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
+from django.db import transaction
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from .serializers import (
@@ -20,6 +24,27 @@ from .serializers import (
 from .permissions import IsAdmin
 
 User = get_user_model()
+
+
+def _last_admin_check(affected_ids):
+    """Refuse the action if it would drop the active-admin count to zero.
+
+    ``affected_ids`` is the set of user ids that the caller is about to
+    deactivate / demote / delete. The check excludes them from the
+    candidate pool of remaining active admins. Used by every endpoint
+    that can demote an admin, both single and bulk.
+    """
+    remaining_admins = (
+        User.objects.filter(role=User.Role.ADMIN, is_active=True)
+        .exclude(id__in=affected_ids)
+        .count()
+    )
+    if remaining_admins == 0:
+        return Response(
+            {'detail': 'Cannot remove the last active admin.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    return None
 
 
 class RegisterView(generics.CreateAPIView):
@@ -238,7 +263,14 @@ class ChangePasswordView(generics.UpdateAPIView):
     ),
 )
 class UserViewSet(viewsets.ModelViewSet):
-    """Admin-only viewset for managing users."""
+    """Admin-only viewset for managing users.
+
+    Exposes the canonical CRUD endpoints plus a small set of action
+    verbs (deactivate / activate / promote / demote / delete) and
+    their bulk counterparts, used by ``/admin/users``. See
+    ``openspec/specs/backend/auth/spec.md`` and
+    ``openspec/specs/frontend/user-management/spec.md``.
+    """
     queryset = User.objects.all()
     permission_classes = [IsAdmin]
 
@@ -246,6 +278,64 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.action in ['update', 'partial_update']:
             return AdminUserUpdateSerializer
         return UserSerializer
+
+    def get_queryset(self):
+        """Apply admin-list filters from query params.
+
+        Supported:
+          - ``role=admin|user``
+          - ``is_active=true|false``
+          - ``last_login_within_days=<int>`` (mutually exclusive with the next)
+          - ``last_login_never=true``
+        """
+        qs = super().get_queryset()
+        params = self.request.query_params
+
+        role = params.get('role')
+        if role in (User.Role.ADMIN, User.Role.USER):
+            qs = qs.filter(role=role)
+
+        is_active = params.get('is_active')
+        if is_active in ('true', 'false'):
+            qs = qs.filter(is_active=(is_active == 'true'))
+
+        within_days = params.get('last_login_within_days')
+        never = params.get('last_login_never') == 'true'
+        if within_days is not None:
+            try:
+                days = int(within_days)
+            except (TypeError, ValueError):
+                days = None
+            if days is not None and days > 0:
+                cutoff = timezone.now() - timedelta(days=days)
+                qs = qs.filter(last_login__gte=cutoff)
+        elif never:
+            qs = qs.filter(last_login__isnull=True)
+
+        return qs
+
+    def destroy(self, request, *args, **kwargs):
+        """Refuse to delete an active user — operators must deactivate first.
+
+        Hard delete is intentional for inactive users (their FK chain is
+        small: notifications cascade, audit-log rows SET_NULL).
+        """
+        target = self.get_object()
+        if target.is_active:
+            return Response(
+                {'detail': 'User must be deactivated before deletion.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if target.id == request.user.id:
+            return Response(
+                {'detail': 'Cannot delete yourself.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if target.role == User.Role.ADMIN:
+            err = _last_admin_check([target.id])
+            if err is not None:
+                return err
+        return super().destroy(request, *args, **kwargs)
 
     @extend_schema(
         summary="Get current user info",
@@ -281,3 +371,220 @@ class UserViewSet(viewsets.ModelViewSet):
         user.set_password(serializer.validated_data['new_password'])
         user.save()
         return Response({'message': 'Password reset'})
+
+    # ── Per-user state actions ────────────────────────────────────────
+    #
+    # ``deactivate`` / ``demote`` / (single ``destroy`` above) are all
+    # gated by the same self + last-admin checks. ``activate`` /
+    # ``promote`` are unconditionally allowed (you can't use them to
+    # lock yourself out).
+
+    @extend_schema(summary="Deactivate user", tags=['users'])
+    @action(detail=True, methods=['post'])
+    def deactivate(self, request, pk=None):
+        target = self.get_object()
+        if target.id == request.user.id:
+            return Response(
+                {'detail': 'Cannot deactivate yourself.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if target.role == User.Role.ADMIN and target.is_active:
+            err = _last_admin_check([target.id])
+            if err is not None:
+                return err
+        target.is_active = False
+        target.save(update_fields=['is_active', 'updated_at'])
+        return Response(UserSerializer(target).data)
+
+    @extend_schema(summary="Activate user", tags=['users'])
+    @action(detail=True, methods=['post'])
+    def activate(self, request, pk=None):
+        target = self.get_object()
+        target.is_active = True
+        target.save(update_fields=['is_active', 'updated_at'])
+        return Response(UserSerializer(target).data)
+
+    @extend_schema(summary="Promote user to admin", tags=['users'])
+    @action(detail=True, methods=['post'])
+    def promote(self, request, pk=None):
+        target = self.get_object()
+        target.role = User.Role.ADMIN
+        target.save(update_fields=['role', 'updated_at'])
+        return Response(UserSerializer(target).data)
+
+    @extend_schema(summary="Demote admin to user", tags=['users'])
+    @action(detail=True, methods=['post'])
+    def demote(self, request, pk=None):
+        target = self.get_object()
+        if target.id == request.user.id:
+            return Response(
+                {'detail': 'Cannot demote yourself.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if target.role == User.Role.ADMIN and target.is_active:
+            err = _last_admin_check([target.id])
+            if err is not None:
+                return err
+        target.role = User.Role.USER
+        target.save(update_fields=['role', 'updated_at'])
+        return Response(UserSerializer(target).data)
+
+    @extend_schema(
+        summary="Get deletion impact",
+        description=(
+            "Return the side-effect counts for deleting this user. "
+            "``notifications`` will be CASCADE-removed; "
+            "``audit_log_entries`` will SET_NULL their history_user "
+            "(rows survive but become anonymous). The frontend renders "
+            "these counts in the delete-confirm modal."
+        ),
+        tags=['users'],
+    )
+    @action(detail=True, methods=['get'], url_path='deletion_impact')
+    def deletion_impact(self, request, pk=None):
+        target = self.get_object()
+        # Deferred imports keep the views.py free of cross-app cycles.
+        from notifications.models import Notification
+        from domain.pets.models import Pet
+        from domain.owners.models import Owner
+        from domain.notes.models import MedicalNote
+
+        notifications = Notification.objects.filter(recipient_user=target).count()
+        # Each tracked model carries its own history; sum across the
+        # ones the audit-log feature instruments.
+        audit_log_entries = (
+            Pet.history.filter(history_user=target).count()
+            + Owner.history.filter(history_user=target).count()
+            + MedicalNote.history.filter(history_user=target).count()
+        )
+        return Response({
+            'notifications': notifications,
+            'audit_log_entries': audit_log_entries,
+        })
+
+    # ── Bulk actions ──────────────────────────────────────────────────
+    #
+    # All bulk endpoints accept ``{ids: [int, ...]}`` in the JSON body,
+    # apply the same self / last-admin guards as the per-user actions,
+    # and run in a single transaction so a failed precondition leaves
+    # the row state untouched.
+
+    def _bulk_ids(self, request):
+        ids = request.data.get('ids', [])
+        if not isinstance(ids, list) or not all(isinstance(i, int) for i in ids):
+            return None, Response(
+                {'detail': '``ids`` must be a list of integers.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return ids, None
+
+    def _reject_self_in_bulk(self, request, ids):
+        if request.user.id in ids:
+            return Response(
+                {'detail': 'Cannot include yourself in this bulk action.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return None
+
+    @extend_schema(summary="Bulk deactivate users", tags=['users'])
+    @action(detail=False, methods=['post'], url_path='bulk_deactivate')
+    def bulk_deactivate(self, request):
+        ids, err = self._bulk_ids(request)
+        if err is not None:
+            return err
+        if (e := self._reject_self_in_bulk(request, ids)) is not None:
+            return e
+        with transaction.atomic():
+            qs = User.objects.select_for_update().filter(id__in=ids)
+            admin_ids = list(qs.filter(role=User.Role.ADMIN, is_active=True).values_list('id', flat=True))
+            if admin_ids:
+                if (e := _last_admin_check(admin_ids)) is not None:
+                    return e
+            updated = qs.update(is_active=False, updated_at=timezone.now())
+        return Response({'updated': updated})
+
+    @extend_schema(summary="Bulk activate users", tags=['users'])
+    @action(detail=False, methods=['post'], url_path='bulk_activate')
+    def bulk_activate(self, request):
+        ids, err = self._bulk_ids(request)
+        if err is not None:
+            return err
+        with transaction.atomic():
+            updated = (
+                User.objects.select_for_update().filter(id__in=ids)
+                .update(is_active=True, updated_at=timezone.now())
+            )
+        return Response({'updated': updated})
+
+    @extend_schema(
+        summary="Bulk delete users",
+        description=(
+            "Delete every user in ``ids``. Refuses if any target is "
+            "still active or is the requesting admin, or if the action "
+            "would leave zero active admins."
+        ),
+        tags=['users'],
+    )
+    @action(detail=False, methods=['post'], url_path='bulk_delete')
+    def bulk_delete(self, request):
+        ids, err = self._bulk_ids(request)
+        if err is not None:
+            return err
+        if (e := self._reject_self_in_bulk(request, ids)) is not None:
+            return e
+        with transaction.atomic():
+            qs = User.objects.select_for_update().filter(id__in=ids)
+            active = list(qs.filter(is_active=True).values_list('id', flat=True))
+            if active:
+                return Response(
+                    {
+                        'detail': 'All users must be deactivated before deletion.',
+                        'active_ids': active,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            admin_ids = list(qs.filter(role=User.Role.ADMIN).values_list('id', flat=True))
+            if admin_ids:
+                if (e := _last_admin_check(admin_ids)) is not None:
+                    return e
+            deleted, _ = qs.delete()
+        return Response({'deleted': deleted})
+
+    @extend_schema(
+        summary="Bulk set role",
+        description=(
+            "Set ``role`` for every user in ``ids``. Body: "
+            "``{ids: [...], role: 'admin'|'user'}``. Demoting refuses "
+            "to leave zero active admins."
+        ),
+        tags=['users'],
+    )
+    @action(detail=False, methods=['post'], url_path='bulk_set_role')
+    def bulk_set_role(self, request):
+        ids, err = self._bulk_ids(request)
+        if err is not None:
+            return err
+        role = request.data.get('role')
+        if role not in (User.Role.ADMIN, User.Role.USER):
+            return Response(
+                {'detail': "``role`` must be 'admin' or 'user'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # Self-demote is the only case we reject; self-promote is a no-op
+        # (the requester is already admin) and harmless.
+        if role == User.Role.USER:
+            if (e := self._reject_self_in_bulk(request, ids)) is not None:
+                return e
+        with transaction.atomic():
+            qs = User.objects.select_for_update().filter(id__in=ids)
+            if role == User.Role.USER:
+                # Only the rows currently admin and active count as
+                # "leaving" the admin pool.
+                losing_admin_ids = list(
+                    qs.filter(role=User.Role.ADMIN, is_active=True).values_list('id', flat=True)
+                )
+                if losing_admin_ids:
+                    if (e := _last_admin_check(losing_admin_ids)) is not None:
+                        return e
+            updated = qs.update(role=role, updated_at=timezone.now())
+        return Response({'updated': updated})
