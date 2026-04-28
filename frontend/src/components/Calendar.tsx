@@ -62,9 +62,13 @@ interface WeekBarSegment {
 const MAX_VISIBLE_BARS = 3;
 const CELL_BAR_ROWS = MAX_VISIBLE_BARS + 1;
 // Vertical space reserved for the day-number badge inside each cell.
-// Pairs with the overlay's bar spacer (which carries the bar area)
-// so the cell row stays compact and the bars render flush under it.
-const DAY_NUMBER_AREA_PX = 28;
+// Slightly taller than the badge itself (~24 px) so the day number
+// has comfortable breathing room above the bar area.
+const DAY_NUMBER_AREA_PX = 32;
+// Pixel height of the bar area inside the overlay row. Carries
+// CELL_BAR_ROWS bar rows plus a small bottom gap so the last bar
+// doesn't touch the next week's border.
+const BAR_AREA_PX = CELL_BAR_ROWS * 22 + 4;
 
 export default function Calendar({ onDateSelect, selectedDate, calendarView = 'month', onViewChange, refreshTrigger = 0 }: CalendarProps) {
   const { t, language } = useTranslation();
@@ -342,20 +346,38 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
               );
             })}
 
-            {/* Schedule bar overlay - spans all 7 columns */}
-            <div
-              className="col-span-7 grid grid-cols-7 relative"
-              style={{ marginTop: '-2px' }}
-            >
-              {/* Vertical cell borders (behind bars) */}
-              <div className="absolute inset-0 grid grid-cols-7 pointer-events-none" aria-hidden>
-                {week.map((_, i) => (
-                  <div key={i} className="border-r last:border-r-0 border-gray-100 dark:border-slate-700/50" />
-                ))}
-              </div>
+            {/* Schedule bar overlay row.
+                7 per-column backdrops own the row's height, the
+                bottom borders, the hover-state, AND the clicks for
+                the bar area below the day-number row. A transparent
+                absolute overlay above them carries the actual bars
+                and "+N more" buttons; pointer-events-none lets clicks
+                in the empty space pass through to the backdrops, and
+                each interactive child re-enables pointer-events-auto
+                so it gets the click first. */}
+            <div className="col-span-7 grid grid-cols-7 relative">
+              {week.map((day, colIdx) => {
+                const isSelected = day ? isSameDay(day, selectedDate) : false;
+                const inMonth = day ? isSameMonth(day, currentMonth) : false;
+                return (
+                  <div
+                    key={`backdrop-${colIdx}`}
+                    onClick={() => day && onDateSelect(day)}
+                    className={`border-r last:border-r-0 border-gray-100 dark:border-slate-700/50 transition-colors ${
+                      day ? 'cursor-pointer hover:bg-muted/30 dark:hover:bg-slate-700/20' : ''
+                    } ${isSelected ? 'bg-primary/10/50 dark:bg-indigo-900/10' : ''} ${
+                      !inMonth && day ? 'opacity-30' : ''
+                    }`}
+                    style={{ minHeight: `${BAR_AREA_PX}px` }}
+                  />
+                );
+              })}
 
-              {/* Bars container */}
-              <div className="col-span-7 relative pb-1">
+              {/* Bars + "+N more" overlay. Sits absolutely on top of
+                  the backdrops; itself is pointer-events-none so the
+                  empty space between bars passes clicks through. Each
+                  interactive child re-enables pointer-events-auto. */}
+              <div className="absolute inset-0 col-span-7 pb-1 pointer-events-none">
                 {visibleSegments.map(seg => {
                   const hasConflicts = seg.schedule.conflicts && seg.schedule.conflicts.length > 0;
                   const colorIdx = petColorMap.get(seg.schedule.pet) ?? 0;
@@ -364,7 +386,6 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                   const roundedLeft = seg.continuesLeft ? 'rounded-l-none' : 'rounded-l-md';
                   const roundedRight = seg.continuesRight ? 'rounded-r-none' : 'rounded-r-md';
 
-                  // Position using CSS grid
                   const left = `${(seg.startCol / 7) * 100}%`;
                   const width = `${((seg.endCol - seg.startCol + 1) / 7) * 100}%`;
                   const top = seg.row * 22;
@@ -376,7 +397,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                         e.stopPropagation();
                         setSelectedSchedule(seg.schedule);
                       }}
-                      className={`absolute h-[18px] flex items-center px-1 sm:px-1.5 text-[10px] sm:text-xs font-medium truncate transition-colors cursor-pointer ${roundedLeft} ${roundedRight} ${color.bg} ${color.text} ${color.hover}`}
+                      className={`pointer-events-auto absolute h-[18px] flex items-center px-1 sm:px-1.5 text-[10px] sm:text-xs font-medium truncate transition-colors cursor-pointer ${roundedLeft} ${roundedRight} ${color.bg} ${color.text} ${color.hover}`}
                       style={{
                         left: `calc(${left} + ${seg.continuesLeft ? 0 : 2}px)`,
                         width: `calc(${width} - ${(seg.continuesLeft ? 0 : 2) + (seg.continuesRight ? 0 : 2)}px)`,
@@ -395,9 +416,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                 {/* "+N more" indicator. Clicking selects the day so
                     the side day-panel can list every schedule on it
                     in time order — the cell itself never grows past
-                    its constant 4-row height. The cell-level click
-                    handler is suppressed via stopPropagation so the
-                    indicator's selection doesn't also fire twice. */}
+                    its constant 4-row height. */}
                 {week.map((day, colIdx) => {
                   if (!day) return null;
                   const hiddenCount = dayHiddenCounts[colIdx];
@@ -407,7 +426,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                     <button
                       key={`more-${colIdx}`}
                       type="button"
-                      className="absolute text-[10px] sm:text-xs text-muted-foreground font-medium px-1 sm:px-1.5 cursor-pointer hover:text-primary dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-sm"
+                      className="pointer-events-auto absolute text-[10px] sm:text-xs text-muted-foreground font-medium px-1 sm:px-1.5 cursor-pointer hover:text-primary dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-sm"
                       style={{
                         left: `${(colIdx / 7) * 100}%`,
                         top: `${MAX_VISIBLE_BARS * 22}px`,
@@ -421,11 +440,6 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                     </button>
                   );
                 })}
-
-                {/* Spacer reserves a constant CELL_BAR_ROWS rows of
-                    bar area so every week (and every cell) has the
-                    same height regardless of bar count. */}
-                <div style={{ height: `${CELL_BAR_ROWS * 22 + 4}px` }} />
               </div>
             </div>
           </div>
