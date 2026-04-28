@@ -54,13 +54,17 @@ interface WeekBarSegment {
 // for a total of MAX_VISIBLE_BARS + 1 = 4 rows of content.
 //
 // CELL_BAR_ROWS is the constant number of bar-area rows reserved per
-// day cell. Every cell across the calendar is the same height — empty
-// cells get empty space below the day number rather than collapsing.
-// This keeps the calendar grid visually stable as the user navigates
-// months and stops the layout from "breathing" when a busy day has
-// many bookings.
+// week — owned by the col-span-7 overlay below the day-number row,
+// NOT by the cells themselves. Each week ends up the same total
+// height (day-number row + overlay) regardless of bar count, which
+// keeps the grid visually stable as the user navigates months
+// without doubling the cell area like a per-cell minHeight would.
 const MAX_VISIBLE_BARS = 3;
 const CELL_BAR_ROWS = MAX_VISIBLE_BARS + 1;
+// Vertical space reserved for the day-number badge inside each cell.
+// Pairs with the overlay's bar spacer (which carries the bar area)
+// so the cell row stays compact and the bars render flush under it.
+const DAY_NUMBER_AREA_PX = 28;
 
 export default function Calendar({ onDateSelect, selectedDate, calendarView = 'month', onViewChange, refreshTrigger = 0 }: CalendarProps) {
   const { t, language } = useTranslation();
@@ -311,10 +315,11 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                     isSelected ? 'bg-primary/10/50 dark:bg-indigo-900/10' : ''
                   } ${!inMonth && day ? 'opacity-30' : ''}`}
                   onClick={() => day && onDateSelect(day)}
-                  // Constant minHeight regardless of how many bars the
-                  // cell holds — see the CELL_BAR_ROWS comment near
-                  // the top of this file.
-                  style={{ minHeight: `${28 + CELL_BAR_ROWS * 22}px` }}
+                  // The cell only owns the day-number area. The bar
+                  // area (CELL_BAR_ROWS rows) lives in the col-span-7
+                  // overlay rendered below this row — including it
+                  // here too would double the height of every week.
+                  style={{ minHeight: `${DAY_NUMBER_AREA_PX}px` }}
                 >
                   {day ? (
                     <div className="flex items-center justify-center sm:justify-start">
