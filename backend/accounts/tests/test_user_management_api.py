@@ -115,3 +115,79 @@ class UserViewSetTests(APITestCase):
     def test_me_endpoint_unauthenticated(self):
         response = self.client.get(self.me_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # ── Admin set_password ─────────────────────────────────────────────
+
+    def _set_password_url(self, pk):
+        return reverse('user-set-password', args=[pk])
+
+    def test_admin_can_reset_user_password_and_login_with_new_one(self):
+        self._auth_admin()
+        new_password = 'NewSecure123!'
+        response = self.client.post(
+            self._set_password_url(self.user.id),
+            {'new_password': new_password, 'new_password_confirm': new_password},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(new_password))
+        self.assertFalse(self.user.check_password(self.user_password))
+
+    def test_admin_reset_password_mismatch_400(self):
+        self._auth_admin()
+        response = self.client.post(
+            self._set_password_url(self.user.id),
+            {'new_password': 'NewSecure123!', 'new_password_confirm': 'TypoSecure123!'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('new_password_confirm', response.data)
+
+    def test_admin_reset_password_weak_400(self):
+        self._auth_admin()
+        # '1234' fails Django's MinimumLengthValidator and
+        # NumericPasswordValidator at the same time.
+        response = self.client.post(
+            self._set_password_url(self.user.id),
+            {'new_password': '1234', 'new_password_confirm': '1234'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('new_password', response.data)
+
+    def test_non_admin_cannot_reset_user_password_403(self):
+        self._auth_user()
+        response = self.client.post(
+            self._set_password_url(self.admin.id),
+            {'new_password': 'NewSecure123!', 'new_password_confirm': 'NewSecure123!'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_unauthenticated_cannot_reset_user_password_401(self):
+        response = self.client.post(
+            self._set_password_url(self.user.id),
+            {'new_password': 'NewSecure123!', 'new_password_confirm': 'NewSecure123!'},
+            format='json',
+        )
+        # DRF returns 401 with the default JWT auth header missing.
+        self.assertIn(
+            response.status_code,
+            (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN),
+        )
+
+    def test_admin_can_reset_own_password_via_admin_endpoint(self):
+        # Admin overriding their own user id via the admin endpoint
+        # SHALL succeed without supplying the old password — the
+        # endpoint's whole point is to bypass the old-password check.
+        self._auth_admin()
+        new_password = 'AdminNewSecure456!'
+        response = self.client.post(
+            self._set_password_url(self.admin.id),
+            {'new_password': new_password, 'new_password_confirm': new_password},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.admin.refresh_from_db()
+        self.assertTrue(self.admin.check_password(new_password))

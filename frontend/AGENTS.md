@@ -103,9 +103,11 @@ JWT-based auth with login, register, logout, token refresh, and protected routes
 | **Design** | `openspec/specs/frontend/auth/design.md` |
 | **Tests** | `frontend/tests/auth.spec.ts` |
 | **Docs** | `docs/docs/frontend/intro.md` (Authentication section) |
-| **Code** | `frontend/src/lib/auth.tsx` (AuthProvider, useAuth), `frontend/src/lib/withAuth.tsx`, `frontend/src/lib/withAdmin.tsx`, `frontend/src/app/login/page.tsx`, `frontend/src/app/register/page.tsx` |
+| **Code** | `frontend/src/lib/auth.tsx` (AuthProvider, useAuth), `frontend/src/lib/withAuth.tsx`, `frontend/src/lib/withAdmin.tsx`, `frontend/src/app/login/page.tsx`, `frontend/src/app/register/page.tsx`, `frontend/src/app/profile/page.tsx`, `frontend/src/domain/users/passwordApi.ts` |
 
 Key decisions: React Context for auth state (not Redux/Zustand). localStorage for token persistence (keys: `auth_tokens`, `auth_user`). HOC pattern (withAuth, withAdmin) for route protection. Login page fetches and displays custom system logo if configured.
+
+Self-service password change lives at `/profile` (linked from the profile-menu dropdown). The form calls `usersApi.changeOwnPassword`, which talks to `PUT /api/auth/change-password/`. Admin password reset lives in `/admin/users` as a per-row "Reset password" button + modal that calls `usersApi.setPassword`, which talks to `POST /api/users/<id>/set_password/`. Both forms share the `FieldErrors` shape from `domain/users/passwordApi.ts` so DRF's per-field errors map directly to the matching input.
 
 ### 2. Calendar Views
 

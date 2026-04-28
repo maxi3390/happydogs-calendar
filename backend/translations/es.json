@@ -426,7 +426,10 @@
     "statusOptions": {
       "active": "Activo",
       "inactive": "Inactivo"
-    }
+    },
+    "resetPassword": "Restablecer contraseña",
+    "resetPasswordTitle": "Restablecer contraseña de {name}",
+    "resetPasswordSuccess": "Contraseña restablecida."
   },
   "public": {
     "welcome": "Bienvenido a Guardería Happy Dogs",
@@ -492,7 +495,8 @@
     "welcome": "Bienvenido",
     "profile": "Perfil",
     "admin": "Administrador",
-    "user": "Usuario"
+    "user": "Usuario",
+    "changePassword": "Cambiar contraseña"
   },
   "vet": {
     "title": "Veterinarios",
@@ -679,6 +683,24 @@
       "emailMe": "Mandame emails",
       "saveSuccess": "Guardado",
       "saveFailed": "No se pudo guardar"
+    }
+  },
+  "profile": {
+    "title": "Perfil",
+    "subtitle": "Administra tu cuenta.",
+    "account": "Cuenta",
+    "changePassword": "Cambiar contraseña",
+    "currentPassword": "Contraseña actual",
+    "newPassword": "Nueva contraseña",
+    "confirmNewPassword": "Confirmar nueva contraseña",
+    "savePassword": "Guardar contraseña",
+    "saving": "Guardando…",
+    "success": "Contraseña cambiada con éxito.",
+    "errors": {
+      "currentRequired": "La contraseña actual es obligatoria.",
+      "newRequired": "La nueva contraseña es obligatoria.",
+      "minLength": "La contraseña debe tener al menos 8 caracteres.",
+      "mismatch": "Las contraseñas no coinciden."
     }
   }
 }

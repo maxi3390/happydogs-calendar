@@ -9,10 +9,23 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className = '', label, error, fullWidth = true, icon, endIcon, ...props }, ref) => {
+  ({ className = '', label, error, fullWidth = true, icon, endIcon, id, ...props }, ref) => {
+    // Generate a stable id when one isn't supplied so the <label> can
+    // bind to the <input> via htmlFor. Without this binding, screen
+    // readers don't connect the label and `getByLabel` queries fall
+    // through, which forces tests to use brittle structural selectors.
+    const generatedId = React.useId();
+    const inputId = id ?? generatedId;
     return (
       <div className={`${fullWidth ? 'w-full' : ''}`}>
-        {label && <label className="block text-sm font-medium text-foreground mb-1.5">{label}</label>}
+        {label && (
+          <label
+            htmlFor={inputId}
+            className="block text-sm font-medium text-foreground mb-1.5"
+          >
+            {label}
+          </label>
+        )}
         <div className="relative">
           {icon && (
             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground flex items-center pointer-events-none z-10">
@@ -21,6 +34,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           )}
           <input
             ref={ref}
+            id={inputId}
             className={`flex h-10 w-full rounded-xl border border-border/50 bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50 transition-colors ${
               icon ? 'pl-10' : ''
             } ${

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   PawPrint, Users, CalendarDays, Settings, Menu, X, LogIn, LogOut,
-  Shield, User, ChevronDown, Code2, Stethoscope, Flag,
+  Shield, User, ChevronDown, Code2, Stethoscope, Flag, Lock,
 } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -191,6 +191,16 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
                           </Link>
                         )}
                         <Link
+                          href="/profile"
+                          role="menuitem"
+                          aria-current={ariaCurrent('/profile')}
+                          onClick={() => setProfileMenuOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-secondary/80 rounded-xl transition-colors"
+                        >
+                          <Lock className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
+                          {t('auth.changePassword')}
+                        </Link>
+                        <Link
                           href="/settings"
                           role="menuitem"
                           aria-current={ariaCurrent('/settings')}
@@ -359,6 +369,16 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
                         {t('nav.vets')}
                       </Link>
                     )}
+
+                    <Link
+                      href="/profile"
+                      aria-current={ariaCurrent('/profile')}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={mobileNavLinkClass('/profile', 'bg-emerald-600 dark:bg-emerald-500')}
+                    >
+                      <Lock className="w-5 h-5" />
+                      {t('auth.changePassword')}
+                    </Link>
 
                     <Link
                       href="/settings"

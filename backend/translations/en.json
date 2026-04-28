@@ -426,7 +426,10 @@
     "statusOptions": {
       "active": "Active",
       "inactive": "Inactive"
-    }
+    },
+    "resetPassword": "Reset password",
+    "resetPasswordTitle": "Reset password for {name}",
+    "resetPasswordSuccess": "Password reset."
   },
   "public": {
     "welcome": "Welcome to Happy Pet Nursery",
@@ -492,7 +495,8 @@
     "welcome": "Welcome",
     "profile": "Profile",
     "admin": "Admin",
-    "user": "User"
+    "user": "User",
+    "changePassword": "Change password"
   },
   "vet": {
     "title": "Vets",
@@ -679,6 +683,24 @@
       "emailMe": "Send me emails",
       "saveSuccess": "Saved",
       "saveFailed": "Failed to save"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Manage your account.",
+    "account": "Account",
+    "changePassword": "Change password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmNewPassword": "Confirm new password",
+    "savePassword": "Save new password",
+    "saving": "Saving…",
+    "success": "Password changed successfully.",
+    "errors": {
+      "currentRequired": "Current password is required.",
+      "newRequired": "New password is required.",
+      "minLength": "Password must be at least 8 characters.",
+      "mismatch": "Passwords do not match."
     }
   }
 }
