@@ -62,17 +62,23 @@ make test-frontend                       # all Playwright E2E tests must pass
 ## Verification Commands
 
 ```bash
-# Run all Playwright E2E tests (headless Chrome via Docker)
+# Run all Playwright E2E tests (headless Chrome via Docker).
+# Tests run against an isolated Postgres + Django pair (db-e2e +
+# backend-e2e) brought up automatically and torn down on exit.
+# The dev DB is never touched. See
+# openspec/specs/tooling/e2e-isolation/spec.md.
 make test-frontend
 
-# Run with trace (for debugging failures)
+# Same as above but with Playwright trace=on for debugging failures.
 make test-frontend-debug
 
-# Run directly (if npm/node available locally)
-cd frontend && npm test
+# Leave the e2e stack up after the run for inspection (e.g. to query
+# what the failing test created via `manage.py shell`). Clean up
+# afterwards with `make e2e-down`.
+KEEP_E2E_DATA=1 make test-frontend
 
-# Run specific test file
-cd frontend && npx playwright test tests/pets.spec.ts
+# Run a single spec against the isolated e2e stack:
+bash scripts/run-e2e-tests.sh tests/pets.spec.ts
 
 # Lint
 cd frontend && npm run lint
@@ -80,6 +86,29 @@ cd frontend && npm run lint
 # Build (checks TypeScript + Next.js compilation)
 cd frontend && npm run build
 ```
+
+### Test isolation invariants
+
+Playwright tests register users (`POST /api/auth/register/`) and create
+owners / pets / schedules through the real REST API. To keep these
+tests from polluting the developer's working database, the test runner
+brings up two dedicated containers defined in **`docker-compose.e2e.yml`**
+(a separate compose file from the dev stack), under the
+`happy-calendar-e2e` compose project on its own `happy-calendar-e2e`
+bridge network:
+
+- **`db-e2e`** — `postgres:18-alpine` with a `tmpfs` data dir. Stopping
+  the container wipes the DB unconditionally; no volume to clean up.
+- **`backend-e2e`** — same Django image as the dev `backend`, configured
+  to talk to `db-e2e`. No Traefik labels, no published host ports;
+  reachable only as `backend-e2e:8000` on the e2e network.
+
+The Playwright container is launched with
+`--network=happy-calendar-e2e` and
+`NEXT_PUBLIC_API_URL=http://backend-e2e:8000/api`, so every server-side
+`page.request.*` call (`setupAuth`, `createOwnerViaApi`, etc.) routes
+to `backend-e2e`. **Do not change this URL in the helpers** — pointing
+the tests back at `backend:8000` would re-introduce dev-DB pollution.
 
 ## Key Context Files
 

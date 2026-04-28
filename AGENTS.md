@@ -46,13 +46,24 @@ happy-calendar/
 
 | Service    | Image / Build      | Port  | Profile    | Notes                                               |
 |------------|--------------------|-------|------------|-----------------------------------------------------|
-| `db`       | postgres:16-alpine | 5432  | (default)  | DB/user/password all `nursery`. Volume `postgres_data`. |
+| `db`       | postgres:18-alpine | 5432  | (default)  | DB/user/password all `nursery`. Volume `postgres_data`. |
 | `backend`  | `./backend`        | 8000  | (default)  | Runs `migrate` then `runserver` on start.           |
 | `frontend` | `./frontend`       | 3000  | (default)  | Next.js standalone build.                           |
 | `docs`     | `./docs`           | 3001  | `docs`     | Docusaurus site. Only with `--profile docs`.        |
 | `pgadmin`  | dpage/pgadmin4     | 5050  | `dev`      | Only with `--profile dev`.                          |
 
 Backend mounts `./backend:/app` as a volume so file edits hot-reload.
+
+### E2E test stack (separate compose file)
+
+Frontend Playwright tests run against an isolated, ephemeral stack defined in `docker-compose.e2e.yml`. It lives in its own compose project (`happy-calendar-e2e`) and on its own bridge network (also `happy-calendar-e2e`), so it never touches the dev stack. See `openspec/specs/tooling/e2e-isolation/spec.md`.
+
+| Service       | Image / Build      | Notes                                                                                  |
+|---------------|--------------------|----------------------------------------------------------------------------------------|
+| `db-e2e`      | postgres:18-alpine | `tmpfs` data dir. Wiped unconditionally on container stop.                             |
+| `backend-e2e` | `./backend`        | Same image as `backend`, talks to `db-e2e`. Reachable only as `backend-e2e:8000` on the e2e network. |
+
+Brought up by `make test-frontend` (via `scripts/run-e2e-tests.sh`); torn down on exit unless `KEEP_E2E_DATA=1` is set.
 
 ---
 
@@ -244,7 +255,8 @@ Run `make help` inside the repo for the full catalogue. Most-used targets:
 | `make migrate`          | Run pending Django migrations                                             |
 | `make test`             | Run all tests (`test-backend` + `test-frontend`)                          |
 | `make test-backend`     | Backend tests (SQLite in-memory)                                          |
-| `make test-frontend`    | Playwright E2E tests (headless Chrome)                                    |
+| `make test-frontend`    | Playwright E2E tests against an isolated, ephemeral Postgres + Django pair (`db-e2e` + `backend-e2e`). The dev DB is never touched. Set `KEEP_E2E_DATA=1` to skip teardown and inspect the e2e stack. Spec: `openspec/specs/tooling/e2e-isolation/spec.md`. |
+| `make e2e-up` / `make e2e-down` | Manually drive the isolated e2e stack (rarely needed; `make test-frontend` handles the lifecycle automatically). |
 | `make lint`             | `flake8` on backend, `next lint` on frontend                              |
 | `make security`         | OWASP-Top-10 suite (bandit + pip-audit + npm audit + `check --deploy` + custom Django tests). Per-run report at `security-reports/<timestamp>/REPORT.md`; `security-reports/latest/REPORT.md` always points at the most recent. Exits non-zero on any `critical` finding. Override retention via `SECURITY_REPORT_KEEP` (default 10). |
 | `make backup`           | Full gzipped `pg_dump` → `backups/nursery-<timestamp>.sql.gz`             |
