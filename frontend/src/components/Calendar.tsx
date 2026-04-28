@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, addDays } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, addDays } from 'date-fns';
 import { ChevronLeft, ChevronRight, AlertTriangle, CalendarDays, CalendarRange, Minus } from 'lucide-react';
 import { api, Schedule } from '@/lib/api';
 import ScheduleDetailsPopup from './ScheduleDetailsPopup';
@@ -94,15 +94,30 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
     });
   };
 
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
+  // Memoize against `currentMonth` so the four derived dates keep a
+  // stable identity across renders. Otherwise useEffect / useMemo
+  // dependents would treat each render's freshly-constructed Date as
+  // a new value and run forever (the schedules fetch in particular
+  // would loop the page into a never-idle network state).
+  const monthStart = useMemo(() => startOfMonth(currentMonth), [currentMonth]);
+  const monthEnd = useMemo(() => endOfMonth(currentMonth), [currentMonth]);
+  // Stretch the visible grid to whole weeks: the first row reaches
+  // back to the previous month's tail, the last row reaches into the
+  // next month's head. This matches PublicCalendar and makes the
+  // grid look complete (no blank cells in the first / last rows).
+  const calendarStart = useMemo(() => startOfWeek(monthStart), [monthStart]);
+  const calendarEnd = useMemo(() => endOfWeek(monthEnd), [monthEnd]);
 
   useEffect(() => {
     const fetchSchedules = async () => {
       setLoading(true);
       try {
-        const start = format(monthStart, 'yyyy-MM-dd');
-        const end = format(monthEnd, 'yyyy-MM-dd');
+        // Fetch over the WHOLE visible window — including the
+        // leading / trailing days from adjacent months — so a
+        // schedule that starts on Mar 30 and ends Apr 5 still
+        // renders its bar in April's first row.
+        const start = format(calendarStart, 'yyyy-MM-dd');
+        const end = format(calendarEnd, 'yyyy-MM-dd');
         const data = await api.schedules.list({ start_date: start, end_date: end });
         setSchedules(data);
       } catch (error) {
@@ -112,30 +127,19 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
       }
     };
     fetchSchedules();
-  }, [currentMonth, refreshTrigger]);
+  }, [calendarStart, calendarEnd, refreshTrigger]);
 
-  // Build calendar grid: weeks containing 7 cells (some may be null for padding)
+  // Build calendar grid: every cell is a real Date — no nulls. The
+  // out-of-month leading / trailing days are rendered with reduced
+  // opacity and no click handler (matching PublicCalendar).
   const weeks = useMemo(() => {
-    const firstDay = monthStart.getDay(); // 0=Sun
-    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-    const grid: (Date | null)[][] = [];
-    let currentWeek: (Date | null)[] = Array(firstDay).fill(null);
-
-    days.forEach(day => {
-      currentWeek.push(day);
-      if (currentWeek.length === 7) {
-        grid.push(currentWeek);
-        currentWeek = [];
-      }
-    });
-
-    if (currentWeek.length > 0) {
-      while (currentWeek.length < 7) currentWeek.push(null);
-      grid.push(currentWeek);
+    const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+    const grid: Date[][] = [];
+    for (let i = 0; i < days.length; i += 7) {
+      grid.push(days.slice(i, i + 7));
     }
-
     return grid;
-  }, [monthStart, monthEnd]);
+  }, [calendarStart, calendarEnd]);
 
   // Deduplicate schedules and assign stable colors per pet
   const uniqueSchedules = useMemo(() => {
@@ -154,9 +158,11 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
   // For each week row, compute bar segments with stacking
   const weekBars = useMemo(() => {
     return weeks.map(week => {
-      const weekDayStrs = week.map(d => d ? format(d, 'yyyy-MM-dd') : null);
-      const firstDayStr = weekDayStrs.find(d => d !== null)!;
-      const lastDayStr = [...weekDayStrs].reverse().find(d => d !== null)!;
+      // Every cell is a real Date (the grid stretches to whole
+      // weeks), so first and last are simply the row endpoints.
+      const weekDayStrs = week.map(d => format(d, 'yyyy-MM-dd'));
+      const firstDayStr = weekDayStrs[0];
+      const lastDayStr = weekDayStrs[weekDayStrs.length - 1];
 
       // Find schedules that overlap with this week
       const overlapping = uniqueSchedules.filter(s =>
@@ -336,40 +342,42 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
           <div key={weekIdx} className="grid grid-cols-7 border-b last:border-b-0 border-gray-100 dark:border-slate-700/50">
             {/* Day number row */}
             {week.map((day, colIdx) => {
-              const isToday = day ? isSameDay(day, new Date()) : false;
-              const isSelected = day ? isSameDay(day, selectedDate) : false;
-              const inMonth = day ? isSameMonth(day, currentMonth) : false;
+              const isToday = isSameDay(day, new Date());
+              const isSelected = isSameDay(day, selectedDate);
+              const inMonth = isSameMonth(day, currentMonth);
 
               return (
                 <div
                   key={colIdx}
-                  className={`border-r last:border-r-0 border-gray-100 dark:border-slate-700/50 pt-1 px-0.5 sm:px-1 cursor-pointer hover:bg-muted/50 dark:hover:bg-slate-700/30 transition-colors ${
-                    isSelected ? 'bg-primary/10/50 dark:bg-indigo-900/10' : ''
-                  } ${!inMonth && day ? 'opacity-30' : ''}`}
-                  onClick={() => day && onDateSelect(day)}
+                  className={`border-r last:border-r-0 border-gray-100 dark:border-slate-700/50 pt-1 px-0.5 sm:px-1 transition-colors ${
+                    inMonth ? 'cursor-pointer hover:bg-muted/50 dark:hover:bg-slate-700/30' : ''
+                  } ${isSelected && inMonth ? 'bg-primary/10/50 dark:bg-indigo-900/10' : ''} ${
+                    !inMonth ? 'opacity-30' : ''
+                  }`}
+                  // Out-of-month days are visible (so the grid looks
+                  // complete) but not clickable for selection — same
+                  // contract PublicCalendar uses. The user navigates
+                  // months via the chevron buttons.
+                  onClick={inMonth ? () => onDateSelect(day) : undefined}
                   // The cell only owns the day-number area. The bar
                   // area (CELL_BAR_ROWS rows) lives in the col-span-7
                   // overlay rendered below this row — including it
                   // here too would double the height of every week.
                   style={{ minHeight: `${DAY_NUMBER_AREA_PX}px` }}
                 >
-                  {day ? (
-                    <div className="flex items-center justify-center sm:justify-start">
-                      <span
-                        className={`inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full text-xs sm:text-sm font-medium ${
-                          isToday
-                            ? 'bg-primary hover:bg-primary/90 dark:bg-primary hover:bg-primary/90 text-white font-bold'
-                            : isSelected
-                              ? 'text-primary font-semibold'
-                              : 'text-gray-700 dark:text-gray-300'
-                        }`}
-                      >
-                        {format(day, 'd')}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="h-5 sm:h-6" />
-                  )}
+                  <div className="flex items-center justify-center sm:justify-start">
+                    <span
+                      className={`inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full text-xs sm:text-sm font-medium ${
+                        isToday
+                          ? 'bg-primary hover:bg-primary/90 dark:bg-primary hover:bg-primary/90 text-white font-bold'
+                          : isSelected && inMonth
+                            ? 'text-primary font-semibold'
+                            : 'text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      {format(day, 'd')}
+                    </span>
+                  </div>
                 </div>
               );
             })}
@@ -388,16 +396,16 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                 child without relying on event-pass-through tricks. */}
             <div className="col-span-7 grid grid-cols-7 relative">
               {week.map((day, colIdx) => {
-                const isSelected = day ? isSameDay(day, selectedDate) : false;
-                const inMonth = day ? isSameMonth(day, currentMonth) : false;
+                const isSelected = isSameDay(day, selectedDate);
+                const inMonth = isSameMonth(day, currentMonth);
                 return (
                   <div
                     key={`backdrop-${colIdx}`}
-                    onClick={() => day && onDateSelect(day)}
+                    onClick={inMonth ? () => onDateSelect(day) : undefined}
                     className={`border-r last:border-r-0 border-gray-100 dark:border-slate-700/50 transition-colors ${
-                      day ? 'cursor-pointer hover:bg-muted/30 dark:hover:bg-slate-700/20' : ''
-                    } ${isSelected ? 'bg-primary/10/50 dark:bg-indigo-900/10' : ''} ${
-                      !inMonth && day ? 'opacity-30' : ''
+                      inMonth ? 'cursor-pointer hover:bg-muted/30 dark:hover:bg-slate-700/20' : ''
+                    } ${isSelected && inMonth ? 'bg-primary/10/50 dark:bg-indigo-900/10' : ''} ${
+                      !inMonth ? 'opacity-30' : ''
                     }`}
                     style={{ minHeight: `${barAreaPx}px` }}
                   />
@@ -442,8 +450,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
               {/* "+N more" indicator (only when collapsed). Clicking
                   expands the week in place so every hidden schedule
                   becomes visible. */}
-              {!expanded && week.map((day, colIdx) => {
-                if (!day) return null;
+              {!expanded && week.map((_day, colIdx) => {
                 const hiddenCount = dayHiddenCounts[colIdx];
                 if (hiddenCount <= 0) return null;
 

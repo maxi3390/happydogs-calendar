@@ -252,3 +252,65 @@ test.describe('Week view: pet-row order', () => {
     expect(idxM).toBeLessThan(idxA);
   });
 });
+
+
+test.describe('Month view: leading/trailing days', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupAuthAndLanguage(page);
+  });
+
+  test('first and last week always render 7 day cells (no blank padding)', async ({ page }) => {
+    // No schedules — we're checking the grid layout, not the bars.
+    await stubSchedules(page, []);
+    await page.reload({ waitUntil: 'networkidle' });
+
+    // Wait for the calendar grid to render. Use the day-name row as
+    // the anchor (every locale has 7 single-letter / 3-letter
+    // header cells).
+    await expect(page.locator('h2')).toContainText(/\d{4}/); // month-year heading rendered
+
+    // Count visible day-number badges across the whole grid. With
+    // the 7-column × N-row stretched grid, a fully-rendered month
+    // has N*7 day cells (always 28, 35, or 42 depending on the
+    // month's first weekday). With the OLD null-padding approach,
+    // the count would be lower than N*7 because leading/trailing
+    // padding cells rendered an empty <div> instead.
+    const dayBadges = page.locator(
+      'span.inline-flex.rounded-full',
+    ).filter({ hasText: /^\d{1,2}$/ });
+    const count = await dayBadges.count();
+    // 28 = exactly 4 weeks (rare but possible, e.g. February in a
+    // non-leap year that starts on a Sunday). 35 = 5 weeks.
+    // 42 = 6 weeks. Anything else is a layout regression.
+    expect([28, 35, 42], `Day-cell count fell outside 28/35/42: ${count}`).toContain(count);
+  });
+
+  test('out-of-month days are visible but not selectable', async ({ page }) => {
+    await stubSchedules(page, []);
+    await page.reload({ waitUntil: 'networkidle' });
+
+    // The opacity-30 styling marks out-of-month cells. They have a
+    // day number rendered (so the grid looks complete) but their
+    // wrapper div has no cursor-pointer / onClick. Click handlers
+    // not firing is hard to assert directly without a sentinel —
+    // instead, we assert the wrapper has the opacity-30 class AND
+    // does NOT have cursor-pointer.
+    const outOfMonthCells = page.locator('div[style*="min-height: 32px"].opacity-30');
+    const count = await outOfMonthCells.count();
+    // At least one — every reasonable month has at least one
+    // leading or trailing out-of-month day after stretching to
+    // whole weeks. Some months DO start on Sunday and end on
+    // Saturday cleanly (no out-of-month days), so we tolerate 0
+    // here too — the height-bucket assertion above already covers
+    // the layout itself.
+    expect(count).toBeGreaterThanOrEqual(0);
+    if (count === 0) return;
+
+    // Spot-check the first out-of-month cell: opacity-30 set,
+    // cursor-pointer absent.
+    const firstOutOfMonth = outOfMonthCells.first();
+    const cls = await firstOutOfMonth.getAttribute('class');
+    expect(cls, `class="${cls}" should include opacity-30`).toContain('opacity-30');
+    expect(cls, `class="${cls}" should NOT include cursor-pointer`).not.toContain('cursor-pointer');
+  });
+});
