@@ -88,6 +88,12 @@ class UserViewSetTests(APITestCase):
     # ── Delete ─────────────────────────────────────────────────────────
 
     def test_admin_can_delete_user(self):
+        # Deletion requires the target to be inactive — set the flag
+        # first via direct DB write, then DELETE. Coverage for the
+        # full lifecycle (deactivate via the action endpoint, then
+        # delete) lives in test_admin_user_actions.py.
+        self.user.is_active = False
+        self.user.save(update_fields=['is_active'])
         self._auth_admin()
         response = self.client.delete(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)

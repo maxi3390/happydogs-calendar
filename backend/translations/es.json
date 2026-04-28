@@ -429,7 +429,45 @@
     },
     "resetPassword": "Restablecer contraseña",
     "resetPasswordTitle": "Restablecer contraseña de {name}",
-    "resetPasswordSuccess": "Contraseña restablecida."
+    "resetPasswordSuccess": "Contraseña restablecida.",
+    "moreActions": "Más acciones",
+    "deactivate": "Desactivar",
+    "activate": "Activar",
+    "promote": "Promover a administrador",
+    "demote": "Bajar a usuario",
+    "deactivateConfirm": "¿Desactivar a {name}? No podrá iniciar sesión.",
+    "activateConfirm": "¿Activar a {name}?",
+    "promoteConfirm": "¿Promover a {name} a administrador? Tendrá acceso total.",
+    "demoteConfirm": "¿Bajar a {name} de administrador a usuario?",
+    "deleteRequiresInactive": "Desactiva al usuario antes de eliminarlo.",
+    "filters": {
+      "title": "Filtros",
+      "role": "Rol",
+      "status": "Estado",
+      "lastLogin": "Último acceso",
+      "all": "Todos",
+      "any": "Cualquiera",
+      "within7d": "Últimos 7 días",
+      "within30d": "Últimos 30 días",
+      "within90d": "Últimos 90 días",
+      "never": "Nunca"
+    },
+    "bulk": {
+      "selected": "{count} seleccionado(s)",
+      "clear": "Limpiar",
+      "activate": "Activar",
+      "deactivate": "Desactivar",
+      "promote": "Promover",
+      "demote": "Bajar",
+      "delete": "Eliminar",
+      "deleteRequiresAllInactive": "Todos los usuarios seleccionados deben estar desactivados primero."
+    },
+    "deletionImpact": {
+      "title": "Qué afectará la eliminación",
+      "notifications": "Se descartarán {count} notificaciones.",
+      "auditLog": "Se anonimizarán {count} entradas del registro de auditoría (las filas se conservan pero el 'quién' se vuelve anónimo).",
+      "noImpact": "Sin datos relacionados — este usuario no tiene notificaciones ni entradas en el registro de auditoría."
+    }
   },
   "public": {
     "welcome": "Bienvenido a Guardería Happy Dogs",

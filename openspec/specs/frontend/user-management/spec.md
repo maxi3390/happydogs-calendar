@@ -294,3 +294,80 @@ On HTTP 200 the modal SHALL close and a "Password reset" toast SHALL be visible 
 - WHEN Bob navigates to the admin user list URL
 - THEN the existing `withAdmin` HOC SHALL redirect Bob away
 - AND the Reset password button is therefore unreachable for non-admin users
+
+### Requirement: `/admin/users` SHALL render filter controls that round-trip to the backend
+
+The toolbar SHALL include three filter controls: role (all / admin / user), status (all / active / inactive), and last-login (any / within 7 days / within 30 days / within 90 days / never).
+
+Changing any filter SHALL trigger a list refetch with the corresponding query params (`role`, `is_active`, `last_login_within_days`, or `last_login_never`). The table SHALL render only the rows the backend returns; no client-side post-filtering is applied for these dimensions.
+
+A free-text search box remains client-side and matches against `email`, `first_name`, and `last_name`.
+
+#### Scenario: Selecting "Admin" in the role filter refetches the list
+
+- GIVEN the admin users page is loaded
+- WHEN the admin selects "Admin" in the role filter
+- THEN the list SHALL refetch with `?role=admin`
+- AND only admin rows SHALL render in the table
+
+### Requirement: `/admin/users` SHALL support bulk select and a bulk action bar
+
+Each row SHALL include a select checkbox; the table header SHALL include a "select all on page" checkbox. The requester's own row SHALL NOT be selectable (the checkbox SHALL be disabled).
+
+When at least one row is selected, a contextual action bar SHALL render above the table with: Activate, Deactivate, Promote, Demote, Delete, and a "Clear" button. The bar SHALL display the count of selected rows.
+
+The Delete button SHALL be disabled when any selected row has `is_active=true`, with a tooltip explaining the constraint. Each action button SHALL post the selected ids to its corresponding bulk endpoint and refetch the list on success.
+
+When the active filter set or the search term changes, ids that are no longer in the visible set SHALL be removed from the selection.
+
+#### Scenario: Bulk action bar appears when any row is selected
+
+- WHEN the admin checks the row-level checkbox for any user
+- THEN the bulk action bar SHALL be visible
+- AND it SHALL display "1 selected"
+
+#### Scenario: Bulk delete is disabled while any selected user is active
+
+- GIVEN the admin selects one active user and one inactive user
+- WHEN inspecting the bulk action bar
+- THEN the Delete button SHALL be disabled
+
+### Requirement: `/admin/users` SHALL provide per-row state actions with a confirm modal
+
+Each row SHALL expose icon buttons for: Edit, Reset password, Activate / Deactivate (mutually exclusive based on `is_active`), Promote / Demote (mutually exclusive based on `role`), and Delete. The Delete button SHALL be disabled while the row is active.
+
+Clicking any of Activate / Deactivate / Promote / Demote SHALL open a shared confirmation modal showing the action verb and the target user's name. Confirming SHALL POST to the matching `/api/users/<id>/<action>/` endpoint and refetch the list on success.
+
+The requester's own row SHALL hide / disable these destructive actions on themselves.
+
+#### Scenario: Per-row deactivate goes through the confirmation flow
+
+- WHEN the admin clicks the deactivate icon on Bob's row
+- THEN a confirmation modal SHALL appear with Bob's name
+- WHEN the admin confirms
+- THEN the page SHALL POST `/api/users/<bob_id>/deactivate/` and refetch the list
+- AND Bob's row SHALL render as Inactive afterwards
+
+#### Scenario: Promote replaces with Demote after the role flips
+
+- GIVEN Bob is currently a regular user
+- WHEN the admin promotes Bob and the list refetches
+- THEN Bob's row SHALL no longer display the Promote icon
+- AND Bob's row SHALL display the Demote icon
+
+### Requirement: The delete modal SHALL display a deletion-impact summary
+
+When the admin opens the delete confirmation modal for a user, the page SHALL fetch `GET /api/users/<id>/deletion_impact/` and display the returned counts:
+
+- "{N} notifications will be discarded." when `notifications > 0`.
+- "{M} audit-log entries will be anonymized…" when `audit_log_entries > 0`.
+- A "no related data" line when both are zero.
+
+Failing to fetch the impact SHALL NOT block the modal — the admin can still proceed; the breakdown is merely omitted.
+
+#### Scenario: Modal renders the impact summary
+
+- GIVEN the deletion-impact endpoint returns `{"notifications": 3, "audit_log_entries": 7}`
+- WHEN the admin opens the delete modal for that user
+- THEN the modal SHALL display "3 notifications will be discarded."
+- AND the modal SHALL display "7 audit-log entries will be anonymized…"
