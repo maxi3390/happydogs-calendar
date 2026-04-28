@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, addDays } from 'date-fns';
-import { ChevronLeft, ChevronRight, AlertTriangle, CalendarDays, CalendarRange } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertTriangle, CalendarDays, CalendarRange, Minus } from 'lucide-react';
 import { api, Schedule } from '@/lib/api';
 import ScheduleDetailsPopup from './ScheduleDetailsPopup';
 import { useTranslation } from '@/lib/translations';
@@ -48,26 +48,26 @@ interface WeekBarSegment {
   row: number;        // stacking row within the week
 }
 
-// Maximum number of bar rows shown inside a day cell. When more
-// schedules exist on a single day, the cell shows MAX_VISIBLE_BARS
-// bars plus a single "+N more" indicator on the row directly below,
-// for a total of MAX_VISIBLE_BARS + 1 = 4 rows of content.
+// Maximum number of bar rows shown inside a day cell when the week is
+// collapsed (the default). When more schedules exist on a single day,
+// the cell shows MAX_VISIBLE_BARS bars plus a "+N more" indicator on
+// the row directly below, for a total of MAX_VISIBLE_BARS + 1 = 4
+// rows of content.
 //
-// CELL_BAR_ROWS is the constant number of bar-area rows reserved per
-// week — owned by the col-span-7 overlay below the day-number row,
-// NOT by the cells themselves. Each week ends up the same total
-// height (day-number row + overlay) regardless of bar count, which
-// keeps the grid visually stable as the user navigates months
-// without doubling the cell area like a per-cell minHeight would.
+// Clicking "+N more" expands that week in place: the bar overlay row
+// grows tall enough to hold every segment, and a "Show less" footer
+// rolls it back to the 4-row default. The cap only applies to the
+// data-driven default — explicit user expansion is still allowed so
+// no schedule is hidden.
 const MAX_VISIBLE_BARS = 3;
 const CELL_BAR_ROWS = MAX_VISIBLE_BARS + 1;
 // Vertical space reserved for the day-number badge inside each cell.
 // Slightly taller than the badge itself (~24 px) so the day number
 // has comfortable breathing room above the bar area.
 const DAY_NUMBER_AREA_PX = 32;
-// Pixel height of the bar area inside the overlay row. Carries
-// CELL_BAR_ROWS bar rows plus a small bottom gap so the last bar
-// doesn't touch the next week's border.
+// Default pixel height of the bar overlay row when the week is
+// collapsed. Carries CELL_BAR_ROWS bar rows plus a small bottom gap
+// so the last bar doesn't touch the next week's border.
 const BAR_AREA_PX = CELL_BAR_ROWS * 22 + 4;
 
 export default function Calendar({ onDateSelect, selectedDate, calendarView = 'month', onViewChange, refreshTrigger = 0 }: CalendarProps) {
@@ -77,6 +77,22 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set());
+
+  // Expansion state is per-week-index; navigating to a different
+  // month invalidates those indices, so reset.
+  useEffect(() => {
+    setExpandedWeeks(new Set());
+  }, [currentMonth]);
+
+  const toggleWeek = (weekIdx: number, expand: boolean) => {
+    setExpandedWeeks(prev => {
+      const next = new Set(prev);
+      if (expand) next.add(weekIdx);
+      else next.delete(weekIdx);
+      return next;
+    });
+  };
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -302,7 +318,19 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
       {/* Week rows */}
       {weeks.map((week, weekIdx) => {
         const { segments, dayHiddenCounts } = weekBars[weekIdx];
-        const visibleSegments = segments.filter(s => s.row < MAX_VISIBLE_BARS);
+        const expanded = expandedWeeks.has(weekIdx);
+        const weekHasHidden = dayHiddenCounts.some(c => c > 0);
+        const visibleSegments = expanded
+          ? segments
+          : segments.filter(s => s.row < MAX_VISIBLE_BARS);
+        // Bar overlay row height: when collapsed, the constant 4-row
+        // default; when expanded, just enough to fit every segment so
+        // no schedule stays hidden.
+        const expandedRows = segments.reduce(
+          (max, s) => Math.max(max, s.row + 1),
+          0,
+        );
+        const barAreaPx = expanded ? expandedRows * 22 + 4 : BAR_AREA_PX;
 
         return (
           <div key={weekIdx} className="grid grid-cols-7 border-b last:border-b-0 border-gray-100 dark:border-slate-700/50">
@@ -371,7 +399,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                     } ${isSelected ? 'bg-primary/10/50 dark:bg-indigo-900/10' : ''} ${
                       !inMonth && day ? 'opacity-30' : ''
                     }`}
-                    style={{ minHeight: `${BAR_AREA_PX}px` }}
+                    style={{ minHeight: `${barAreaPx}px` }}
                   />
                 );
               })}
@@ -411,11 +439,10 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                 );
               })}
 
-              {/* "+N more" indicator. Clicking selects the day so the
-                  side day-panel can list every schedule on it in time
-                  order — the cell itself never grows past its
-                  constant 4-row height. */}
-              {week.map((day, colIdx) => {
+              {/* "+N more" indicator (only when collapsed). Clicking
+                  expands the week in place so every hidden schedule
+                  becomes visible. */}
+              {!expanded && week.map((day, colIdx) => {
                 if (!day) return null;
                 const hiddenCount = dayHiddenCounts[colIdx];
                 if (hiddenCount <= 0) return null;
@@ -431,7 +458,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      onDateSelect(day);
+                      toggleWeek(weekIdx, true);
                     }}
                   >
                     +{hiddenCount} {t('calendar.more').replace('+{count} ', '').replace('{count} ', '')}
@@ -439,6 +466,22 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                 );
               })}
             </div>
+
+            {/* Show-less footer (only when expanded AND the week
+                actually had something hidden, so a fully-empty week
+                never sprouts a "Show less" link). */}
+            {expanded && weekHasHidden && (
+              <div className="col-span-7 flex justify-end px-1 pb-1">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); toggleWeek(weekIdx, false); }}
+                  className="inline-flex items-center gap-1 text-[10px] sm:text-xs text-muted-foreground hover:text-primary dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-sm px-1.5 py-0.5"
+                >
+                  <Minus className="w-3 h-3" />
+                  {t('calendar.showLess')}
+                </button>
+              </div>
+            )}
           </div>
         );
       })}
