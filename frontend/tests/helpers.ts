@@ -9,7 +9,7 @@ const EN_TRANSLATIONS = {
     calendar: 'Calendar',
     newSchedule: 'New Schedule',
   },
-  calendar: { month: 'Month', week: 'Week', today: 'Today', thisWeek: 'This Week', weekOf: 'Week of' },
+  calendar: { month: 'Month', week: 'Week', today: 'Today', thisWeek: 'This Week', weekOf: 'Week of', more: '+{count} more', showLess: 'Show less' },
   schedule: {
     title: 'Schedule',
     newSchedule: 'New Schedule',
@@ -95,7 +95,7 @@ const ES_TRANSLATIONS = {
     menu: 'Menú',
     newSchedule: 'Nuevo Horario',
   },
-  calendar: { month: 'Mes', week: 'Semana', today: 'Hoy', thisWeek: 'Esta Semana', weekOf: 'Semana de' },
+  calendar: { month: 'Mes', week: 'Semana', today: 'Hoy', thisWeek: 'Esta Semana', weekOf: 'Semana de', more: '+{count} más', showLess: 'Mostrar menos' },
   schedule: {
     title: 'Horario',
     newSchedule: 'Nuevo Horario',
