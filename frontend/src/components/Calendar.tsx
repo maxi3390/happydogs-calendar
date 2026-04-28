@@ -48,7 +48,27 @@ interface WeekBarSegment {
   row: number;        // stacking row within the week
 }
 
+// Maximum number of bar rows shown inside a day cell when the week is
+// collapsed (the default). When more schedules exist on a single day,
+// the cell shows MAX_VISIBLE_BARS bars plus a "+N more" indicator on
+// the row directly below, for a total of MAX_VISIBLE_BARS + 1 = 4
+// rows of content.
+//
+// Clicking "+N more" expands that week in place: the bar overlay row
+// grows tall enough to hold every segment, and a "Show less" footer
+// rolls it back to the 4-row default. The cap only applies to the
+// data-driven default — explicit user expansion is still allowed so
+// no schedule is hidden.
 const MAX_VISIBLE_BARS = 3;
+const CELL_BAR_ROWS = MAX_VISIBLE_BARS + 1;
+// Vertical space reserved for the day-number badge inside each cell.
+// Slightly taller than the badge itself (~24 px) so the day number
+// has comfortable breathing room above the bar area.
+const DAY_NUMBER_AREA_PX = 32;
+// Default pixel height of the bar overlay row when the week is
+// collapsed. Carries CELL_BAR_ROWS bar rows plus a small bottom gap
+// so the last bar doesn't touch the next week's border.
+const BAR_AREA_PX = CELL_BAR_ROWS * 22 + 4;
 
 export default function Calendar({ onDateSelect, selectedDate, calendarView = 'month', onViewChange, refreshTrigger = 0 }: CalendarProps) {
   const { t, language } = useTranslation();
@@ -59,14 +79,17 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set());
 
-  // Reset week expansions whenever the visible month changes — a "show
-  // less" link wouldn't make sense across navigation.
-  useEffect(() => { setExpandedWeeks(new Set()); }, [currentMonth]);
+  // Expansion state is per-week-index; navigating to a different
+  // month invalidates those indices, so reset.
+  useEffect(() => {
+    setExpandedWeeks(new Set());
+  }, [currentMonth]);
 
   const toggleWeek = (weekIdx: number, expand: boolean) => {
     setExpandedWeeks(prev => {
       const next = new Set(prev);
-      if (expand) next.add(weekIdx); else next.delete(weekIdx);
+      if (expand) next.add(weekIdx);
+      else next.delete(weekIdx);
       return next;
     });
   };
@@ -205,19 +228,19 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
 
       // `dayHiddenCounts` counts segments per day that landed at
       // row >= MAX_VISIBLE_BARS. Used directly by the "+N more"
-      // indicator: deriving it as `dayBarCounts - MAX` is wrong when
-      // overlap on other days pushes a single-day-only segment to a
-      // high row (it can go negative).
-      const dayBarCounts = Array(7).fill(0) as number[];
+      // indicator. Computing it from a column's total bar count
+      // would be wrong: a single-day segment that fell to a high
+      // row because of overlaps on OTHER days isn't visible on
+      // that column despite the column itself only having one bar.
       const dayHiddenCounts = Array(7).fill(0) as number[];
       segments.forEach(seg => {
+        if (seg.row < MAX_VISIBLE_BARS) return;
         for (let c = seg.startCol; c <= seg.endCol; c++) {
-          dayBarCounts[c]++;
-          if (seg.row >= MAX_VISIBLE_BARS) dayHiddenCounts[c]++;
+          dayHiddenCounts[c]++;
         }
       });
 
-      return { segments, dayBarCounts, dayHiddenCounts };
+      return { segments, dayHiddenCounts };
     });
   }, [weeks, uniqueSchedules]);
 
@@ -294,19 +317,20 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
 
       {/* Week rows */}
       {weeks.map((week, weekIdx) => {
-        const { segments, dayBarCounts, dayHiddenCounts } = weekBars[weekIdx];
+        const { segments, dayHiddenCounts } = weekBars[weekIdx];
         const expanded = expandedWeeks.has(weekIdx);
         const weekHasHidden = dayHiddenCounts.some(c => c > 0);
         const visibleSegments = expanded
           ? segments
           : segments.filter(s => s.row < MAX_VISIBLE_BARS);
-        // Vertical layout rows for a given day cell. Collapsed: cap at
-        // 3 bars + 1 overflow line. Expanded: real count.
-        const rowsForCol = (colIdx: number) => {
-          if (expanded) return dayBarCounts[colIdx];
-          const visible = Math.min(dayBarCounts[colIdx] - dayHiddenCounts[colIdx], MAX_VISIBLE_BARS);
-          return visible + (dayHiddenCounts[colIdx] > 0 ? 1 : 0);
-        };
+        // Bar overlay row height: when collapsed, the constant 4-row
+        // default; when expanded, just enough to fit every segment so
+        // no schedule stays hidden.
+        const expandedRows = segments.reduce(
+          (max, s) => Math.max(max, s.row + 1),
+          0,
+        );
+        const barAreaPx = expanded ? expandedRows * 22 + 4 : BAR_AREA_PX;
 
         return (
           <div key={weekIdx} className="grid grid-cols-7 border-b last:border-b-0 border-gray-100 dark:border-slate-700/50">
@@ -323,7 +347,11 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                     isSelected ? 'bg-primary/10/50 dark:bg-indigo-900/10' : ''
                   } ${!inMonth && day ? 'opacity-30' : ''}`}
                   onClick={() => day && onDateSelect(day)}
-                  style={{ minHeight: `${28 + rowsForCol(colIdx) * 22}px` }}
+                  // The cell only owns the day-number area. The bar
+                  // area (CELL_BAR_ROWS rows) lives in the col-span-7
+                  // overlay rendered below this row — including it
+                  // here too would double the height of every week.
+                  style={{ minHeight: `${DAY_NUMBER_AREA_PX}px` }}
                 >
                   {day ? (
                     <div className="flex items-center justify-center sm:justify-start">
@@ -346,92 +374,102 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
               );
             })}
 
-            {/* Schedule bar overlay - spans all 7 columns */}
-            <div
-              className="col-span-7 grid grid-cols-7 relative"
-              style={{ marginTop: '-2px' }}
-            >
-              {/* Vertical cell borders (behind bars) */}
-              <div className="absolute inset-0 grid grid-cols-7 pointer-events-none" aria-hidden>
-                {week.map((_, i) => (
-                  <div key={i} className="border-r last:border-r-0 border-gray-100 dark:border-slate-700/50" />
-                ))}
-              </div>
+            {/* Schedule bar overlay row.
+                Layout is intentionally flat:
+                  - 7 in-flow backdrop divs (one per column) own the
+                    row's height, the right borders, the hover/select
+                    tint, and the click handler that selects the day.
+                  - Schedule bars are absolute siblings positioned by
+                    percentage across the grid container.
+                  - "+N more" indicators are also absolute siblings.
+                Keeping bars / indicators as direct siblings of the
+                backdrops (instead of nested in a pointer-events-none
+                wrapper) keeps clicks reliable on every interactive
+                child without relying on event-pass-through tricks. */}
+            <div className="col-span-7 grid grid-cols-7 relative">
+              {week.map((day, colIdx) => {
+                const isSelected = day ? isSameDay(day, selectedDate) : false;
+                const inMonth = day ? isSameMonth(day, currentMonth) : false;
+                return (
+                  <div
+                    key={`backdrop-${colIdx}`}
+                    onClick={() => day && onDateSelect(day)}
+                    className={`border-r last:border-r-0 border-gray-100 dark:border-slate-700/50 transition-colors ${
+                      day ? 'cursor-pointer hover:bg-muted/30 dark:hover:bg-slate-700/20' : ''
+                    } ${isSelected ? 'bg-primary/10/50 dark:bg-indigo-900/10' : ''} ${
+                      !inMonth && day ? 'opacity-30' : ''
+                    }`}
+                    style={{ minHeight: `${barAreaPx}px` }}
+                  />
+                );
+              })}
 
-              {/* Bars container */}
-              <div className="col-span-7 relative pb-1">
-                {visibleSegments.map(seg => {
-                  const hasConflicts = seg.schedule.conflicts && seg.schedule.conflicts.length > 0;
-                  const colorIdx = petColorMap.get(seg.schedule.pet) ?? 0;
-                  const color = hasConflicts ? CONFLICT_COLOR : BAR_COLORS[colorIdx];
+              {visibleSegments.map(seg => {
+                const hasConflicts = seg.schedule.conflicts && seg.schedule.conflicts.length > 0;
+                const colorIdx = petColorMap.get(seg.schedule.pet) ?? 0;
+                const color = hasConflicts ? CONFLICT_COLOR : BAR_COLORS[colorIdx];
 
-                  const roundedLeft = seg.continuesLeft ? 'rounded-l-none' : 'rounded-l-md';
-                  const roundedRight = seg.continuesRight ? 'rounded-r-none' : 'rounded-r-md';
+                const roundedLeft = seg.continuesLeft ? 'rounded-l-none' : 'rounded-l-md';
+                const roundedRight = seg.continuesRight ? 'rounded-r-none' : 'rounded-r-md';
 
-                  // Position using CSS grid
-                  const left = `${(seg.startCol / 7) * 100}%`;
-                  const width = `${((seg.endCol - seg.startCol + 1) / 7) * 100}%`;
-                  const top = seg.row * 22;
+                const left = `${(seg.startCol / 7) * 100}%`;
+                const width = `${((seg.endCol - seg.startCol + 1) / 7) * 100}%`;
+                const top = seg.row * 22;
 
-                  return (
-                    <button
-                      key={`${seg.schedule.id}-${weekIdx}-${seg.startCol}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedSchedule(seg.schedule);
-                      }}
-                      className={`absolute h-[18px] flex items-center px-1 sm:px-1.5 text-[10px] sm:text-xs font-medium truncate transition-colors cursor-pointer ${roundedLeft} ${roundedRight} ${color.bg} ${color.text} ${color.hover}`}
-                      style={{
-                        left: `calc(${left} + ${seg.continuesLeft ? 0 : 2}px)`,
-                        width: `calc(${width} - ${(seg.continuesLeft ? 0 : 2) + (seg.continuesRight ? 0 : 2)}px)`,
-                        top: `${top}px`,
-                      }}
-                      title={`${seg.schedule.pet_details.name} — ${seg.schedule.start_date} to ${seg.schedule.end_date}`}
-                    >
-                      {hasConflicts && (
-                        <AlertTriangle className="w-2.5 h-2.5 mr-0.5 flex-shrink-0" />
-                      )}
-                      <span className="truncate">{seg.schedule.pet_details.name}</span>
-                    </button>
-                  );
-                })}
+                return (
+                  <button
+                    key={`${seg.schedule.id}-${weekIdx}-${seg.startCol}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedSchedule(seg.schedule);
+                    }}
+                    className={`absolute h-[18px] flex items-center px-1 sm:px-1.5 text-[10px] sm:text-xs font-medium truncate transition-colors cursor-pointer ${roundedLeft} ${roundedRight} ${color.bg} ${color.text} ${color.hover}`}
+                    style={{
+                      left: `calc(${left} + ${seg.continuesLeft ? 0 : 2}px)`,
+                      width: `calc(${width} - ${(seg.continuesLeft ? 0 : 2) + (seg.continuesRight ? 0 : 2)}px)`,
+                      top: `${top}px`,
+                    }}
+                    title={`${seg.schedule.pet_details.name} — ${seg.schedule.start_date} to ${seg.schedule.end_date}`}
+                  >
+                    {hasConflicts && (
+                      <AlertTriangle className="w-2.5 h-2.5 mr-0.5 flex-shrink-0" />
+                    )}
+                    <span className="truncate">{seg.schedule.pet_details.name}</span>
+                  </button>
+                );
+              })}
 
-                {/* "+N more" indicators (collapsed only). Click expands the
-                    whole week row in place; the day-cell click handler is
-                    suppressed via stopPropagation so we don't also select
-                    the day underneath. */}
-                {!expanded && week.map((day, colIdx) => {
-                  if (!day) return null;
-                  const hiddenCount = dayHiddenCounts[colIdx];
-                  if (hiddenCount <= 0) return null;
+              {/* "+N more" indicator (only when collapsed). Clicking
+                  expands the week in place so every hidden schedule
+                  becomes visible. */}
+              {!expanded && week.map((day, colIdx) => {
+                if (!day) return null;
+                const hiddenCount = dayHiddenCounts[colIdx];
+                if (hiddenCount <= 0) return null;
 
-                  return (
-                    <button
-                      key={`more-${colIdx}`}
-                      type="button"
-                      className="absolute text-[10px] sm:text-xs text-muted-foreground font-medium px-1 sm:px-1.5 cursor-pointer hover:text-primary dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-sm"
-                      style={{
-                        left: `${(colIdx / 7) * 100}%`,
-                        top: `${MAX_VISIBLE_BARS * 22}px`,
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleWeek(weekIdx, true);
-                      }}
-                    >
-                      +{hiddenCount} {t('calendar.more').replace('+{count} ', '').replace('{count} ', '')}
-                    </button>
-                  );
-                })}
-
-                {/* Spacer sized to the tallest cell in this week. */}
-                <div style={{ height: `${Math.max(0, ...week.map((_, colIdx) => rowsForCol(colIdx))) * 22 + 4}px` }} />
-              </div>
+                return (
+                  <button
+                    key={`more-${colIdx}`}
+                    type="button"
+                    className="absolute text-[10px] sm:text-xs text-muted-foreground font-medium px-1 sm:px-1.5 cursor-pointer hover:text-primary dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-sm bg-card dark:bg-slate-800"
+                    style={{
+                      left: `${(colIdx / 7) * 100}%`,
+                      top: `${MAX_VISIBLE_BARS * 22}px`,
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleWeek(weekIdx, true);
+                    }}
+                  >
+                    +{hiddenCount} {t('calendar.more').replace('+{count} ', '').replace('{count} ', '')}
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Show-less footer when the week is expanded. Only rendered
-                if there was something hidden to expand in the first place,
-                so a week without overflow never sprouts the link. */}
+            {/* Show-less footer (only when expanded AND the week
+                actually had something hidden, so a fully-empty week
+                never sprouts a "Show less" link). */}
             {expanded && weekHasHidden && (
               <div className="col-span-7 flex justify-end px-1 pb-1">
                 <button
