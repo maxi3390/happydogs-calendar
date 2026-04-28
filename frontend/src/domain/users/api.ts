@@ -1,5 +1,6 @@
 import { fetchApi } from '../_http/client';
 import { User, UserFormData, UserCreateData } from './types';
+import { changeOwnPassword, setUserPassword } from './passwordApi';
 
 export const usersApi = {
   list: () => fetchApi<User[]>('/users/'),
@@ -18,4 +19,9 @@ export const usersApi = {
     method: 'PATCH',
     body: JSON.stringify({ language }),
   }),
+  // Password helpers — see ./passwordApi.ts. Their result type is
+  // `PasswordResult` (not the user shape) because the forms need
+  // field-level errors that fetchApi swallows.
+  changeOwnPassword,
+  setPassword: setUserPassword,
 };

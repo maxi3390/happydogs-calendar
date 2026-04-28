@@ -13,6 +13,7 @@ from .serializers import (
     UserUpdateSerializer,
     UserLanguageSerializer,
     AdminUserUpdateSerializer,
+    AdminSetPasswordSerializer,
     ChangePasswordSerializer,
     LoginSerializer,
 )
@@ -256,3 +257,27 @@ class UserViewSet(viewsets.ModelViewSet):
         """Get current user info."""
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
+
+    @extend_schema(
+        summary="Admin: reset a user's password",
+        description=(
+            "Admin-only. Resets the target user's password to the supplied "
+            "value without requiring the old password — the recovery path "
+            "for forgotten passwords in the absence of an email-based flow."
+        ),
+        request=AdminSetPasswordSerializer,
+        tags=['users']
+    )
+    @action(detail=True, methods=['post'])
+    def set_password(self, request, pk=None):
+        """Admin override: set the target user's password.
+
+        Permission gate is the viewset's class-level ``IsAdmin``;
+        non-admins SHALL get 403 before reaching this method.
+        """
+        user = self.get_object()
+        serializer = AdminSetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user.set_password(serializer.validated_data['new_password'])
+        user.save()
+        return Response({'message': 'Password reset'})

@@ -105,6 +105,11 @@ Email-based JWT authentication with admin/user roles.
 
 Key decisions: Custom User model with email as USERNAME_FIELD (no username). JWT via simplejwt with 60min access / 7day refresh tokens, rotation + blacklisting. Role field on User model (not Django groups).
 
+Two password endpoints, one self-service and one admin-override:
+
+- `PUT /api/auth/change-password/` — caller's own account. Requires `old_password`. Uses `ChangePasswordSerializer`.
+- `POST /api/users/<id>/set_password/` — admin-only DRF action on `UserViewSet`. No `old_password`; the recovery path for forgotten passwords without an email-based flow. Uses `AdminSetPasswordSerializer`. Both serializers run Django's `AUTH_PASSWORD_VALIDATORS` and require `new_password == new_password_confirm`.
+
 ### 2. User Management (Admin)
 
 Admin-only CRUD for managing users, roles, and active status.

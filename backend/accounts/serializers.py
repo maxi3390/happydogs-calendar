@@ -65,7 +65,12 @@ class AdminUserUpdateSerializer(serializers.ModelSerializer):
 
 
 class ChangePasswordSerializer(serializers.Serializer):
-    """Serializer for password change."""
+    """Self-service password change.
+
+    Requires the caller to know their current password — the canonical
+    rotation path. ``AdminSetPasswordSerializer`` is the admin-override
+    counterpart that drops the old-password requirement.
+    """
     old_password = serializers.CharField(write_only=True)
     new_password = serializers.CharField(write_only=True, validators=[validate_password])
     new_password_confirm = serializers.CharField(write_only=True)
@@ -75,6 +80,23 @@ class ChangePasswordSerializer(serializers.Serializer):
         if not user.check_password(value):
             raise serializers.ValidationError('Current password is incorrect.')
         return value
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError({'new_password_confirm': 'New passwords do not match.'})
+        return attrs
+
+
+class AdminSetPasswordSerializer(serializers.Serializer):
+    """Admin-override password reset. No ``old_password``.
+
+    Used by ``UserViewSet.set_password`` (admin-only). The admin
+    endpoint exists specifically to recover from forgotten passwords
+    without an email-based flow, so requiring the old value would
+    defeat the purpose. ``AUTH_PASSWORD_VALIDATORS`` still applies.
+    """
+    new_password = serializers.CharField(write_only=True, validators=[validate_password])
+    new_password_confirm = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
         if attrs['new_password'] != attrs['new_password_confirm']:

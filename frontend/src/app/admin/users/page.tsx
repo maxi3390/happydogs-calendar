@@ -6,9 +6,10 @@ import { api } from '@/lib/api';
 import { User, UserFormData, UserCreateData } from '@/domain/users/types';
 import { withAdmin } from '@/lib/withAdmin';
 import Navigation from '@/components/Navigation';
-import { Shield, User as UserIcon, Plus, Edit2, Trash2, X, Check, Search, Mail, UserCheck, UserX } from 'lucide-react';
+import { Shield, User as UserIcon, Plus, Edit2, Trash2, X, Check, Search, Mail, UserCheck, UserX, KeyRound, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { FieldErrors } from '@/domain/users/passwordApi';
 
 function UsersAdminPage() {
   const { t } = useTranslation();
@@ -19,7 +20,16 @@ function UsersAdminPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  // Reset-password modal state. Kept local to the modal (cleared on
+  // every close) so the new password is never cached on the page.
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetPasswordConfirm, setResetPasswordConfirm] = useState('');
+  const [resetErrors, setResetErrors] = useState<FieldErrors>({});
+  const [resetSubmitting, setResetSubmitting] = useState(false);
+  const [resetSuccessAt, setResetSuccessAt] = useState<number | null>(null);
 
   // Form states
   const [formData, setFormData] = useState<UserCreateData>({
@@ -113,6 +123,54 @@ function UsersAdminPage() {
   const openDeleteModal = (user: User) => {
     setSelectedUser(user);
     setIsDeleteModalOpen(true);
+  };
+
+  const openResetPasswordModal = (user: User) => {
+    setSelectedUser(user);
+    setResetPassword('');
+    setResetPasswordConfirm('');
+    setResetErrors({});
+    setIsResetPasswordModalOpen(true);
+  };
+
+  const closeResetPasswordModal = () => {
+    setIsResetPasswordModalOpen(false);
+    setSelectedUser(null);
+    setResetPassword('');
+    setResetPasswordConfirm('');
+    setResetErrors({});
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    // Mirror /profile's client-side validation rules (8 char min,
+    // matching values) so the same shape of error surfaces here.
+    const local: FieldErrors = {};
+    if (!resetPassword) local.new_password = [t('profile.errors.newRequired') || 'New password is required.'];
+    else if (resetPassword.length < 8) {
+      local.new_password = [t('profile.errors.minLength') || 'Password must be at least 8 characters.'];
+    }
+    if (resetPassword && resetPassword !== resetPasswordConfirm) {
+      local.new_password_confirm = [t('profile.errors.mismatch') || 'Passwords do not match.'];
+    }
+    if (Object.keys(local).length > 0) {
+      setResetErrors(local);
+      return;
+    }
+    setResetSubmitting(true);
+    setResetErrors({});
+    const result = await api.users.setPassword(selectedUser.id, resetPassword, resetPasswordConfirm);
+    setResetSubmitting(false);
+    if (result.ok) {
+      setResetSuccessAt(Date.now());
+      // Auto-close the modal so the new password isn't sitting in
+      // the form cache. Toast persists for 3 s after close.
+      closeResetPasswordModal();
+      setTimeout(() => setResetSuccessAt(null), 3000);
+    } else {
+      setResetErrors(result.fieldErrors);
+    }
   };
 
   const filteredUsers = users.filter(user =>
@@ -302,15 +360,24 @@ function UsersAdminPage() {
                           onClick={() => openEditModal(user)}
                           variant="ghost"
                           size="icon"
-                          title="Edit user"
+                          title={t('admin.editUser') || 'Edit user'}
                         >
                           <Edit2 className="w-4 h-4 text-primary" />
+                        </Button>
+                        <Button
+                          onClick={() => openResetPasswordModal(user)}
+                          variant="ghost"
+                          size="icon"
+                          title={t('admin.resetPassword') || 'Reset password'}
+                          aria-label={t('admin.resetPassword') || 'Reset password'}
+                        >
+                          <KeyRound className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
                         </Button>
                         <Button
                           onClick={() => openDeleteModal(user)}
                           variant="ghost"
                           size="icon"
-                          title="Delete user"
+                          title={t('admin.deleteUser') || 'Delete user'}
                         >
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
@@ -528,6 +595,87 @@ function UsersAdminPage() {
                 </div>
               </form>
             </div>
+          </div>
+        )}
+
+        {/* Reset Password Modal */}
+        {isResetPasswordModalOpen && selectedUser && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-card text-card-foreground rounded-xl shadow-xl max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <KeyRound className="w-5 h-5 text-emerald-600 dark:text-emerald-500" />
+                  <h2 className="text-lg font-semibold text-foreground">
+                    {(t('admin.resetPasswordTitle') || 'Reset password for {name}').replace(
+                      '{name}', selectedUser.full_name || selectedUser.email,
+                    )}
+                  </h2>
+                </div>
+                <button
+                  onClick={closeResetPasswordModal}
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label={t('common.cancel') || 'Cancel'}
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              {resetErrors._global_ && (
+                <div className="mb-4 flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+                  <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span>{resetErrors._global_.join(' ')}</span>
+                </div>
+              )}
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <Input
+                  label={t('profile.newPassword') || 'New password'}
+                  type="password"
+                  autoComplete="new-password"
+                  value={resetPassword}
+                  onChange={e => setResetPassword(e.target.value)}
+                  error={resetErrors.new_password?.[0]}
+                  disabled={resetSubmitting}
+                />
+                <Input
+                  label={t('profile.confirmNewPassword') || 'Confirm new password'}
+                  type="password"
+                  autoComplete="new-password"
+                  value={resetPasswordConfirm}
+                  onChange={e => setResetPasswordConfirm(e.target.value)}
+                  error={resetErrors.new_password_confirm?.[0]}
+                  disabled={resetSubmitting}
+                />
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    type="button"
+                    onClick={closeResetPasswordModal}
+                    variant="outline"
+                    className="flex-1"
+                    disabled={resetSubmitting}
+                  >
+                    {t('common.cancel') || 'Cancel'}
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={resetSubmitting}>
+                    {resetSubmitting
+                      ? (t('profile.saving') || 'Saving…')
+                      : (t('admin.resetPassword') || 'Reset password')}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Reset-password success toast. Lives at the page level so it
+            persists for ~3 s after the modal closes. The text never
+            includes the new password — re-displaying it would create
+            a screen-recording risk. */}
+        {resetSuccessAt !== null && (
+          <div
+            role="status"
+            className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300 shadow-lg"
+          >
+            <Check className="w-4 h-4" />
+            {t('admin.resetPasswordSuccess') || 'Password reset.'}
           </div>
         )}
 
