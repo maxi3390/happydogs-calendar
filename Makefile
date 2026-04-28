@@ -1,4 +1,4 @@
-.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend test-frontend test-frontend-debug lint lint-backend clean rebuild create-admin seed-example-data env env-check init upgrade backup restore volume-ensure destroy-db notifications-run
+.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend test-frontend test-frontend-debug lint lint-backend clean rebuild create-admin seed-example-data env env-check init upgrade backup restore volume-ensure destroy-db notifications-run e2e-up e2e-down
 
 POSTGRES_VOLUME_NAME := happy-calendar_postgres_data
 
@@ -41,8 +41,11 @@ help:
 	@echo "Testing:"
 	@echo "  make test              - Run all tests (backend + frontend)"
 	@echo "  make test-backend      - Run backend tests only"
-	@echo "  make test-frontend     - Run frontend Playwright tests (Chrome headless)"
-	@echo "  make test-frontend-debug - Run frontend tests with Playwright trace viewer"
+	@echo "  make test-frontend     - Run frontend Playwright tests against an isolated, ephemeral DB"
+	@echo "                            (set KEEP_E2E_DATA=1 to leave the e2e stack up for inspection)"
+	@echo "  make test-frontend-debug - Run frontend tests with Playwright trace on"
+	@echo "  make e2e-up            - Manually bring up the isolated e2e stack (db-e2e + backend-e2e)"
+	@echo "  make e2e-down          - Tear down the isolated e2e stack"
 	@echo "  make test-coverage     - Run tests with coverage report"
 	@echo ""
 	@echo "Development:"
@@ -175,25 +178,32 @@ test: test-backend test-frontend
 test-backend:
 	docker compose exec backend python manage.py test --settings=nursery.test_settings
 
+# Frontend Playwright tests run against an isolated, ephemeral
+# Postgres + Django pair (`db-e2e` + `backend-e2e`, defined under the
+# `e2e` profile in docker-compose.yml). The dev DB is never touched.
+# Spec: openspec/specs/tooling/e2e-isolation/spec.md
+#
+# Set KEEP_E2E_DATA=1 to leave the stack up after the run for inspection.
 test-frontend:
-	@echo "Running Playwright tests (Chrome headless)..."
-	docker run --rm --network=happy-calendar_proxy \
-		-v $(PWD)/frontend:/app \
-		-w /app \
-		-e BASE_URL=http://localhost:3000 \
-		-e NEXT_PUBLIC_API_URL=http://backend:8000/api \
-		$(PLAYWRIGHT_IMAGE) \
-		sh -c "npm install && npx playwright test --project=chromium"
+	@bash scripts/run-e2e-tests.sh
 
 test-frontend-debug:
-	@echo "Running Playwright tests (Chrome headless, trace on)..."
-	docker run --rm --network=happy-calendar_proxy \
-		-v $(PWD)/frontend:/app \
-		-w /app \
-		-e BASE_URL=http://localhost:3000 \
-		-e NEXT_PUBLIC_API_URL=http://backend:8000/api \
-		$(PLAYWRIGHT_IMAGE) \
-		sh -c "npm install && npx playwright test --project=chromium --trace=on"
+	@PLAYWRIGHT_ARGS=--trace=on bash scripts/run-e2e-tests.sh
+
+# Manual e2e stack management — useful when you want to seed db-e2e by
+# hand and run a single Playwright spec against it. The e2e stack lives
+# in its own compose project + network (see docker-compose.e2e.yml), so
+# these targets never touch the dev stack.
+E2E_COMPOSE := docker compose -p happy-calendar-e2e -f docker-compose.e2e.yml
+
+e2e-up:
+	$(E2E_COMPOSE) up -d --wait --wait-timeout 120
+	@echo ""
+	@echo "[e2e] Stack is up. backend-e2e is reachable as backend-e2e:8000 on the happy-calendar-e2e network."
+	@echo "[e2e] Run 'make e2e-down' to tear it down."
+
+e2e-down:
+	$(E2E_COMPOSE) down --remove-orphans
 
 test-coverage:
 	docker compose exec backend coverage run --source='.' manage.py test --settings=nursery.test_settings

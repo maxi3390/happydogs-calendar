@@ -1,0 +1,69 @@
+# Isolated e2e (Playwright) test stack — a Postgres + Django pair that
+# is brought up only when frontend tests run, and torn down on exit
+# unless KEEP_E2E_DATA=1 is set. Strictly separate from docker-compose.yml:
+# its own compose project (``happy-calendar-e2e``) and its own bridge
+# network (``happy-calendar-e2e``), so ``compose up/down`` against this
+# file never touches the dev stack.
+#
+# Lifecycle:
+#   make test-frontend          # via scripts/run-e2e-tests.sh
+#   make e2e-up / make e2e-down # manual control for ad-hoc inspection
+#
+# Live spec: openspec/specs/tooling/e2e-isolation/spec.md
+
+services:
+  db-e2e:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: nursery
+      POSTGRES_USER: nursery
+      POSTGRES_PASSWORD: nursery
+    # tmpfs makes this DB strictly ephemeral: stopping the container
+    # wipes every byte of state, no ``down -v`` required. Costs ~50–100
+    # MB of RAM during a test run; trivial on any dev box. Mounted at
+    # /var/lib/postgresql (parent) to match postgres:18+'s major-version-
+    # subdirectory layout, same as the dev ``db`` service.
+    tmpfs:
+      - /var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nursery -d nursery"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+    networks:
+      - e2e
+
+  backend-e2e:
+    build: ./backend
+    environment:
+      - DEBUG=True
+      - POSTGRES_DB=nursery
+      - POSTGRES_USER=nursery
+      - POSTGRES_PASSWORD=nursery
+      - POSTGRES_HOST=db-e2e
+      - POSTGRES_PORT=5432
+      - DJANGO_SECRET_KEY=dev-secret-key-change-in-production
+    depends_on:
+      db-e2e:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    healthcheck:
+      # ``runserver`` opens the port AFTER ``migrate`` completes, so a
+      # plain TCP check on 8000 is also a "migrations done" signal.
+      test: ["CMD-SHELL", "python -c \"import socket,sys; s=socket.socket(); s.settimeout(1); sys.exit(0 if s.connect_ex(('localhost',8000))==0 else 1)\""]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    networks:
+      - e2e
+
+networks:
+  # Pinned name (no project prefix added by compose) so the Playwright
+  # container can join the network with a stable, project-agnostic
+  # identifier: ``docker run --network=happy-calendar-e2e ...``.
+  e2e:
+    name: happy-calendar-e2e
