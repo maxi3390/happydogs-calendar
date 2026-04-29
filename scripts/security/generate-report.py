@@ -389,6 +389,83 @@ def parse_owasp_tests(path: Path) -> ToolStatus:
     return status
 
 
+# ── ZAP baseline ───────────────────────────────────────────────────────
+
+# ZAP riskcode → our severity. ZAP uses 0..3 (info / low / medium /
+# high). We promote High → critical because baseline-mode only flags
+# clear runtime exposures, almost always actionable.
+ZAP_SEVERITY: dict[str, str] = {
+    '3': 'critical',
+    '2': 'warning',
+    '1': 'warning',
+    '0': 'info',
+}
+
+
+def _zap_category(alert_name: str) -> str:
+    """Coarse OWASP Top-10 mapping by alert-name keyword.
+
+    ZAP exposes CWE / WASC IDs but not direct OWASP categories. The
+    rules below match the alert name (case-insensitive) against
+    keyword sets that align with the most frequent baseline findings
+    for a Django + Next.js app. Default A05 covers the broad
+    "Security Misconfiguration" bucket where most header/config
+    findings naturally land.
+    """
+    name = alert_name.lower()
+    if 'cookie' in name and any(k in name for k in ('secure', 'httponly', 'samesite')):
+        return 'A02'
+    if 'hsts' in name or 'strict-transport-security' in name or 'tls' in name or 'ssl' in name:
+        return 'A02'
+    if 'session' in name:
+        return 'A07'
+    if any(k in name for k in ('sql injection', 'sqli', 'xss', 'cross-site', 'injection')):
+        return 'A03'
+    return 'A05'
+
+
+def parse_zap(path: Path) -> ToolStatus:
+    status = ToolStatus(name='zap-baseline', artefact='zap-baseline.json', ok=False)
+    try:
+        data = json.loads(path.read_text())
+    except Exception as exc:
+        status.note = f'Could not parse zap-baseline.json: {exc}'
+        return status
+
+    errors = data.get('errors') or []
+    if errors:
+        status.note = f'ZAP error: {errors[0]}'
+
+    sites = data.get('site') or []
+    seen = 0
+    for site in sites:
+        for alert in site.get('alerts') or []:
+            seen += 1
+            risk_code = str(alert.get('riskcode', '0'))
+            severity = ZAP_SEVERITY.get(risk_code, 'warning')
+            alert_name = alert.get('name') or alert.get('alert') or '(unnamed)'
+            instances = alert.get('instances') or []
+            location = (
+                instances[0].get('uri') if instances and isinstance(instances[0], dict) else ''
+            ) or site.get('@name', '')
+            risk_desc = alert.get('riskdesc', '')
+            status.findings.append(Finding(
+                category=_zap_category(alert_name),
+                severity=severity,
+                tool='zap-baseline',
+                title=alert_name,
+                location=location,
+                description=f'risk={risk_desc}, instances={len(instances)}',
+            ))
+
+    if not sites and not errors:
+        status.note = 'ZAP report empty (DAST step did not run or scan produced no output)'
+    elif seen == 0 and not errors:
+        status.note = 'ZAP completed with 0 findings'
+    status.ok = True
+    return status
+
+
 # ── Report rendering ───────────────────────────────────────────────────
 
 def render_report(tools: list[ToolStatus]) -> tuple[str, int]:
@@ -504,6 +581,11 @@ def main(argv: list[str]) -> int:
         parse_django_check(report_dir / 'django-check.txt'),
         parse_owasp_tests(report_dir / 'owasp-tests.txt'),
     ]
+    # Opt-in DAST: only include the ZAP block when the artefact is
+    # present (the orchestrator writes the file only when WITH_DAST=1).
+    zap_artefact = report_dir / 'zap-baseline.json'
+    if zap_artefact.exists():
+        tools.append(parse_zap(zap_artefact))
 
     text, exit_code = render_report(tools)
     (report_dir / 'REPORT.md').write_text(text)

@@ -26,6 +26,15 @@ REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." &>/dev/null && pwd)"
 REPORT_DIR="$REPO_ROOT/security-reports"
 KEEP="${SECURITY_REPORT_KEEP:-10}"
 
+# Opt-in DAST step. When unset (default), no ZAP work happens, no
+# image pull, no e2e stack lifecycle. Set to 1 to add a 6th scanner
+# that runs OWASP ZAP's baseline (passive) scan against the isolated
+# e2e stack.
+WITH_DAST="${WITH_DAST:-0}"
+ZAP_IMAGE="${ZAP_IMAGE:-zaproxy/zap-stable}"
+ZAP_TARGET="${ZAP_TARGET:-http://frontend-e2e:3000/}"
+E2E_NETWORK="${E2E_NETWORK:-happy-calendar-e2e}"
+
 # Per-run subdirectory. The format is `YYYY-MM-DD-HHMMSS` so a
 # directory listing sorts chronologically without any extra plumbing.
 RUN_NAME="$(date '+%Y-%m-%d-%H%M%S')"
@@ -103,10 +112,50 @@ echo "[security] [4/5] Running Django check --deploy..."
 docker compose exec -T -e DEBUG=False backend python manage.py check --deploy --fail-level WARNING \
   >"$RUN_DIR/django-check.txt" 2>&1 || true
 
+total_steps=5
+if [[ "$WITH_DAST" == "1" ]]; then
+  total_steps=6
+fi
+
 # 5. Custom OWASP Django test suite.
-echo "[security] [5/5] Running security_tests Django app..."
+echo "[security] [5/$total_steps] Running security_tests Django app..."
 docker compose exec -T backend python manage.py test security_tests --verbosity 2 \
   >"$RUN_DIR/owasp-tests.txt" 2>&1 || true
+
+# 6. (opt-in) OWASP ZAP baseline DAST against the isolated e2e stack.
+#    Brings the e2e stack up if needed (idempotent), runs zap-baseline.py,
+#    captures JSON + Markdown reports, and tears the stack back down.
+if [[ "$WITH_DAST" == "1" ]]; then
+  echo "[security] [6/6] Running OWASP ZAP baseline scan..."
+  echo "[security]   Bringing up isolated e2e stack as DAST target..."
+  if ! make -C "$REPO_ROOT" e2e-up >"$RUN_DIR/zap-baseline.setup.log" 2>&1; then
+    echo "[security]   ERROR: failed to bring up e2e stack — DAST step skipped." >&2
+    echo '{"site": [], "errors": ["e2e stack failed to come up"]}' > "$RUN_DIR/zap-baseline.json"
+  else
+    # ZAP runs as the `zap` user inside the container; the work
+    # directory needs to be writable by that user. We mount the
+    # run dir at /zap/wrk (ZAP's expected work-dir convention) and
+    # let the JSON / Markdown reports land there.
+    chmod a+rwx "$RUN_DIR"
+    docker run --rm \
+      --network="$E2E_NETWORK" \
+      -v "$RUN_DIR:/zap/wrk:rw" \
+      "$ZAP_IMAGE" \
+      zap-baseline.py \
+        -t "$ZAP_TARGET" \
+        -J zap-baseline.json \
+        -w zap-baseline.md \
+        -I \
+      >"$RUN_DIR/zap-baseline.stdout" 2>"$RUN_DIR/zap-baseline.stderr" || true
+
+    if [[ ! -s "$RUN_DIR/zap-baseline.json" ]]; then
+      echo '{"site": [], "errors": ["zap-baseline produced no JSON output"]}' > "$RUN_DIR/zap-baseline.json"
+    fi
+
+    echo "[security]   Tearing down e2e stack..."
+    make -C "$REPO_ROOT" e2e-down >"$RUN_DIR/zap-baseline.teardown.log" 2>&1 || true
+  fi
+fi
 
 echo
 echo "[security] Aggregating findings into REPORT.md..."

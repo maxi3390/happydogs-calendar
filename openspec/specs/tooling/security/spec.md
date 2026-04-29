@@ -111,3 +111,43 @@ The report SHALL name both gaps in their respective sections so a reader does no
 - WHEN the operator opens `REPORT.md`
 - THEN the A04 section SHALL include the sentence "No automated coverage; this category requires threat-modelling discipline that lives outside the scanner."
 - AND the A10 section SHALL note that bandit covers the obvious cases but full SSRF detection requires taint analysis which is out of scope for this suite
+
+### Requirement: `WITH_DAST=1 make security` SHALL run an OWASP ZAP baseline scan
+
+`make security` SHALL accept a `WITH_DAST=1` env var to enable an opt-in 6th step: an OWASP ZAP baseline (passive) scan against the isolated e2e stack. The flag SHALL be off by default — without `WITH_DAST=1` the suite's behaviour is unchanged from today (5 scanners, no ZAP image pull, no e2e stack lifecycle).
+
+When `WITH_DAST=1`, the orchestrator SHALL:
+
+1. Bring up the isolated e2e stack via `make e2e-up` (idempotent — no-op if already up).
+2. Run `zaproxy/zap-stable` `zap-baseline.py` from a one-off container joined to the `happy-calendar-e2e` network, targeting `http://frontend-e2e:3000/` by default.
+3. Capture `zap-baseline.json` (machine-readable) and `zap-baseline.md` (human-readable) into the per-run report directory.
+4. Tear the e2e stack back down via `make e2e-down`.
+
+ZAP findings SHALL be folded into the existing OWASP-Top-10 sections of `REPORT.md`. Risk → severity:
+
+- `High` → `critical`
+- `Medium` / `Low` → `warning`
+- `Informational` → `info`
+
+OWASP categorisation SHALL be derived from the alert name with a documented keyword-mapping (header / cookie / TLS / session / injection); default A05.
+
+#### Scenario: Default invocation skips DAST
+
+- WHEN the operator runs `make security`
+- THEN no ZAP work SHALL run
+- AND the report SHALL contain the existing 5 scanner sections, unchanged
+
+#### Scenario: WITH_DAST=1 adds the ZAP section
+
+- WHEN the operator runs `WITH_DAST=1 make security`
+- THEN the e2e stack SHALL be brought up before the ZAP step
+- AND `zap-baseline.json` and `zap-baseline.md` SHALL appear in the per-run report directory
+- AND the e2e stack SHALL be torn down after the scan
+- AND `REPORT.md` SHALL include ZAP findings folded into the appropriate OWASP-Top-10 sections
+
+#### Scenario: A ZAP High-risk finding fails the suite
+
+- GIVEN a ZAP baseline scan that surfaces a High-risk alert (e.g., a clear runtime exposure)
+- WHEN the aggregator runs
+- THEN the finding SHALL be classified as `critical`
+- AND `make security` SHALL exit non-zero
