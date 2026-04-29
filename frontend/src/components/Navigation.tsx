@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   PawPrint, Users, CalendarDays, Settings, Menu, X, LogIn, LogOut,
-  Shield, User, ChevronDown, Code2, Stethoscope, Flag, Lock,
+  Shield, User, ChevronDown, Code2, Stethoscope, Flag, Lock, Activity,
 } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -236,6 +236,18 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
                         )}
                         {isAdmin && (
                           <Link
+                            href="/admin/activity"
+                            role="menuitem"
+                            aria-current={ariaCurrent('/admin/activity')}
+                            onClick={() => setProfileMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-secondary/80 rounded-xl transition-colors"
+                          >
+                            <Activity className="w-4 h-4 text-rose-500" />
+                            {t('audit.activity.navLabel')}
+                          </Link>
+                        )}
+                        {isAdmin && (
+                          <Link
                             href="/ui-system"
                             role="menuitem"
                             aria-current={ariaCurrent('/ui-system')}
@@ -411,6 +423,18 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
                       >
                         <Shield className="w-5 h-5" />
                         {t('nav.admin')}
+                      </Link>
+                    )}
+
+                    {isAdmin && (
+                      <Link
+                        href="/admin/activity"
+                        aria-current={ariaCurrent('/admin/activity')}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={mobileNavLinkClass('/admin/activity', 'bg-rose-600 dark:bg-rose-500')}
+                      >
+                        <Activity className="w-5 h-5" />
+                        {t('audit.activity.navLabel')}
                       </Link>
                     )}
 

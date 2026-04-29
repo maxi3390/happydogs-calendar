@@ -750,5 +750,47 @@
       "strong": "Fuerte",
       "veryStrong": "Muy fuerte"
     }
+  },
+  "audit": {
+    "activity": {
+      "title": "Registro de actividad",
+      "description": "Cambios recientes en la guardería.",
+      "empty": "Sin actividad para mostrar.",
+      "navLabel": "Actividad",
+      "table": {
+        "when": "Cuándo",
+        "who": "Quién",
+        "action": "Acción",
+        "entity": "Entidad",
+        "label": "Nombre"
+      },
+      "action": {
+        "created": "Creado",
+        "updated": "Modificado",
+        "deleted": "Eliminado"
+      },
+      "entity": {
+        "pet": "Mascota",
+        "owner": "Dueño",
+        "medical_note": "Nota médica",
+        "vaccination": "Vacuna"
+      },
+      "filters": {
+        "title": "Filtros",
+        "entity": "Entidad",
+        "action": "Acción",
+        "period": "Período",
+        "all": "Todos",
+        "last7d": "Últimos 7 días",
+        "last30d": "Últimos 30 días",
+        "last90d": "Últimos 90 días"
+      },
+      "pagination": {
+        "prev": "Anterior",
+        "next": "Siguiente",
+        "page": "Página {n} de {total}",
+        "showing": "Mostrando {start}–{end} de {total}"
+      }
+    }
   }
 }

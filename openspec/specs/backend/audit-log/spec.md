@@ -79,3 +79,87 @@ The response body SHALL be an array of history rows ordered by `history_date` de
 - AND user Alice is admin
 - WHEN Alice `GET /api/pets/2/medical-notes/5/history/`
 - THEN the response SHALL be HTTP 404
+
+### Requirement: A unified activity feed SHALL expose a chronologically merged stream of changes across all tracked entities
+
+The audit log SHALL expose `GET /api/audit-log/activity/` as an admin-only endpoint that returns a paginated, filterable stream of history rows across all tracked entities (currently Pet, Owner, MedicalNote, Vaccination).
+
+The response body SHALL have shape:
+
+```json
+{
+  "count": <int>,
+  "results": [
+    {
+      "entity_type": "pet" | "owner" | "medical_note" | "vaccination",
+      "entity_id": <int>,
+      "entity_label": <string>,
+      "history_id": <int>,
+      "history_type": "+" | "~" | "-",
+      "history_date": <ISO 8601>,
+      "history_user": { "id": <int>, "email": <string> } | null
+    },
+    ...
+  ]
+}
+```
+
+`entity_label` SHALL be a human-readable label derived from the historical row's snapshot (Pet → `name`; Owner → `first_name + ' ' + last_name`; MedicalNote → `title`; Vaccination → `vax_type`).
+
+Results SHALL be sorted by `history_date` descending. `count` SHALL be the total number of rows matching the filter set (across all entities), independent of pagination.
+
+The endpoint SHALL accept the following filter query params:
+
+- `entity_type`: one of `pet|owner|medical_note|vaccination`. Unknown values → 400.
+- `action`: one of `+|~|-` (matches `history_type`). Unknown values → 400.
+- `user`: integer; matches `history_user_id`. Non-integer → 400; unknown id → 0 results, not 400.
+- `since` / `until`: ISO 8601 timestamps; bound `history_date`. Bad format → 400.
+- `limit`: integer, default 50, silently clamped to `[1, 200]`.
+- `offset`: integer, default 0; negative → 400.
+
+Permission SHALL match the existing per-entity history endpoints: admin-only (`role='admin'`), 401 for unauthenticated callers, 403 for non-admins.
+
+#### Scenario: Admin reads the unified feed
+
+- GIVEN user Alice has admin role
+- AND the system has 4 history rows (one per tracked entity)
+- WHEN Alice `GET /api/audit-log/activity/`
+- THEN the response SHALL be HTTP 200
+- AND the body SHALL include `count: 4` and 4 result rows
+- AND the rows SHALL include all four entity types
+- AND the rows SHALL be sorted by `history_date` descending
+
+#### Scenario: Filter by entity_type narrows the feed
+
+- WHEN Alice `GET /api/audit-log/activity/?entity_type=pet`
+- THEN the response SHALL be HTTP 200
+- AND every result SHALL have `entity_type == 'pet'`
+
+#### Scenario: Filter by action returns only matching history_type
+
+- GIVEN there are creates ('+') and updates ('~') in the log
+- WHEN Alice `GET /api/audit-log/activity/?action=~`
+- THEN every result SHALL have `history_type == '~'`
+
+#### Scenario: Unknown filter values reject with 400
+
+- WHEN Alice `GET /api/audit-log/activity/?entity_type=mystery`
+- THEN the response SHALL be HTTP 400
+- WHEN Alice `GET /api/audit-log/activity/?action=wat`
+- THEN the response SHALL be HTTP 400
+- WHEN Alice `GET /api/audit-log/activity/?since=not-a-date`
+- THEN the response SHALL be HTTP 400
+
+#### Scenario: Non-admin is refused
+
+- GIVEN user Bob is a non-admin authenticated user
+- WHEN Bob `GET /api/audit-log/activity/`
+- THEN the response SHALL be HTTP 403
+
+#### Scenario: Pagination with offset beyond total returns empty results
+
+- GIVEN there are 4 history rows total
+- WHEN Alice `GET /api/audit-log/activity/?offset=999`
+- THEN the response SHALL be HTTP 200
+- AND `results` SHALL be an empty array
+- AND `count` SHALL still be 4
