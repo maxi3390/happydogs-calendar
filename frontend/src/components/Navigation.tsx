@@ -28,6 +28,8 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const vetManagementEnabled = useFeatureFlag('vet_management');
+  const uiSystemEnabled = useFeatureFlag('ui_system');
+  const activityLogsEnabled = useFeatureFlag('activity_logs');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -234,7 +236,7 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
                             {t('nav.admin')}
                           </Link>
                         )}
-                        {isAdmin && (
+                        {isAdmin && activityLogsEnabled && (
                           <Link
                             href="/admin/activity"
                             role="menuitem"
@@ -246,7 +248,7 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
                             {t('audit.activity.navLabel')}
                           </Link>
                         )}
-                        {isAdmin && (
+                        {isAdmin && uiSystemEnabled && (
                           <Link
                             href="/ui-system"
                             role="menuitem"
@@ -426,7 +428,7 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
                       </Link>
                     )}
 
-                    {isAdmin && (
+                    {isAdmin && activityLogsEnabled && (
                       <Link
                         href="/admin/activity"
                         aria-current={ariaCurrent('/admin/activity')}
@@ -438,7 +440,7 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
                       </Link>
                     )}
 
-                    {isAdmin && (
+                    {isAdmin && uiSystemEnabled && (
                       <Link
                         href="/ui-system"
                         aria-current={ariaCurrent('/ui-system')}

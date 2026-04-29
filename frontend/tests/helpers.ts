@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import { Page, Route } from '@playwright/test';
 
 const EN_TRANSLATIONS = {
   app: { name: 'Happy Pet Nursery', tagline: 'Schedule Management System' },
@@ -330,6 +330,54 @@ async function mockI18nEndpoints(page: Page) {
         { code: 'es', name: 'Spanish', nativeName: 'Español' },
       ]),
     });
+  });
+}
+
+/**
+ * Default ``enabled`` value for every canonical flag — kept in sync with
+ * the seed migrations. Tests can pass an overrides map to flip individual
+ * flags; unspecified keys keep the seed default.
+ */
+const DEFAULT_FLAG_STATE: Record<string, boolean> = {
+  multiday_schedule: true,
+  custom_pet_species: false,
+  vet_management: true,
+  medical_notes: true,
+  data_backup: true,
+  compatibility_warnings: true,
+  deworming_tracking: false,
+  notifications: false,
+  ui_system: false,
+  activity_logs: true,
+};
+
+/**
+ * Stub ``GET /api/feature-flags/`` with a deterministic list of every
+ * canonical flag, optionally overriding one or more values. Routes are
+ * registered before page navigation; PATCH calls fall through.
+ */
+export async function stubFeatureFlags(
+  page: Page,
+  overrides: Record<string, boolean> = {},
+) {
+  const state = { ...DEFAULT_FLAG_STATE, ...overrides };
+  const today = new Date().toISOString();
+  const body = JSON.stringify(
+    Object.entries(state).map(([key, enabled], idx) => ({
+      id: idx + 1,
+      key,
+      label: key,
+      description: '',
+      enabled,
+      updated_at: today,
+    })),
+  );
+  await page.route('**/api/feature-flags/**', async (route: Route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json', body });
   });
 }
 

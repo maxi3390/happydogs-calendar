@@ -8,8 +8,28 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { Badge } from '@/components/ui/Badge';
 import { Select } from '@/components/ui/Select';
 import { Edit2, Shield, Trash2, PawPrint } from 'lucide-react';
+import { useTranslation } from '@/lib/translations';
+import { useFeatureFlag } from '@/lib/feature-flags';
 
 export default function UIComponentsPage() {
+  const { t } = useTranslation();
+  const enabled = useFeatureFlag('ui_system');
+
+  if (!enabled) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Navigation />
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-testid="ui-system-disabled">
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              {t('featureFlags.empty')}
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navigation />

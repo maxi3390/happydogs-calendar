@@ -22,6 +22,8 @@ SEEDED_KEYS = {
     'compatibility_warnings',
     'deworming_tracking',
     'notifications',
+    'ui_system',
+    'activity_logs',
 }
 ENABLED_BY_DEFAULT = {
     'multiday_schedule',
@@ -29,8 +31,14 @@ ENABLED_BY_DEFAULT = {
     'medical_notes',
     'data_backup',
     'compatibility_warnings',
+    'activity_logs',
 }
-DISABLED_BY_DEFAULT = {'custom_pet_species', 'deworming_tracking', 'notifications'}
+DISABLED_BY_DEFAULT = {
+    'custom_pet_species',
+    'deworming_tracking',
+    'notifications',
+    'ui_system',
+}
 
 
 class SeedMigrationTests(TestCase):

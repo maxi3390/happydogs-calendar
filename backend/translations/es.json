@@ -626,6 +626,14 @@
       "notifications": {
         "label": "Notificaciones",
         "description": "Interruptor maestro del sistema de notificaciones. Cuando está activa, el cron diario genera recordatorios in-app (vacunación / desparasitación pendientes, cumpleaños de mascotas, llegadas y salidas) y se renderizan la campanita y la página /notifications. Cuando está desactivada, todas las superficies de notificación quedan ocultas y el cron es un no-op."
+      },
+      "ui_system": {
+        "label": "Sistema de UI",
+        "description": "Controla la visibilidad de la página /ui-system de referencia para desarrolladores (guía de estilo viva de los componentes UI compartidos). Cuando está desactivada, la entrada en el menú se oculta y al visitar la URL se muestra un estado vacío. Por defecto desactivada — esta superficie es para personal técnico, no para staff de la guardería."
+      },
+      "activity_logs": {
+        "label": "Registro de actividad",
+        "description": "Controla la visibilidad del feed de auditoría cross-entidad /admin/activity. Cuando está desactivada, la entrada en el menú se oculta, la página muestra un estado vacío y GET /api/audit-log/activity/ devuelve 404. Las filas de auditoría subyacentes se siguen registrando; reactivar el flag restaura el feed sin pérdida de datos."
       }
     }
   },
