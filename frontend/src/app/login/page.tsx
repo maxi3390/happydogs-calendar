@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/translations';
 import { api } from '@/lib/api';
+import { LogoShape } from '@/domain/settings/types';
+import { readLogoCache, writeLogoCache } from '@/domain/settings/cache';
 import { Eye, EyeOff, LogIn, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -21,6 +23,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoShape, setLogoShape] = useState<LogoShape>('circle');
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -30,7 +33,18 @@ export default function LoginPage() {
   }, [isAuthenticated, router]);
 
   useEffect(() => {
-    api.nurserySettings.get().then(s => setLogoUrl(s.logo_url)).catch(() => {});
+    // Hydrate from the localStorage cache synchronously before the
+    // network round-trip so a returning visitor sees their persisted
+    // shape immediately on the login screen. The fetch refreshes
+    // both state and cache.
+    const cached = readLogoCache();
+    setLogoUrl(cached.url);
+    setLogoShape(cached.shape);
+    api.nurserySettings.get().then(s => {
+      setLogoUrl(s.logo_url);
+      setLogoShape(s.logo_shape);
+      writeLogoCache(s);
+    }).catch(() => {});
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,9 +71,21 @@ export default function LoginPage() {
 
       <div className="max-w-md w-full relative z-10">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center p-3 sm:p-4 rounded-2xl bg-primary mb-4 shadow-lg shadow-primary/20 overflow-hidden">
+          <div
+            className={`w-16 h-16 sm:w-20 sm:h-20 inline-flex items-center justify-center bg-primary mb-4 shadow-lg shadow-primary/20 overflow-hidden ${
+              logoShape === 'circle' ? 'rounded-full' : 'rounded-2xl'
+            }`}
+            data-testid="login-logo"
+            data-shape={logoShape}
+          >
             {logoUrl ? (
-              <img src={logoUrl} alt="Logo" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
+              <img
+                src={logoUrl}
+                alt="Logo"
+                className={`w-full h-full ${
+                  logoShape === 'circle' ? 'object-cover' : 'object-contain'
+                }`}
+              />
             ) : (
               <LogIn className="w-8 h-8 sm:w-10 sm:h-10 text-primary-foreground" />
             )}

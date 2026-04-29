@@ -169,6 +169,93 @@ class SystemLogoAPITest(TestCase):
         self.assertIsNotNone(resp.data['logo_url'])
 
 
+class LogoShapeAPITest(TestCase):
+    """``logo_shape`` chooses between a square and a circular clip path
+    for the system logo wherever it renders. The default is ``circle``
+    so a fresh install — and any pre-existing row that gets the new
+    field via the migration — picks up the new visual without manual
+    intervention.
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+        admin = create_admin(password='AdminPass123!')
+        self.user = auth_client(self.client, admin, 'AdminPass123!')
+
+    def test_settings_response_includes_logo_shape_field(self):
+        NurserySetting.load()
+        resp = self.client.get('/api/settings/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('logo_shape', resp.data)
+
+    def test_default_logo_shape_is_circle(self):
+        # Default applies both at model creation time and to any
+        # pre-existing row migrated up via 0005_nurserysetting_logo_shape.
+        s = NurserySetting.load()
+        self.assertEqual(s.logo_shape, NurserySetting.LOGO_SHAPE_CIRCLE)
+
+    def test_admin_can_set_logo_shape_to_square(self):
+        NurserySetting.load()
+        resp = self.client.patch(
+            '/api/settings/update/',
+            {'logo_shape': 'square'},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['logo_shape'], 'square')
+        self.assertEqual(NurserySetting.load().logo_shape, 'square')
+
+    def test_admin_can_set_logo_shape_to_circle(self):
+        s = NurserySetting.load()
+        s.logo_shape = NurserySetting.LOGO_SHAPE_SQUARE
+        s.save()
+        resp = self.client.patch(
+            '/api/settings/update/',
+            {'logo_shape': 'circle'},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['logo_shape'], 'circle')
+        self.assertEqual(NurserySetting.load().logo_shape, 'circle')
+
+    def test_unknown_shape_value_is_rejected(self):
+        NurserySetting.load()
+        resp = self.client.patch(
+            '/api/settings/update/',
+            {'logo_shape': 'triangle'},
+            format='json',
+        )
+        # Choices field rejects with 400 + per-field error map.
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('logo_shape', resp.data)
+
+    def test_logo_shape_persists_across_logo_upload(self):
+        # Upload a logo first, then flip the shape — the upload path
+        # (separate endpoint) MUST NOT clobber the shape value.
+        s = NurserySetting.load()
+        s.logo_shape = NurserySetting.LOGO_SHAPE_SQUARE
+        s.save()
+        image = _make_test_image()
+        resp = self.client.post(
+            '/api/settings/upload_logo/', {'logo': image}, format='multipart',
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['logo_shape'], 'square')
+        self.assertEqual(NurserySetting.load().logo_shape, 'square')
+
+    def test_unauthenticated_get_includes_logo_shape(self):
+        # ``/api/settings/`` is intentionally public so the login page
+        # can render with the operator-chosen shape before the user
+        # has any credentials.
+        s = NurserySetting.load()
+        s.logo_shape = NurserySetting.LOGO_SHAPE_SQUARE
+        s.save()
+        anon = APIClient()
+        resp = anon.get('/api/settings/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['logo_shape'], 'square')
+
+
 class DailyCountAPITest(TestCase):
     def setUp(self):
         self.client = APIClient()

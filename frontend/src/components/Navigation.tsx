@@ -14,6 +14,8 @@ import { useTranslation } from '@/lib/translations';
 import { useAuth } from '@/lib/auth';
 import { useFeatureFlag } from '@/lib/feature-flags';
 import { api } from '@/lib/api';
+import { LogoShape } from '@/domain/settings/types';
+import { readLogoCache, writeLogoCache } from '@/domain/settings/cache';
 
 interface NavigationProps {
   onMultiPetSchedule?: () => void;
@@ -26,6 +28,7 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoShape, setLogoShape] = useState<LogoShape>('circle');
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const vetManagementEnabled = useFeatureFlag('vet_management');
   const uiSystemEnabled = useFeatureFlag('ui_system');
@@ -40,7 +43,18 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
   }, []);
 
   useEffect(() => {
-    api.nurserySettings.get().then(s => setLogoUrl(s.logo_url)).catch(() => {});
+    // Hydrate from the localStorage cache synchronously before the
+    // network round-trip so a returning visitor sees their persisted
+    // shape immediately. The fetch refreshes the cache so the next
+    // mount reflects any out-of-band server-side change.
+    const cached = readLogoCache();
+    setLogoUrl(cached.url);
+    setLogoShape(cached.shape);
+    api.nurserySettings.get().then(s => {
+      setLogoUrl(s.logo_url);
+      setLogoShape(s.logo_shape);
+      writeLogoCache(s);
+    }).catch(() => {});
   }, []);
 
   // Close overlays on Escape for keyboard accessibility.
@@ -88,9 +102,21 @@ export default function Navigation({ onMultiPetSchedule }: NavigationProps) {
             aria-current={ariaCurrent('/')}
             className="flex items-center gap-2 sm:gap-3 group hover:opacity-90 transition-opacity"
           >
-            <div className={`p-2 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center overflow-hidden ${isActive('/') ? 'bg-primary scale-105' : 'bg-primary/90 group-hover:scale-105 group-hover:bg-primary'}`}>
+            <div
+              className={`w-9 h-9 sm:w-10 sm:h-10 transition-all duration-300 shadow-md flex items-center justify-center overflow-hidden ${
+                logoShape === 'circle' ? 'rounded-full' : 'rounded-xl'
+              } ${isActive('/') ? 'bg-primary scale-105' : 'bg-primary/90 group-hover:scale-105 group-hover:bg-primary'}`}
+              data-testid="nav-logo"
+              data-shape={logoShape}
+            >
               {logoUrl ? (
-                <img src={logoUrl} alt="Logo" className="w-5 h-5 sm:w-6 sm:h-6 object-contain" />
+                <img
+                  src={logoUrl}
+                  alt="Logo"
+                  className={`w-full h-full ${
+                    logoShape === 'circle' ? 'object-cover' : 'object-contain'
+                  }`}
+                />
               ) : (
                 <PawPrint className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               )}

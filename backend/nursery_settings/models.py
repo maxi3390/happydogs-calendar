@@ -6,6 +6,14 @@ from domain.files.validators import validate_file_size, validate_image_type
 
 class NurserySetting(models.Model):
     """Singleton model for nursery-wide configuration."""
+
+    LOGO_SHAPE_SQUARE = 'square'
+    LOGO_SHAPE_CIRCLE = 'circle'
+    LOGO_SHAPE_CHOICES = [
+        (LOGO_SHAPE_SQUARE, 'Square'),
+        (LOGO_SHAPE_CIRCLE, 'Circle'),
+    ]
+
     daily_booking_limit = models.PositiveIntegerField(
         default=0,
         help_text="Maximum number of bookings allowed per day. 0 means unlimited."
@@ -16,6 +24,18 @@ class NurserySetting(models.Model):
         null=True,
         validators=[validate_file_size, validate_image_type],
         help_text="System logo (JPEG, PNG, GIF, WEBP — max 5 MB)",
+    )
+    logo_shape = models.CharField(
+        max_length=10,
+        choices=LOGO_SHAPE_CHOICES,
+        default=LOGO_SHAPE_CIRCLE,
+        help_text=(
+            "How the logo image is clipped wherever it renders "
+            "(navigation header, login page, settings preview). "
+            "``square`` keeps a rounded-corner rectangle with the "
+            "image's full aspect ratio (object-contain); ``circle`` "
+            "clips the image to a circle and fills it (object-cover)."
+        ),
     )
 
     # Notification system fields. The cron container reads

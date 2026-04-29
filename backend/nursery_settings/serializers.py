@@ -8,7 +8,7 @@ class NurserySettingSerializer(serializers.ModelSerializer):
     class Meta:
         model = NurserySetting
         fields = [
-            'daily_booking_limit', 'logo_url',
+            'daily_booking_limit', 'logo_url', 'logo_shape',
             'notifications_run_time', 'deworming_default_due_days',
             'notifications_vaccination_enabled',
             'notifications_arrivals_enabled',

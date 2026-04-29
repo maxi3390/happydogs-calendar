@@ -13,6 +13,13 @@ interface ProfilePictureUploadProps {
   onUpload: (file: File) => Promise<void>;
   onDelete: () => Promise<void>;
   initials?: string;
+  /**
+   * How the preview is clipped. ``circle`` (default) matches the
+   * profile-picture conventions used by pet / owner avatars; ``square``
+   * mirrors the rounded-corner rectangle the system logo uses in the
+   * navigation header and login page when the operator picks square.
+   */
+  shape?: 'circle' | 'square';
 }
 
 export default function ProfilePictureUpload({
@@ -20,6 +27,7 @@ export default function ProfilePictureUpload({
   onUpload,
   onDelete,
   initials = '?',
+  shape = 'circle',
 }: ProfilePictureUploadProps) {
   const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
@@ -65,15 +73,28 @@ export default function ProfilePictureUpload({
     }
   };
 
+  // Square previews use a rounded-corner rectangle that mirrors the
+  // navigation-header logo container (rounded-2xl, slightly larger
+  // corner than rounded-xl so the preview reads as "framed image"
+  // rather than "icon button"). Circle keeps the historic full-round
+  // clip used everywhere else.
+  const containerShapeClass = shape === 'square' ? 'rounded-2xl' : 'rounded-full';
+  const overlayShapeClass = shape === 'square' ? 'rounded-2xl' : 'rounded-full';
+  const imageFitClass = shape === 'square' ? 'object-contain' : 'object-cover';
+
   return (
     <div className="flex flex-col items-center gap-2">
       <div className="relative group">
-        <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-border bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
+        <div
+          className={`w-24 h-24 ${containerShapeClass} overflow-hidden border-2 border-border bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center`}
+          data-testid="picture-preview"
+          data-shape={shape}
+        >
           {currentUrl ? (
             <img
               src={currentUrl}
               alt="Profile"
-              className="w-full h-full object-cover"
+              className={`w-full h-full ${imageFitClass}`}
             />
           ) : (
             <span className="text-2xl font-bold text-primary">
@@ -81,7 +102,7 @@ export default function ProfilePictureUpload({
             </span>
           )}
           {uploading && (
-            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center">
+            <div className={`absolute inset-0 bg-black/40 ${overlayShapeClass} flex items-center justify-center`}>
               <Loader2 className="w-6 h-6 text-white animate-spin" />
             </div>
           )}
