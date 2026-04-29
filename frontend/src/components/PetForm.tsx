@@ -597,6 +597,20 @@ export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAnd
             >
               {t('common.cancel')}
             </Button>
+            {/* Save & Add Another: only in create mode, only when the
+                parent passes a handler. Lets staff register a litter of
+                pets for the same owner without round-tripping through
+                the modal each time. */}
+            {!isEditing && onSaveAndAnother && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSaveAndAddAnother}
+                disabled={loading || !isOwnerSelected}
+              >
+                {t('pet.saveAndAddAnother')}
+              </Button>
+            )}
             <Button
               type="submit"
               variant="primary"

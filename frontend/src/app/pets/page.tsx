@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
 import PetList from '@/components/PetList';
 import PetForm from '@/components/PetForm';
 import OwnerForm from '@/components/OwnerForm';
@@ -10,10 +9,11 @@ import Navigation from '@/components/Navigation';
 import { Owner, OwnerWithPets, Pet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 import { withAuth } from '@/lib/withAuth';
-import { Button } from '@/components/ui/Button';
 
 function PetsPage() {
   const { t } = useTranslation();
+  // Pet *creation* lives on /owners (expand an owner card → "Add Pet"),
+  // so this page only ever opens the form in EDIT mode.
   const [showPetForm, setShowPetForm] = useState(false);
   const [editingPet, setEditingPet] = useState<Pet | undefined>();
   const [refreshPets, setRefreshPets] = useState(0);
@@ -21,11 +21,6 @@ function PetsPage() {
   // Cross-entity: view (and optionally edit) an owner from the pet accordion.
   const [ownerDetailsId, setOwnerDetailsId] = useState<number | null>(null);
   const [editingOwner, setEditingOwner] = useState<Owner | undefined>();
-
-  const handleAddPet = () => {
-    setEditingPet(undefined);
-    setShowPetForm(true);
-  };
 
   const handleEditPet = (pet: Pet) => {
     setEditingPet(pet);
@@ -71,15 +66,9 @@ function PetsPage() {
       <Navigation />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h2 className="text-3xl font-extrabold tracking-tight text-foreground">{t('pet.title')}</h2>
-            <p className="text-muted-foreground mt-1">{t('pet.description')}</p>
-          </div>
-          <Button onClick={handleAddPet} variant="primary">
-            <Plus className="w-5 h-5" />
-            {t('pet.addPet')}
-          </Button>
+        <div className="mb-8">
+          <h2 className="text-3xl font-extrabold tracking-tight text-foreground">{t('pet.title')}</h2>
+          <p className="text-muted-foreground mt-1">{t('pet.description')}</p>
         </div>
 
         <PetList
