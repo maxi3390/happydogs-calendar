@@ -41,6 +41,7 @@ import { vetsApi } from '@/domain/vets/api';
 import { dataPortabilityApi } from '@/domain/data-portability/api';
 import { featureFlagsApi } from '@/domain/feature-flags/api';
 import { notificationsApi } from '@/domain/notifications/api';
+import { auditLogApi } from '@/domain/auditLog/api';
 
 export const api = {
   owners: ownersApi,
@@ -56,4 +57,5 @@ export const api = {
   dataPortability: dataPortabilityApi,
   featureFlags: featureFlagsApi,
   notifications: notificationsApi,
+  auditLog: auditLogApi,
 };

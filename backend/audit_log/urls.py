@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    AuditLogActivityView,
     MedicalNoteHistoryView,
     OwnerHistoryView,
     PetHistoryView,
@@ -21,4 +22,7 @@ urlpatterns = [
         VaccinationHistoryView.as_view(),
         name='vaccination-history',
     ),
+    # Cross-entity activity feed for /admin/activity. See
+    # openspec/specs/backend/audit-log/spec.md for the contract.
+    path('audit-log/activity/', AuditLogActivityView.as_view(), name='audit-log-activity'),
 ]
