@@ -12,9 +12,12 @@ The repository SHALL provide a Makefile target `test-frontend` that runs Playwri
 
 The target SHALL, in order:
 
-1. Bring up two services defined in `docker-compose.e2e.yml` (a separate compose file from `docker-compose.yml`), under the dedicated `happy-calendar-e2e` compose project, on the dedicated `happy-calendar-e2e` bridge network: `db-e2e` (Postgres with ephemeral storage) and `backend-e2e` (the same Django image as `backend`, configured to talk to `db-e2e`).
-2. Wait for `backend-e2e` to be healthy (migrations completed, server accepting connections).
-3. Run Playwright in the existing pinned container image, joined to the `happy-calendar-e2e` network, with `NEXT_PUBLIC_API_URL=http://backend-e2e:8000/api`.
+1. Bring up three services defined in `docker-compose.e2e.yml` (a separate compose file from `docker-compose.yml`), under the dedicated `happy-calendar-e2e` compose project, on the dedicated `happy-calendar-e2e` bridge network:
+   - `db-e2e` — Postgres with ephemeral (`tmpfs`) storage.
+   - `backend-e2e` — the same Django image as `backend`, configured to talk to `db-e2e`.
+   - `frontend-e2e` — the same source tree as `frontend`, **built with `NEXT_PUBLIC_API_URL=http://backend-e2e:8000/api` baked into the bundle** so the browser fetches resolve directly to the e2e backend.
+2. Wait for all three services to be healthy (`backend-e2e` has migrations completed, `frontend-e2e` is responding to GET `/`).
+3. Run Playwright in the existing pinned container image, joined to the `happy-calendar-e2e` network, with `BASE_URL=http://frontend-e2e:3000` and `NEXT_PUBLIC_API_URL=http://backend-e2e:8000/api` (the env var is consumed by server-side `page.request.*` helpers; the browser bundle already has the URL baked in).
 4. Tear down the e2e stack on exit (success or failure), unless `KEEP_E2E_DATA=1` is set.
 
 #### Scenario: A clean run leaves the dev DB untouched
@@ -25,6 +28,13 @@ The target SHALL, in order:
 - AND every server-side test request (registration, owner creation, schedule creation) SHALL hit `backend-e2e:8000`
 - AND the dev `db` container SHALL receive zero writes from the test run
 - AND when the run completes, `db-e2e` and `backend-e2e` SHALL be removed
+
+#### Scenario: Browser-side fetches reach backend-e2e directly
+
+- GIVEN the e2e stack is running
+- WHEN the Playwright browser loads `http://frontend-e2e:3000` and the page makes a fetch to `/api/translations/en/`
+- THEN that fetch SHALL resolve to `http://backend-e2e:8000/api/translations/en/` (the URL is baked into the bundle at build time via `NEXT_PUBLIC_API_URL`)
+- AND the response SHALL come from the real e2e backend (not from a Playwright `page.route` mock)
 
 #### Scenario: KEEP_E2E_DATA=1 leaves the stack up for inspection
 

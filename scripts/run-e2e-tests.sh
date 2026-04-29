@@ -51,21 +51,21 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "[e2e] Bringing up db-e2e + backend-e2e..."
-# `--wait` blocks until every started service is healthy (we set
-# healthchecks on both). `--wait-timeout` keeps a stuck migration from
-# hanging the run forever.
-if ! docker compose -p "$COMPOSE_PROJECT" -f "$COMPOSE_FILE" up -d --wait --wait-timeout 120; then
+echo "[e2e] Bringing up db-e2e + backend-e2e + frontend-e2e..."
+# `--wait` blocks until every started service is healthy. `--wait-timeout`
+# is generous (240s) because the first run builds the frontend image
+# from scratch (next build can take ~30–45s on a cold cache).
+if ! docker compose -p "$COMPOSE_PROJECT" -f "$COMPOSE_FILE" up -d --wait --wait-timeout 240; then
   echo "[e2e] ERROR: e2e stack failed to come up healthy. Recent logs:" >&2
   docker compose -p "$COMPOSE_PROJECT" -f "$COMPOSE_FILE" logs --tail=80 >&2 || true
   exit 1
 fi
 
-echo "[e2e] Running Playwright tests against backend-e2e..."
+echo "[e2e] Running Playwright tests against frontend-e2e + backend-e2e..."
 docker run --rm --network="$NETWORK" \
   -v "$REPO_ROOT/frontend:/app" \
   -w /app \
-  -e BASE_URL=http://localhost:3000 \
+  -e BASE_URL=http://frontend-e2e:3000 \
   -e NEXT_PUBLIC_API_URL=http://backend-e2e:8000/api \
   "$PLAYWRIGHT_IMAGE" \
   sh -c "npm install && npx playwright test --project=chromium $PLAYWRIGHT_ARGS $*"

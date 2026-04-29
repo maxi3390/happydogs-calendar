@@ -197,9 +197,11 @@ test-frontend-debug:
 E2E_COMPOSE := docker compose -p happy-calendar-e2e -f docker-compose.e2e.yml
 
 e2e-up:
-	$(E2E_COMPOSE) up -d --wait --wait-timeout 120
+	$(E2E_COMPOSE) up -d --wait --wait-timeout 240
 	@echo ""
-	@echo "[e2e] Stack is up. backend-e2e is reachable as backend-e2e:8000 on the happy-calendar-e2e network."
+	@echo "[e2e] Stack is up on the happy-calendar-e2e network:"
+	@echo "[e2e]   backend-e2e:8000   — Django API (pointed at db-e2e)"
+	@echo "[e2e]   frontend-e2e:3000  — Next.js, NEXT_PUBLIC_API_URL baked at backend-e2e:8000/api"
 	@echo "[e2e] Run 'make e2e-down' to tear it down."
 
 e2e-down:

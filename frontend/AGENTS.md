@@ -92,7 +92,7 @@ cd frontend && npm run build
 Playwright tests register users (`POST /api/auth/register/`) and create
 owners / pets / schedules through the real REST API. To keep these
 tests from polluting the developer's working database, the test runner
-brings up two dedicated containers defined in **`docker-compose.e2e.yml`**
+brings up three dedicated containers defined in **`docker-compose.e2e.yml`**
 (a separate compose file from the dev stack), under the
 `happy-calendar-e2e` compose project on its own `happy-calendar-e2e`
 bridge network:
@@ -102,13 +102,25 @@ bridge network:
 - **`backend-e2e`** — same Django image as the dev `backend`, configured
   to talk to `db-e2e`. No Traefik labels, no published host ports;
   reachable only as `backend-e2e:8000` on the e2e network.
+- **`frontend-e2e`** — same source tree as the dev `frontend`, but built
+  with the build-arg `NEXT_PUBLIC_API_URL=http://backend-e2e:8000/api`.
+  Next.js inlines that URL into the browser bundle, so browser-side
+  fetches go straight to the e2e backend instead of the dev frontend's
+  empty default (`/api` relative). Reachable as `frontend-e2e:3000`.
 
 The Playwright container is launched with
-`--network=happy-calendar-e2e` and
-`NEXT_PUBLIC_API_URL=http://backend-e2e:8000/api`, so every server-side
-`page.request.*` call (`setupAuth`, `createOwnerViaApi`, etc.) routes
-to `backend-e2e`. **Do not change this URL in the helpers** — pointing
-the tests back at `backend:8000` would re-introduce dev-DB pollution.
+`--network=happy-calendar-e2e`, `BASE_URL=http://frontend-e2e:3000`,
+and `NEXT_PUBLIC_API_URL=http://backend-e2e:8000/api`. Server-side
+`page.request.*` calls (`setupAuth`, `createOwnerViaApi`, etc.) read
+the env var; browser-side fetches read the URL baked into the bundle.
+Both end up at `backend-e2e`. **Do not change these URLs in the
+helpers** — pointing the tests back at the dev `backend:8000` would
+re-introduce dev-DB pollution.
+
+**`page.route` mocks remain optional, not required.** Existing tests
+use them to deliver deterministic responses; new tests can rely on the
+real backend instead. Both styles work because `page.route` matches
+URLs by pattern, regardless of the underlying origin.
 
 ## Key Context Files
 

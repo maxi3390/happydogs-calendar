@@ -61,6 +61,33 @@ services:
     networks:
       - e2e
 
+  frontend-e2e:
+    # Same source tree as the dev ``frontend``, but built with
+    # ``NEXT_PUBLIC_API_URL`` baked in so the browser bundle's API
+    # fetches resolve to ``backend-e2e:8000`` directly (vs the dev
+    # bundle's empty default that produces relative ``/api/...``).
+    # Means tests don't need ``page.route`` mocks on browser-side
+    # calls — the real Django backend handles them.
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://backend-e2e:8000/api
+    depends_on:
+      backend-e2e:
+        condition: service_healthy
+    healthcheck:
+      # ``next build`` produces a static server.js; the healthcheck
+      # passes once it answers GET /. wget is part of busybox in the
+      # node:24-alpine runner image. We hit 127.0.0.1 explicitly
+      # because busybox wget resolves ``localhost`` to ``::1`` first
+      # and Next's standalone server only binds IPv4 (0.0.0.0:3000).
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/ >/dev/null 2>&1 || exit 1"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+    networks:
+      - e2e
+
 networks:
   # Pinned name (no project prefix added by compose) so the Playwright
   # container can join the network with a stable, project-agnostic
