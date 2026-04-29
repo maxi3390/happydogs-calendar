@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { setupAuthAndLanguage } from './helpers';
+import { setupAuthAndLanguage, stubFeatureFlags } from './helpers';
 
 test.describe('Navigation', () => {
   test.beforeEach(async ({ page }) => {
@@ -119,7 +119,14 @@ test.describe('Navigation (admin)', () => {
     await expect(adminItem.first()).toHaveAttribute('href', '/admin/users');
   });
 
-  test('should expose UI System in the profile dropdown for admin users', async ({ page }) => {
+  test('should expose UI System in the profile dropdown for admin users when the flag is on', async ({ page }) => {
+    // /ui-system is gated by the ``ui_system`` feature flag (default
+    // off). Tests that want the historic always-on behaviour must
+    // stub the flag to ``true``; the gating-specific spec covers the
+    // default-off path.
+    await stubFeatureFlags(page, { ui_system: true });
+    await page.reload({ waitUntil: 'networkidle' });
+
     await page.getByRole('button').filter({ hasText: 'Test' }).first().click();
     const uiSystemItem = page.getByRole('menuitem', { name: /ui system|sistema de ui/i });
     await expect(uiSystemItem.first()).toBeVisible();
@@ -214,7 +221,13 @@ test.describe('Mobile Navigation (admin)', () => {
     await setupAuthAndLanguage(page, { admin: true });
   });
 
-  test('should list Admin and UI System in the mobile menu for admin users', async ({ page }) => {
+  test('should list Admin and UI System in the mobile menu for admin users when ui_system is on', async ({ page }) => {
+    // The UI System link is gated behind the ``ui_system`` feature
+    // flag (default off). Stub the flag to ``true`` so this test
+    // continues to assert the historic always-on behaviour.
+    await stubFeatureFlags(page, { ui_system: true });
+    await page.reload({ waitUntil: 'networkidle' });
+
     const menuButton = page.locator('button').filter({ has: page.locator('svg.lucide-menu') });
     await menuButton.click();
 

@@ -17,6 +17,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 
 from accounts.permissions import IsAdmin
+from feature_flags.services import is_feature_enabled
 from pets.models import MedicalNote, Owner, Pet, Vaccination
 
 from .serializers import (
@@ -152,6 +153,17 @@ class AuditLogActivityView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
     def get(self, request, *args, **kwargs):
+        # The feature gate runs *after* the permission check so an
+        # unauthenticated curl gets 401 / a non-admin gets 403, matching
+        # the rest of the audit-log endpoints. Only authenticated admins
+        # see the 404 when the flag is off — i.e. they can tell the
+        # surface exists but is currently disabled.
+        if not is_feature_enabled('activity_logs'):
+            return Response(
+                {'detail': 'Activity logs feature is disabled.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
         params = request.query_params
 
         # ── Filter parsing + validation ────────────────────────────

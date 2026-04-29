@@ -5,8 +5,10 @@ import { Activity as ActivityIcon, Filter, Mail, ChevronLeft, ChevronRight } fro
 import { useTranslation } from '@/lib/translations';
 import { api } from '@/lib/api';
 import { withAdmin } from '@/lib/withAdmin';
+import { useFeatureFlag } from '@/lib/feature-flags';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/Button';
+import { Card, CardContent } from '@/components/ui/Card';
 import { ActivityFilters, ActivityRow, EntityType, ActionType } from '@/domain/auditLog/types';
 
 type EntityFilter = 'all' | EntityType;
@@ -32,6 +34,7 @@ const ENTITY_LABEL_KEY: Record<EntityType, string> = {
 
 function ActivityFeedPage() {
   const { t } = useTranslation();
+  const enabled = useFeatureFlag('activity_logs');
   const [rows, setRows] = useState<ActivityRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -76,9 +79,27 @@ function ActivityFeedPage() {
     }
   }, [apiFilters]);
 
+  // Skip the fetch when the flag is off — the backend would 404 anyway
+  // and we'd just paint a useless error banner. The empty-state branch
+  // below handles the visible UI.
   useEffect(() => {
-    load();
-  }, [load]);
+    if (enabled) load();
+  }, [enabled, load]);
+
+  if (!enabled) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Navigation />
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-testid="activity-disabled">
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              {t('featureFlags.empty')}
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    );
+  }
 
   // Derive page numbers for the pagination strip. Server cap is 200;
   // we use 50 by default so a 1k-row log is still 20 pages.

@@ -626,6 +626,14 @@
       "notifications": {
         "label": "Notifications",
         "description": "Master switch for the notifications system. When enabled, the daily cron generates in-app reminders (vaccination/deworming due, pet birthdays, schedule arrivals/egress) and the bell + /notifications page render. When disabled, every notification surface is hidden and the cron is a no-op."
+      },
+      "ui_system": {
+        "label": "UI System",
+        "description": "Controls the visibility of the /ui-system developer reference page (live style guide of the shared UI components). When disabled, the nav entry is hidden and visiting the URL renders an empty state. Default off — this surface is for engineers, not nursery staff."
+      },
+      "activity_logs": {
+        "label": "Activity logs",
+        "description": "Controls the visibility of the /admin/activity cross-entity audit feed. When disabled, the nav entry is hidden, the page renders an empty state, and GET /api/audit-log/activity/ returns 404. The underlying audit rows continue to be recorded; flipping the flag back on restores the feed without data loss."
       }
     }
   },

@@ -11,6 +11,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from feature_flags.models import FeatureFlag
 from pets.models import MedicalNote, Owner, Pet, Vaccination
 from tests.factories import (
     auth_client, create_admin, create_owner, create_pet, create_user,
@@ -158,3 +159,28 @@ class ActivityFeedPagination(_Base):
         self.assertEqual(resp.data['results'], [])
         # Total count still reflects the actual number of rows.
         self.assertEqual(resp.data['count'], 4)
+
+
+class ActivityFeedFeatureGate(_Base):
+    """``activity_logs`` feature flag gates the endpoint.
+
+    The flag exists so a strict-privacy deployment can hide the entire
+    audit-feed surface (page + nav entry + endpoint) without a code
+    change. When the flag is off the API is reported as 404 — i.e.
+    "this URL does not exist" — rather than 403, because a 403 would
+    leak the surface's existence to a curious admin reader.
+    """
+
+    def test_returns_404_when_flag_disabled(self):
+        FeatureFlag.objects.filter(key='activity_logs').update(enabled=False)
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_flag_check_runs_after_admin_check(self):
+        # Non-admin should still get 403 even when the flag is off; the
+        # feature gate must not be reachable to an unauthorised reader.
+        FeatureFlag.objects.filter(key='activity_logs').update(enabled=False)
+        u = create_user(email='reg2@example.com', password='UserPass123!')
+        auth_client(self.client, u, 'UserPass123!')
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
