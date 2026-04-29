@@ -36,4 +36,4 @@
 
 ## Commit
 - [x] Single commit on `feat/feature-flag-ui-system-and-activity-logs`
-- [ ] Wait for explicit operator consent before merge / push
+- [x] Merged into master (operator approval received post-review)
