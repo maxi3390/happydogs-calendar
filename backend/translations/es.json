@@ -740,5 +740,15 @@
       "minLength": "La contraseña debe tener al menos 8 caracteres.",
       "mismatch": "Las contraseñas no coinciden."
     }
+  },
+  "password": {
+    "strength": {
+      "label": "Seguridad:",
+      "veryWeak": "Muy débil",
+      "weak": "Débil",
+      "fair": "Aceptable",
+      "strong": "Fuerte",
+      "veryStrong": "Muy fuerte"
+    }
   }
 }

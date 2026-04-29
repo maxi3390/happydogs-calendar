@@ -148,6 +148,16 @@ const EN_TRANSLATIONS = {
       mismatch: 'Passwords do not match.',
     },
   },
+  password: {
+    strength: {
+      label: 'Strength:',
+      veryWeak: 'Very weak',
+      weak: 'Weak',
+      fair: 'Fair',
+      strong: 'Strong',
+      veryStrong: 'Very strong',
+    },
+  },
   common: { cancel: 'Cancel' },
 };
 
@@ -247,6 +257,16 @@ const ES_TRANSLATIONS = {
       newRequired: 'La nueva contraseña es obligatoria.',
       minLength: 'La contraseña debe tener al menos 8 caracteres.',
       mismatch: 'Las contraseñas no coinciden.',
+    },
+  },
+  password: {
+    strength: {
+      label: 'Seguridad:',
+      veryWeak: 'Muy débil',
+      weak: 'Débil',
+      fair: 'Aceptable',
+      strong: 'Fuerte',
+      veryStrong: 'Muy fuerte',
     },
   },
   common: { cancel: 'Cancelar' },

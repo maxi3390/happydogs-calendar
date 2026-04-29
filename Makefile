@@ -197,7 +197,7 @@ test-frontend-debug:
 E2E_COMPOSE := docker compose -p happy-calendar-e2e -f docker-compose.e2e.yml
 
 e2e-up:
-	$(E2E_COMPOSE) up -d --wait --wait-timeout 240
+	$(E2E_COMPOSE) up -d --build --wait --wait-timeout 240
 	@echo ""
 	@echo "[e2e] Stack is up on the happy-calendar-e2e network:"
 	@echo "[e2e]   backend-e2e:8000   — Django API (pointed at db-e2e)"

@@ -7,6 +7,7 @@ import { withAuth } from '@/lib/withAuth';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import PasswordStrengthMeter from '@/components/PasswordStrengthMeter';
 import { useTranslation } from '@/lib/translations';
 import { api } from '@/lib/api';
 import { FieldErrors } from '@/domain/users/passwordApi';
@@ -133,15 +134,18 @@ function ProfilePage() {
               error={errors.old_password?.[0]}
               disabled={submitting}
             />
-            <Input
-              label={t('profile.newPassword') || 'New password'}
-              type="password"
-              autoComplete="new-password"
-              value={newPassword}
-              onChange={e => setNewPassword(e.target.value)}
-              error={errors.new_password?.[0]}
-              disabled={submitting}
-            />
+            <div>
+              <Input
+                label={t('profile.newPassword') || 'New password'}
+                type="password"
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                error={errors.new_password?.[0]}
+                disabled={submitting}
+              />
+              <PasswordStrengthMeter value={newPassword} testId="profile-strength-meter" />
+            </div>
             <Input
               label={t('profile.confirmNewPassword') || 'Confirm new password'}
               type="password"
