@@ -1,6 +1,9 @@
+export type LogoShape = 'square' | 'circle';
+
 export interface NurserySetting {
   daily_booking_limit: number;
   logo_url: string | null;
+  logo_shape: LogoShape;
   notifications_run_time: string;
   deworming_default_due_days: number;
   notifications_vaccination_enabled: boolean;

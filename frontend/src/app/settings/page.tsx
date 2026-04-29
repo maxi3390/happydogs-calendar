@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, AlertTriangle, Plus, Trash2, Save, Info, Syringe, ToggleLeft, ToggleRight, CalendarClock, Image as ImageIcon } from 'lucide-react';
+import { Settings, AlertTriangle, Plus, Trash2, Save, Info, Syringe, ToggleLeft, ToggleRight, CalendarClock, Image as ImageIcon, Square, Circle } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import DataBackupSection from '@/components/DataBackupSection';
@@ -9,6 +9,8 @@ import NotificationsSettings from '@/components/NotificationsSettings';
 import { useTranslation } from '@/lib/translations';
 import { useFeatureFlag } from '@/lib/feature-flags';
 import { api, Pet, PetIncompatibility, VaccinationType } from '@/lib/api';
+import { LogoShape } from '@/domain/settings/types';
+import { writeLogoCache } from '@/domain/settings/cache';
 import { translateTemperament } from '@/domain/pets/labels';
 import { withAuth } from '@/lib/withAuth';
 import { Button } from '@/components/ui/Button';
@@ -33,6 +35,8 @@ function SettingsPage() {
   const [dailyLimitSaving, setDailyLimitSaving] = useState(false);
   const [dailyLimitSaved, setDailyLimitSaved] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoShape, setLogoShape] = useState<LogoShape>('circle');
+  const [logoShapeSaving, setLogoShapeSaving] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -50,6 +54,10 @@ function SettingsPage() {
       setVaccinationTypes(vaxTypesData);
       setDailyLimit(settingsData.daily_booking_limit);
       setLogoUrl(settingsData.logo_url);
+      setLogoShape(settingsData.logo_shape);
+      // Refresh the navigation/login cache so the next mount on
+      // those surfaces hydrates with the latest persisted values.
+      writeLogoCache(settingsData);
       setIncompatibilities(incompatibilitiesData);
 
       // Show a one-time migration banner when (a) the legacy localStorage
@@ -166,6 +174,27 @@ function SettingsPage() {
     }
   };
 
+  const handleSelectLogoShape = async (next: LogoShape) => {
+    if (next === logoShape || logoShapeSaving) return;
+    // Optimistic update so the preview switches immediately; revert on
+    // failure. The toggle is a small affordance, so we don't bother
+    // with a "saved" confirmation pill — the visual feedback is the
+    // preview re-clipping itself.
+    const previous = logoShape;
+    setLogoShape(next);
+    setLogoShapeSaving(true);
+    try {
+      const updated = await api.nurserySettings.update({ logo_shape: next });
+      setLogoShape(updated.logo_shape);
+      writeLogoCache(updated);
+    } catch (error) {
+      console.error('Failed to save logo shape:', error);
+      setLogoShape(previous);
+    } finally {
+      setLogoShapeSaving(false);
+    }
+  };
+
   const dogPets = pets.filter(p => p.species === 'dog');
 
   return (
@@ -205,16 +234,76 @@ function SettingsPage() {
             <div className="flex justify-center">
               <ProfilePictureUpload
                 currentUrl={logoUrl}
+                shape={logoShape}
                 onUpload={async (file) => {
                   const updated = await api.nurserySettings.uploadLogo(file);
                   setLogoUrl(updated.logo_url);
+                  // The upload endpoint round-trips the full settings
+                  // payload — keep the local copy of logo_shape in
+                  // sync in case the operator updated it elsewhere.
+                  setLogoShape(updated.logo_shape);
+                  writeLogoCache(updated);
                 }}
                 onDelete={async () => {
                   await api.nurserySettings.deleteLogo();
                   setLogoUrl(null);
+                  // Cache mirrors the post-delete state: shape is
+                  // unchanged but the url is now null.
+                  writeLogoCache({ logo_shape: logoShape, logo_url: null });
                 }}
                 initials="?"
               />
+            </div>
+
+            {/* Shape toggle — square vs circle. The choice flows
+                everywhere the logo renders (navigation header, login
+                page, preview above). */}
+            <div className="mt-6 flex flex-col items-center gap-2">
+              <span className="text-sm font-medium text-foreground">
+                {t('settings.logoShape') || 'Logo shape'}
+              </span>
+              <div
+                className="inline-flex rounded-xl border border-border bg-background p-1"
+                role="radiogroup"
+                aria-label={t('settings.logoShape') || 'Logo shape'}
+                data-testid="logo-shape-toggle"
+              >
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={logoShape === 'square'}
+                  data-testid="logo-shape-square"
+                  onClick={() => handleSelectLogoShape('square')}
+                  disabled={logoShapeSaving}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2 transition-colors ${
+                    logoShape === 'square'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-foreground/70 hover:text-foreground hover:bg-secondary/50'
+                  }`}
+                >
+                  <Square className="w-4 h-4" />
+                  {t('settings.logoShapeSquare') || 'Square'}
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={logoShape === 'circle'}
+                  data-testid="logo-shape-circle"
+                  onClick={() => handleSelectLogoShape('circle')}
+                  disabled={logoShapeSaving}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2 transition-colors ${
+                    logoShape === 'circle'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-foreground/70 hover:text-foreground hover:bg-secondary/50'
+                  }`}
+                >
+                  <Circle className="w-4 h-4" />
+                  {t('settings.logoShapeCircle') || 'Circle'}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground text-center max-w-md">
+                {t('settings.logoShapeInfo')}
+              </p>
             </div>
           </div>
         </div>

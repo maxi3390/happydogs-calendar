@@ -382,7 +382,11 @@
     "dailyBookingLimitSaved": "Límite diario de reservas guardado",
     "unlimited": "Ilimitado",
     "systemLogo": "Logo del Sistema",
-    "systemLogoInfo": "Sube un logo personalizado para mostrar en la página de inicio de sesión y en la barra de navegación. Formatos aceptados: JPEG, PNG, GIF, WEBP. Tamaño máximo: 5 MB."
+    "systemLogoInfo": "Sube un logo personalizado para mostrar en la página de inicio de sesión y en la barra de navegación. Formatos aceptados: JPEG, PNG, GIF, WEBP. Tamaño máximo: 5 MB.",
+    "logoShape": "Forma del logo",
+    "logoShapeSquare": "Cuadrado",
+    "logoShapeCircle": "Círculo",
+    "logoShapeInfo": "Elegí cómo se recorta el logo en todas las pantallas donde aparece. Cuadrado conserva la relación de aspecto completa de la imagen dentro de un rectángulo con esquinas redondeadas. Círculo recorta la imagen a un círculo y la rellena por completo — recomendado para logos cuadrados o casi cuadrados."
   },
   "admin": {
     "title": "Gestión de Usuarios",
