@@ -16,10 +16,12 @@ from notifications.models import (
     NotificationPreference,
     NotificationTemplate,
 )
+from nursery_settings.models import NurserySetting
 from pets.models import (
     MedicalNote,
     Owner,
     Pet,
+    PetIncompatibility,
     Schedule,
     Vaccination,
     VaccinationType,
@@ -408,4 +410,190 @@ class SeedExampleDataNotificationsTests(TestCase):
                 scope__in=[t['scope'] for t in seed_module.SEED_NOTIFICATION_TEMPLATES],
             ).count(),
             len(seed_module.SEED_NOTIFICATION_TEMPLATES),
+        )
+
+
+@override_settings(DEBUG=True)
+class SeedExampleDataScheduleScenariosTests(TestCase):
+    """The seed exercises every schedule shape the calendar can render.
+
+    The shapes are documented in the live spec (tooling/seed). These
+    tests pin each one so a future hand-edit that accidentally drops a
+    shape (e.g. removing the multi-day pair) breaks loudly rather than
+    silently regressing the demo's visual coverage.
+    """
+
+    def setUp(self):
+        call_command('seed_example_data', '--quiet')
+
+    def _seed_schedules_qs(self):
+        """All schedules attached to seed-owned pets."""
+        seed_owner_emails = [o['email'] for o in seed_module.SEED_OWNERS]
+        return Schedule.objects.filter(pet__owner__email__in=seed_owner_emails)
+
+    def test_at_least_one_multi_day_schedule(self):
+        # start_date != end_date — exercises the calendar's multi-day
+        # bar rendering and the multiday_schedule feature flag path.
+        from django.db.models import F
+        multi_day = self._seed_schedules_qs().exclude(start_date=F('end_date'))
+        self.assertGreaterEqual(multi_day.count(), 2)
+
+    def test_overlapping_multi_day_pair_is_present(self):
+        # Two schedules whose date ranges overlap, where at least one
+        # is multi-day. The seed deliberately stages Kiki (4-day) +
+        # Perico (2-day, nested) so the calendar shows two stacked
+        # multi-day bars.
+        kiki = Schedule.objects.get(pet__name='Kiki', pet__owner__email='diego.torres@seed.example')
+        perico = Schedule.objects.get(pet__name='Perico', pet__owner__email='diego.torres@seed.example')
+        # Kiki spans Perico fully.
+        self.assertNotEqual(kiki.start_date, kiki.end_date)
+        self.assertLessEqual(kiki.start_date, perico.start_date)
+        self.assertGreaterEqual(kiki.end_date, perico.end_date)
+
+    def test_same_pet_two_time_slots_same_day(self):
+        # Mía has both a morning and an afternoon visit on `today`.
+        from datetime import date
+        today = date.today()
+        mia_today = Schedule.objects.filter(
+            pet__name='Mía',
+            pet__owner__email='ana.garcia@seed.example',
+            start_date=today,
+            end_date=today,
+        )
+        self.assertEqual(mia_today.count(), 2)
+        # Time slots are disjoint.
+        slots = sorted([(s.start_time, s.end_time) for s in mia_today])
+        self.assertLess(slots[0][1], slots[1][0])
+
+    def test_override_conflict_pair_triggers_compatibility_rule(self):
+        # Bruno (aggressive) has a multi-day stay that overlaps a Toby
+        # single-day visit. The conflict check SHALL surface at least
+        # the "aggressive" reason — proving the operator went ahead
+        # despite the warning (the schedule exists in the DB).
+        from django.db.models import F
+        bruno_multi_day = Schedule.objects.filter(
+            pet__name='Bruno',
+            pet__owner__email='jose.martinez@seed.example',
+        ).exclude(start_date=F('end_date')).first()
+        self.assertIsNotNone(bruno_multi_day, 'seed must include a multi-day Bruno stay')
+
+        toby_overlapping = bruno_multi_day.get_overlapping_schedules().filter(
+            pet__name='Toby',
+        ).first()
+        self.assertIsNotNone(
+            toby_overlapping,
+            'expected Bruno multi-day stay to overlap a Toby visit',
+        )
+        is_compatible, reasons = bruno_multi_day.pet.is_compatible_with(
+            toby_overlapping.pet,
+        )
+        self.assertFalse(is_compatible)
+        self.assertIn(
+            bruno_multi_day.pet.CONFLICT_REASON_AGGRESSIVE, reasons,
+        )
+
+    def test_custom_incompatibility_overlap_surfaces_custom_reason(self):
+        # Milo + Cleo have a custom rule AND overlap — the conflict
+        # check SHALL return the custom free-text reason verbatim.
+        milo = Schedule.objects.get(
+            pet__name='Milo',
+            pet__owner__email='pedro.sanchez@seed.example',
+            status='scheduled',
+        )
+        cleo_overlapping = milo.get_overlapping_schedules().filter(pet__name='Cleo').first()
+        self.assertIsNotNone(cleo_overlapping)
+        is_compatible, reasons = milo.pet.is_compatible_with(cleo_overlapping.pet)
+        self.assertFalse(is_compatible)
+        custom_reason = seed_module.SEED_PET_INCOMPATIBILITIES[0]['reason']
+        self.assertIn(custom_reason, reasons)
+
+
+@override_settings(DEBUG=True)
+class SeedExampleDataPetIncompatibilityTests(TestCase):
+    """Custom (free-text) incompatibility rules are seeded and idempotent."""
+
+    def test_seeded_rules_count_matches_constant(self):
+        call_command('seed_example_data', '--quiet')
+        self.assertEqual(
+            PetIncompatibility.objects.count(),
+            len(seed_module.SEED_PET_INCOMPATIBILITIES),
+        )
+
+    def test_rule_resolves_to_correct_pet_pair(self):
+        call_command('seed_example_data', '--quiet')
+        data = seed_module.SEED_PET_INCOMPATIBILITIES[0]
+        pet_a = Pet.objects.get(
+            owner__email=data['pet_a_owner_email'], name=data['pet_a_name'],
+        )
+        pet_b = Pet.objects.get(
+            owner__email=data['pet_b_owner_email'], name=data['pet_b_name'],
+        )
+        lo, hi = sorted([pet_a.pk, pet_b.pk])
+        rule = PetIncompatibility.objects.get(pet1_id=lo, pet2_id=hi)
+        self.assertEqual(rule.reason, data['reason'])
+
+    def test_idempotent_re_seed_does_not_duplicate(self):
+        call_command('seed_example_data', '--quiet')
+        call_command('seed_example_data', '--quiet')
+        self.assertEqual(
+            PetIncompatibility.objects.count(),
+            len(seed_module.SEED_PET_INCOMPATIBILITIES),
+        )
+
+    def test_reset_recreates_rules(self):
+        call_command('seed_example_data', '--quiet')
+        # Tamper: edit the reason and confirm reset restores canonical.
+        rule = PetIncompatibility.objects.first()
+        rule.reason = 'tampered'
+        rule.save()
+
+        call_command('seed_example_data', '--reset', '--quiet')
+
+        # The rule's PK changes across --reset (delete + recreate),
+        # so look up by the canonical pet pair instead of by PK.
+        data = seed_module.SEED_PET_INCOMPATIBILITIES[0]
+        pet_a = Pet.objects.get(
+            owner__email=data['pet_a_owner_email'], name=data['pet_a_name'],
+        )
+        pet_b = Pet.objects.get(
+            owner__email=data['pet_b_owner_email'], name=data['pet_b_name'],
+        )
+        lo, hi = sorted([pet_a.pk, pet_b.pk])
+        recreated = PetIncompatibility.objects.get(pet1_id=lo, pet2_id=hi)
+        self.assertEqual(recreated.reason, data['reason'])
+
+
+@override_settings(DEBUG=True)
+class SeedExampleDataNurserySettingsTests(TestCase):
+    """The seed pre-configures the singleton's seed-owned fields."""
+
+    def test_daily_booking_limit_set_to_seed_value(self):
+        call_command('seed_example_data', '--quiet')
+        self.assertEqual(
+            NurserySetting.load().daily_booking_limit,
+            seed_module.SEED_NURSERY_SETTINGS['daily_booking_limit'],
+        )
+
+    def test_re_seed_restores_canonical_value_after_drift(self):
+        call_command('seed_example_data', '--quiet')
+        s = NurserySetting.load()
+        s.daily_booking_limit = 999
+        s.save()
+
+        call_command('seed_example_data', '--quiet')
+        self.assertEqual(
+            NurserySetting.load().daily_booking_limit,
+            seed_module.SEED_NURSERY_SETTINGS['daily_booking_limit'],
+        )
+
+    def test_non_seed_fields_are_left_alone(self):
+        # Pre-seed: change a field that the seed does NOT manage.
+        s = NurserySetting.load()
+        s.deworming_default_due_days = 42
+        s.save()
+
+        call_command('seed_example_data', '--quiet')
+        self.assertEqual(
+            NurserySetting.load().deworming_default_due_days, 42,
+            'seed must not clobber operator-managed singleton fields',
         )

@@ -14,6 +14,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db.models import Q
 
 from feature_flags.services import is_feature_enabled
 from notifications.models import (
@@ -22,10 +23,12 @@ from notifications.models import (
     NotificationTemplate,
 )
 from notifications.services import generate_for_date
+from nursery_settings.models import NurserySetting
 from pets.models import (
     MedicalNote,
     Owner,
     Pet,
+    PetIncompatibility,
     Schedule,
     Vaccination,
     VaccinationType,
@@ -400,12 +403,21 @@ def _seed_schedules() -> list[dict[str, Any]]:
             'status': 'cancelled',
             'notes': 'Owner cancelled the night before.',
         },
-        # Today
+        # Today — Mía morning visit (checked_in).
         {
             'owner_email': 'ana.garcia@seed.example', 'pet_name': 'Mía',
             'start_date': today, 'end_date': today,
             'start_time': time(9, 0), 'end_time': time(12, 0),
             'status': 'checked_in',
+        },
+        # Today — Mía afternoon visit (same pet, same day, separate time
+        # slot). Demonstrates the calendar's split-shift rendering.
+        {
+            'owner_email': 'ana.garcia@seed.example', 'pet_name': 'Mía',
+            'start_date': today, 'end_date': today,
+            'start_time': time(14, 0), 'end_time': time(17, 30),
+            'status': 'scheduled',
+            'notes': 'Afternoon visit; same day as morning drop-off.',
         },
         # Tomorrow — Luis's two dogs, separate time slots.
         {
@@ -420,7 +432,8 @@ def _seed_schedules() -> list[dict[str, Any]]:
             'start_time': time(14, 0), 'end_time': time(18, 0),
             'status': 'scheduled',
         },
-        # Next week — María's pets on the same day.
+        # Next week — María's pets on the same day (different species,
+        # compatible under the temperament/dominance rules).
         {
             'owner_email': 'maria.lopez@seed.example', 'pet_name': 'Luna',
             'start_date': today + 7 * day, 'end_date': today + 7 * day,
@@ -456,7 +469,97 @@ def _seed_schedules() -> list[dict[str, Any]]:
             'start_time': time(10, 0), 'end_time': time(15, 0),
             'status': 'scheduled',
         },
+        # Overlapping multi-day stays (compatible). Diego's two pets stay
+        # for an overlapping window — Kiki the dog for four days, Perico
+        # the bird for two days nested inside Kiki's window. Different
+        # species + non-aggressive temperaments, so no conflict.
+        {
+            'owner_email': 'diego.torres@seed.example', 'pet_name': 'Kiki',
+            'start_date': today + 14 * day, 'end_date': today + 17 * day,
+            'start_time': time(8, 0), 'end_time': time(19, 0),
+            'status': 'scheduled',
+            'notes': 'Owner travelling — four-day stay.',
+        },
+        {
+            'owner_email': 'diego.torres@seed.example', 'pet_name': 'Perico',
+            'start_date': today + 15 * day, 'end_date': today + 16 * day,
+            'start_time': time(8, 0), 'end_time': time(19, 0),
+            'status': 'scheduled',
+            'notes': 'Bird stays alongside Kiki — separate enclosure.',
+        },
+        # Multi-day + operator-override conflict combined. Bruno
+        # (aggressive, dominance 9) checks in for a three-day weekend; the
+        # second day he overlaps Toby (anxious) for a single-day visit
+        # because the owner couldn't reschedule. Triggers compatibility
+        # rule 1 (aggressive). Operator accepted the warning and noted
+        # the physical-separation arrangement on both schedules.
+        {
+            'owner_email': 'jose.martinez@seed.example', 'pet_name': 'Bruno',
+            'start_date': today + 21 * day, 'end_date': today + 23 * day,
+            'start_time': time(9, 0), 'end_time': time(18, 0),
+            'status': 'scheduled',
+            'notes': (
+                'Three-day stay, owner unavailable to drop off later. '
+                'Operator override on day 22 overlap with Toby — kept in '
+                'the small-dog room behind a physical fence.'
+            ),
+        },
+        {
+            'owner_email': 'laura.rodriguez@seed.example', 'pet_name': 'Toby',
+            'start_date': today + 22 * day, 'end_date': today + 22 * day,
+            'start_time': time(10, 0), 'end_time': time(14, 0),
+            'status': 'scheduled',
+            'notes': (
+                'Operator override — overlaps with Bruno (aggressive). '
+                'Toby occupies the front playroom while Bruno stays behind.'
+            ),
+        },
+        # Custom PetIncompatibility overlap. Pedro's two cats Milo and
+        # Cleo had a hissing match on a previous stay; the operator
+        # recorded a custom rule (see SEED_PET_INCOMPATIBILITIES). The
+        # schedule below intentionally schedules them in the same time
+        # window so the conflict-warning UI shows the custom-reason path.
+        {
+            'owner_email': 'pedro.sanchez@seed.example', 'pet_name': 'Milo',
+            'start_date': today + 5 * day, 'end_date': today + 5 * day,
+            'start_time': time(10, 0), 'end_time': time(15, 0),
+            'status': 'scheduled',
+            'notes': 'Operator override — custom incompatibility with Cleo.',
+        },
+        {
+            'owner_email': 'pedro.sanchez@seed.example', 'pet_name': 'Cleo',
+            'start_date': today + 5 * day, 'end_date': today + 5 * day,
+            'start_time': time(10, 0), 'end_time': time(15, 0),
+            'status': 'scheduled',
+            'notes': 'Operator override — custom incompatibility with Milo.',
+        },
     ]
+
+
+# Custom pet-incompatibility rules. Stored order-independently — the
+# seed code does the (lo, hi) sort on save so the UniqueConstraint on
+# ``(pet1, pet2)`` is consistent with the manual creation path.
+SEED_PET_INCOMPATIBILITIES: list[dict[str, Any]] = [
+    {
+        'pet_a_owner_email': 'pedro.sanchez@seed.example',
+        'pet_a_name': 'Milo',
+        'pet_b_owner_email': 'pedro.sanchez@seed.example',
+        'pet_b_name': 'Cleo',
+        'reason': (
+            'Hissing match on a previous joint stay. Keep them in '
+            'separate playrooms; supervise feeding.'
+        ),
+    },
+]
+
+
+# Nursery-wide singleton config. Limited to the fields the seed
+# actively wants to demonstrate — every other field stays at its model
+# default (preserving any operator-side customisation outside this
+# subset).
+SEED_NURSERY_SETTINGS: dict[str, Any] = {
+    'daily_booking_limit': 6,
+}
 
 
 # Notification templates — Spanish operator overrides showcasing what
@@ -535,6 +638,8 @@ class _Summary:
     vaccinations: _Tally = field(default_factory=_Tally)
     medical_notes: _Tally = field(default_factory=_Tally)
     schedules: _Tally = field(default_factory=_Tally)
+    pet_incompatibilities: _Tally = field(default_factory=_Tally)
+    nursery_settings: _Tally = field(default_factory=_Tally)
     notification_templates: _Tally = field(default_factory=_Tally)
     notification_preferences: _Tally = field(default_factory=_Tally)
     notifications: _Tally = field(default_factory=_Tally)
@@ -585,6 +690,10 @@ class Command(BaseCommand):
             self._seed_vaccinations(summary.vaccinations, pets_by_key)
             self._seed_medical_notes(summary.medical_notes, pets_by_key)
             self._seed_schedules(summary.schedules, pets_by_key)
+            self._seed_pet_incompatibilities(
+                summary.pet_incompatibilities, pets_by_key,
+            )
+            self._seed_nursery_setting(summary.nursery_settings)
             self._seed_notification_templates(summary.notification_templates)
             self._seed_notification_preferences(
                 summary.notification_preferences, users_by_email,
@@ -651,6 +760,17 @@ class Command(BaseCommand):
 
         summary.schedules.deleted = _count(
             Schedule.objects.filter(pet_id__in=seed_pet_ids), 'pets.Schedule',
+        )
+        # PetIncompatibility cascades off Pet, but we count it here so
+        # the per-entity summary attributes the deletes correctly. Both
+        # FK columns must be checked because the model stores rows
+        # order-independently (lo_id, hi_id) — a seed pet may sit in
+        # either column.
+        summary.pet_incompatibilities.deleted = _count(
+            PetIncompatibility.objects.filter(
+                Q(pet1_id__in=seed_pet_ids) | Q(pet2_id__in=seed_pet_ids),
+            ),
+            'pets.PetIncompatibility',
         )
         summary.vaccinations.deleted = _count(
             Vaccination.objects.filter(pet_id__in=seed_pet_ids), 'pets.Vaccination',
@@ -924,6 +1044,63 @@ class Command(BaseCommand):
                     obj.save()
             tally.bump(created=created, updated=updated)
 
+    # ── Pet incompatibilities ──────────────────────────────────────────────
+
+    def _seed_pet_incompatibilities(
+        self,
+        tally: _Tally,
+        pets_by_key: dict[tuple[str, str], Pet],
+    ) -> None:
+        """Custom (free-text) incompatibility rules.
+
+        The model stores rows order-independently — ``pet1_id`` is
+        always the smaller of the two pet ids. Tests + manual UX rely
+        on that invariant, so we sort here too. ``unique_together`` on
+        ``(pet1, pet2)`` makes the get_or_create idempotent.
+        """
+        for data in SEED_PET_INCOMPATIBILITIES:
+            pet_a = pets_by_key[(data['pet_a_owner_email'], data['pet_a_name'])]
+            pet_b = pets_by_key[(data['pet_b_owner_email'], data['pet_b_name'])]
+            lo, hi = sorted([pet_a.pk, pet_b.pk])
+            obj, created = PetIncompatibility.objects.get_or_create(
+                pet1_id=lo, pet2_id=hi,
+                defaults={'reason': data['reason']},
+            )
+            updated = False
+            if not created and obj.reason != data['reason']:
+                obj.reason = data['reason']
+                obj.save(update_fields=['reason', 'updated_at'])
+                updated = True
+            tally.bump(created=created, updated=updated)
+
+    # ── Nursery settings (singleton) ───────────────────────────────────────
+
+    def _seed_nursery_setting(self, tally: _Tally) -> None:
+        """Singleton config; only the seed-owned fields are touched.
+
+        The model enforces ``pk = 1`` in ``save()``; ``load()`` returns
+        the canonical row, creating it with model defaults on first
+        call. We then reconcile the seed-owned subset against
+        ``SEED_NURSERY_SETTINGS`` and leave every other field
+        (notifications times, deworming cadence, etc.) alone so an
+        operator's customisation outside the seed scope survives a
+        re-seed.
+        """
+        obj = NurserySetting.load()
+        # ``load()`` may have just created the row; we treat the first
+        # touch as a "create" only when no seed-owned field needed
+        # adjusting and the timestamp is still the default-fresh row.
+        # To keep the bookkeeping simple, we report drift as `updated`
+        # and a fully-canonical row as `unchanged`.
+        updated = False
+        for field_name, value in SEED_NURSERY_SETTINGS.items():
+            if getattr(obj, field_name) != value:
+                setattr(obj, field_name, value)
+                updated = True
+        if updated:
+            obj.save()
+        tally.bump(created=False, updated=updated)
+
     # ── Notification templates ─────────────────────────────────────────────
 
     def _seed_notification_templates(self, tally: _Tally) -> None:
@@ -990,6 +1167,8 @@ class Command(BaseCommand):
             ('vaccinations', summary.vaccinations),
             ('medical notes', summary.medical_notes),
             ('schedules', summary.schedules),
+            ('pet incompat.', summary.pet_incompatibilities),
+            ('nursery settings', summary.nursery_settings),
             ('notif. templates', summary.notification_templates),
             ('notif. preferences', summary.notification_preferences),
             ('notifications', summary.notifications),
