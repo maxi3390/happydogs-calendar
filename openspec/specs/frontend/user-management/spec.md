@@ -371,3 +371,14 @@ Failing to fetch the impact SHALL NOT block the modal — the admin can still pr
 - WHEN the admin opens the delete modal for that user
 - THEN the modal SHALL display "3 notifications will be discarded."
 - AND the modal SHALL display "7 audit-log entries will be anonymized…"
+
+### Requirement: The reset-password modal SHALL render a strength meter
+
+The admin reset-password modal SHALL render the same advisory password-strength meter as `/profile` beneath its New password input. The scoring rules and labels SHALL match `password.strength.*` (see the auth spec). The meter SHALL be hidden on empty input and SHALL NOT block submission.
+
+#### Scenario: Meter renders inside the reset modal
+
+- GIVEN the admin opens the reset-password modal for a user
+- WHEN the admin types into the New password input
+- THEN the strength meter SHALL render below the input
+- AND its severity label SHALL update as the input value changes

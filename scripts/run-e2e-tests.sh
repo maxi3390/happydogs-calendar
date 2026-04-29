@@ -52,10 +52,13 @@ cleanup() {
 trap cleanup EXIT
 
 echo "[e2e] Bringing up db-e2e + backend-e2e + frontend-e2e..."
-# `--wait` blocks until every started service is healthy. `--wait-timeout`
-# is generous (240s) because the first run builds the frontend image
-# from scratch (next build can take ~30–45s on a cold cache).
-if ! docker compose -p "$COMPOSE_PROJECT" -f "$COMPOSE_FILE" up -d --wait --wait-timeout 240; then
+# `--build` forces docker to re-evaluate the build context on every run
+# so frontend source changes (which invalidate the COPY . . layer in
+# the Dockerfile) propagate into the next test run. Layer cache handles
+# the no-changes case efficiently. `--wait` blocks until every started
+# service is healthy; `--wait-timeout` is generous (240s) for cold
+# `next build` runs.
+if ! docker compose -p "$COMPOSE_PROJECT" -f "$COMPOSE_FILE" up -d --build --wait --wait-timeout 240; then
   echo "[e2e] ERROR: e2e stack failed to come up healthy. Recent logs:" >&2
   docker compose -p "$COMPOSE_PROJECT" -f "$COMPOSE_FILE" logs --tail=80 >&2 || true
   exit 1

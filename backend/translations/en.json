@@ -740,5 +740,15 @@
       "minLength": "Password must be at least 8 characters.",
       "mismatch": "Passwords do not match."
     }
+  },
+  "password": {
+    "strength": {
+      "label": "Strength:",
+      "veryWeak": "Very weak",
+      "weak": "Weak",
+      "fair": "Fair",
+      "strong": "Strong",
+      "veryStrong": "Very strong"
+    }
   }
 }

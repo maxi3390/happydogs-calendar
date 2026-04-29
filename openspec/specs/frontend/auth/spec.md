@@ -356,3 +356,38 @@ On HTTP 200 the form SHALL clear all three inputs and show a success state for a
 - WHEN Alice opens the profile-menu dropdown
 - THEN a "Change password" link SHALL be visible
 - AND clicking it SHALL navigate to `/profile`
+
+### Requirement: `/profile` SHALL render a strength meter under the New password input
+
+The new-password input on `/profile` SHALL render an advisory password-strength meter beneath it. The meter SHALL be hidden when the input value is empty and SHALL appear with one of five severity labels when the input has any value:
+
+| Score | Criteria | Label key |
+|---|---|---|
+| 1 | < 8 chars | `password.strength.veryWeak` |
+| 2 | ≥ 8 chars, 1 character class | `password.strength.weak` |
+| 3 | ≥ 8 chars, 2 character classes | `password.strength.fair` |
+| 4 | ≥ 8 chars, 3 character classes | `password.strength.strong` |
+| 5 | ≥ 12 chars, 4 character classes | `password.strength.veryStrong` |
+
+Character classes are: lowercase letters, uppercase letters, digits, symbols.
+
+The meter SHALL NOT block submission. Server-side `AUTH_PASSWORD_VALIDATORS` remain the source of truth; the meter is advisory UX.
+
+#### Scenario: Empty input → meter hidden
+
+- GIVEN Alice navigates to `/profile`
+- WHEN the New password input is empty
+- THEN the strength meter SHALL NOT render
+
+#### Scenario: Severity label updates as the user types
+
+- WHEN Alice fills the New password input with `abc`
+- THEN the strength meter SHALL render with the "Very weak" label
+- WHEN she changes it to `Abcdefg1!XYZ`
+- THEN the strength meter SHALL render with the "Very strong" label
+
+#### Scenario: Save button stays enabled regardless of meter score
+
+- WHEN the meter shows "Very weak"
+- THEN the Save button SHALL still be enabled
+- AND server-side validators SHALL be the only path that can reject the submission

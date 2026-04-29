@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import PasswordStrengthMeter from '@/components/PasswordStrengthMeter';
 import { FieldErrors } from '@/domain/users/passwordApi';
 
 type RoleFilter = 'all' | 'admin' | 'user';
@@ -917,15 +918,18 @@ function UsersAdminPage() {
                 </div>
               )}
               <form onSubmit={handleResetPassword} className="space-y-4">
-                <Input
-                  label={t('profile.newPassword') || 'New password'}
-                  type="password"
-                  autoComplete="new-password"
-                  value={resetPassword}
-                  onChange={e => setResetPassword(e.target.value)}
-                  error={resetErrors.new_password?.[0]}
-                  disabled={resetSubmitting}
-                />
+                <div>
+                  <Input
+                    label={t('profile.newPassword') || 'New password'}
+                    type="password"
+                    autoComplete="new-password"
+                    value={resetPassword}
+                    onChange={e => setResetPassword(e.target.value)}
+                    error={resetErrors.new_password?.[0]}
+                    disabled={resetSubmitting}
+                  />
+                  <PasswordStrengthMeter value={resetPassword} testId="admin-reset-strength-meter" />
+                </div>
                 <Input
                   label={t('profile.confirmNewPassword') || 'Confirm new password'}
                   type="password"
