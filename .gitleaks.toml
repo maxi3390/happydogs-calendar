@@ -1,0 +1,28 @@
+# Project-level gitleaks config. Inherits the bundled default ruleset
+# (the same one gitleaks uses when no config is present) and adds
+# path-based allowlists for build artefacts and dependency caches the
+# working-tree scan would otherwise flag.
+#
+# Build outputs (Next.js .next/, Docusaurus build/) and dependency
+# caches (node_modules/) routinely contain high-entropy strings that
+# trip generic detectors but are not real secrets — they're hashes,
+# obfuscated bundle ids, etc. Gitleaks's working-tree scan ignores
+# .gitignore by default, so we have to repeat the exclusion here.
+#
+# When a real false positive surfaces in TRACKED source, prefer adding
+# a per-rule allowlist with a `regexes` filter instead of broadening
+# the path list.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Build artefacts and dependency caches (not real secrets)"
+paths = [
+  '''(.+/)?\.next/.*''',
+  '''(.+/)?node_modules/.*''',
+  '''(.+/)?\.docusaurus/.*''',
+  '''docs/build/.*''',
+  '''security-reports/.*''',
+  '''backups/.*''',
+]

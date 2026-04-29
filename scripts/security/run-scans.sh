@@ -69,8 +69,16 @@ done
 
 echo
 
+# Compute total step count up-front so every per-step prefix shows
+# the same denominator (no /5 -> /6 jumps mid-run when DAST is off
+# but gitleaks is on).
+total_steps=6
+if [[ "$WITH_DAST" == "1" ]]; then
+  total_steps=7
+fi
+
 # 1. Bandit — Python static analysis on the backend.
-echo "[security] [1/5] Running bandit..."
+echo "[security] [1/$total_steps] Running bandit..."
 docker compose exec -T backend bandit \
   -r . \
   -c bandit.yaml \
@@ -81,7 +89,7 @@ docker compose exec -T backend cat /tmp/bandit.json > "$RUN_DIR/bandit.json" 2>/
   echo '{"errors": [{"reason": "bandit produced no JSON output"}], "results": []}' > "$RUN_DIR/bandit.json"
 
 # 2. pip-audit — Python deps CVE check.
-echo "[security] [2/5] Running pip-audit..."
+echo "[security] [2/$total_steps] Running pip-audit..."
 docker compose exec -T backend pip-audit \
   -r requirements.txt \
   --format json \
@@ -92,7 +100,7 @@ docker compose exec -T backend cat /tmp/pip-audit.json > "$RUN_DIR/pip-audit.jso
   echo '{"dependencies": [], "errors": ["pip-audit produced no JSON output"]}' > "$RUN_DIR/pip-audit.json"
 
 # 3. npm audit — Node deps CVE check on the frontend.
-echo "[security] [3/5] Running npm audit..."
+echo "[security] [3/$total_steps] Running npm audit..."
 # `npm audit` requires a populated node_modules. We reuse the project's
 # pinned image (node:24-alpine matches frontend/Dockerfile) and install
 # only when needed. The audit runs against the ALREADY-installed
@@ -108,25 +116,89 @@ docker run --rm \
 # DEBUG=False forces the deploy-mode warnings to surface (they are
 # silently downgraded under DEBUG=True). We run inside the existing
 # backend container.
-echo "[security] [4/5] Running Django check --deploy..."
+echo "[security] [4/$total_steps] Running Django check --deploy..."
 docker compose exec -T -e DEBUG=False backend python manage.py check --deploy --fail-level WARNING \
   >"$RUN_DIR/django-check.txt" 2>&1 || true
-
-total_steps=5
-if [[ "$WITH_DAST" == "1" ]]; then
-  total_steps=6
-fi
 
 # 5. Custom OWASP Django test suite.
 echo "[security] [5/$total_steps] Running security_tests Django app..."
 docker compose exec -T backend python manage.py test security_tests --verbosity 2 \
   >"$RUN_DIR/owasp-tests.txt" 2>&1 || true
 
-# 6. (opt-in) OWASP ZAP baseline DAST against the isolated e2e stack.
+# 6. gitleaks — secret scanning. Two passes: ``dir`` over the working
+#    tree (catches uncommitted secrets the operator just typed) +
+#    ``detect`` over the git history (catches secrets committed once,
+#    deleted later, but still recoverable from git log). Findings
+#    from both runs are merged into ``gitleaks.json`` and de-duped on
+#    (RuleID, File, StartLine).
+echo "[security] [6/$total_steps] Running gitleaks..."
+chmod a+rwx "$RUN_DIR"
+
+# Pass 1 — working tree.
+docker run --rm \
+  -v "$REPO_ROOT:/repo:ro" \
+  -v "$RUN_DIR:/out:rw" \
+  zricethezav/gitleaks:latest \
+  dir /repo \
+    --report-format=json \
+    --report-path=/out/gitleaks-tree.json \
+    --no-banner \
+    --exit-code=0 \
+  >"$RUN_DIR/gitleaks-tree.stdout" 2>"$RUN_DIR/gitleaks-tree.stderr" || true
+
+# Pass 2 — git history.
+docker run --rm \
+  -v "$REPO_ROOT:/repo:ro" \
+  -v "$RUN_DIR:/out:rw" \
+  zricethezav/gitleaks:latest \
+  detect \
+    --source=/repo \
+    --report-format=json \
+    --report-path=/out/gitleaks-history.json \
+    --no-banner \
+    --exit-code=0 \
+  >"$RUN_DIR/gitleaks-history.stdout" 2>"$RUN_DIR/gitleaks-history.stderr" || true
+
+# Merge the two reports into a single de-duped JSON. The aggregator
+# only reads gitleaks.json; the two source files stay around for
+# operators who want to know which pass surfaced a finding.
+python3 - "$RUN_DIR/gitleaks-tree.json" "$RUN_DIR/gitleaks-history.json" "$RUN_DIR/gitleaks.json" <<'PY'
+import json, sys
+def load(p):
+    try:
+        with open(p) as f:
+            d = json.load(f)
+        return d if isinstance(d, list) else []
+    except Exception:
+        return []
+seen = set()
+out = []
+for path in sys.argv[1:3]:
+    for leak in load(path):
+        if not isinstance(leak, dict):
+            continue
+        key = (
+            leak.get('RuleID') or leak.get('ruleID') or '',
+            leak.get('File') or leak.get('file') or '',
+            leak.get('StartLine') or leak.get('startLine') or 0,
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(leak)
+with open(sys.argv[3], 'w') as f:
+    json.dump(out, f, indent=2)
+PY
+
+if [[ ! -s "$RUN_DIR/gitleaks.json" ]]; then
+  echo '[]' > "$RUN_DIR/gitleaks.json"
+fi
+
+# 7. (opt-in) OWASP ZAP baseline DAST against the isolated e2e stack.
 #    Brings the e2e stack up if needed (idempotent), runs zap-baseline.py,
 #    captures JSON + Markdown reports, and tears the stack back down.
 if [[ "$WITH_DAST" == "1" ]]; then
-  echo "[security] [6/6] Running OWASP ZAP baseline scan..."
+  echo "[security] [7/7] Running OWASP ZAP baseline scan..."
   echo "[security]   Bringing up isolated e2e stack as DAST target..."
   if ! make -C "$REPO_ROOT" e2e-up >"$RUN_DIR/zap-baseline.setup.log" 2>&1; then
     echo "[security]   ERROR: failed to bring up e2e stack — DAST step skipped." >&2

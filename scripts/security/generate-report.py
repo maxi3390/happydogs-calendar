@@ -389,6 +389,54 @@ def parse_owasp_tests(path: Path) -> ToolStatus:
     return status
 
 
+# ── gitleaks ───────────────────────────────────────────────────────────
+
+def parse_gitleaks(path: Path) -> ToolStatus:
+    """One Finding per gitleaks leak. All `critical` / A02.
+
+    A hardcoded secret in source is unambiguous: severity `critical`,
+    OWASP A02 (Cryptographic Failures). This matches how bandit's
+    B105/B106/B107 (hardcoded_password_*) are already mapped.
+    """
+    status = ToolStatus(name='gitleaks', artefact='gitleaks.json', ok=False)
+    try:
+        data = json.loads(path.read_text())
+    except Exception as exc:
+        status.note = f'Could not parse gitleaks.json: {exc}'
+        return status
+
+    if not isinstance(data, list):
+        status.note = 'gitleaks.json is not a list'
+        status.ok = True
+        return status
+
+    for leak in data:
+        if not isinstance(leak, dict):
+            continue
+        rule_id = leak.get('RuleID') or leak.get('ruleID') or 'gitleaks'
+        description = leak.get('Description') or leak.get('description') or rule_id
+        file_ = leak.get('File') or leak.get('file') or ''
+        line = leak.get('StartLine') or leak.get('startLine') or leak.get('line') or ''
+        commit = leak.get('Commit') or leak.get('commit') or ''
+        location = f'{file_}:{line}' if line else file_
+        if commit:
+            # 7-char short hash is plenty for an inline reference; the
+            # full hash lives in gitleaks.json if the operator needs it.
+            location = f'{location} @ {str(commit)[:7]}'
+        status.findings.append(Finding(
+            category='A02',
+            severity='critical',
+            tool='gitleaks',
+            title=f'{rule_id}: {description}',
+            location=location,
+        ))
+
+    if not status.findings:
+        status.note = 'gitleaks completed with 0 findings'
+    status.ok = True
+    return status
+
+
 # ── ZAP baseline ───────────────────────────────────────────────────────
 
 # ZAP riskcode → our severity. ZAP uses 0..3 (info / low / medium /
@@ -580,6 +628,7 @@ def main(argv: list[str]) -> int:
         parse_npm_audit(report_dir / 'npm-audit.json'),
         parse_django_check(report_dir / 'django-check.txt'),
         parse_owasp_tests(report_dir / 'owasp-tests.txt'),
+        parse_gitleaks(report_dir / 'gitleaks.json'),
     ]
     # Opt-in DAST: only include the ZAP block when the artefact is
     # present (the orchestrator writes the file only when WITH_DAST=1).

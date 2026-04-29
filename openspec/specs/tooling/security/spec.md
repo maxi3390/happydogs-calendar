@@ -151,3 +151,37 @@ OWASP categorisation SHALL be derived from the alert name with a documented keyw
 - WHEN the aggregator runs
 - THEN the finding SHALL be classified as `critical`
 - AND `make security` SHALL exit non-zero
+
+### Requirement: `make security` SHALL run gitleaks against the working tree and git history
+
+The suite SHALL include an always-on gitleaks step that scans both the working tree (`gitleaks dir`) and the full git history (`gitleaks detect`). Findings from both passes SHALL be merged and de-duped on (RuleID, File, StartLine) into a single `gitleaks.json` artefact.
+
+Every gitleaks finding SHALL be classified as `critical` severity and OWASP category `A02` (Cryptographic Failures), matching the existing categorisation of bandit's `B105` / `B106` / `B107` (hardcoded password) rules.
+
+Gitleaks SHALL be configured via a project-level `.gitleaks.toml` that:
+
+- Inherits the bundled default ruleset (`[extend].useDefault = true`).
+- Adds path-based allowlists for build artefacts and dependency caches (`.next/`, `node_modules/`, `.docusaurus/`, `docs/build/`, `security-reports/`, `backups/`).
+
+#### Scenario: Clean repo → 0 findings, suite is unaffected
+
+- GIVEN a checkout with no committed or working-tree secrets
+- WHEN the operator runs `make security`
+- THEN gitleaks SHALL run as step 6/6
+- AND `gitleaks.json` SHALL be written into the per-run directory
+- AND the per-tool table in `REPORT.md` SHALL include a `gitleaks completed with 0 findings` note
+- AND no critical finding SHALL be added by gitleaks
+
+#### Scenario: A committed AWS access token is caught and fails the suite
+
+- GIVEN a file in the working tree contains a string matching gitleaks's `aws-access-token` rule
+- WHEN the operator runs `make security`
+- THEN gitleaks SHALL emit a finding with `RuleID=aws-access-token`
+- AND the finding SHALL render under A02 with severity `critical`
+- AND `make security` SHALL exit non-zero
+
+#### Scenario: Build artefacts are not flagged
+
+- GIVEN the working tree has populated `frontend/.next/` and `frontend/node_modules/` directories
+- WHEN gitleaks scans the working tree
+- THEN no finding from those paths SHALL appear in `gitleaks.json` (the project-level allowlist suppresses them)
