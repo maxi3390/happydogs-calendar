@@ -401,6 +401,10 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                 return (
                   <div
                     key={`backdrop-${colIdx}`}
+                    // Stable selector for E2E tests: click a day cell to
+                    // surface the DaySchedule panel. Out-of-month cells
+                    // are not interactive and intentionally not labelled.
+                    data-testid={inMonth ? `calendar-day-${format(day, 'yyyy-MM-dd')}` : undefined}
                     onClick={inMonth ? () => onDateSelect(day) : undefined}
                     className={`border-r last:border-r-0 border-gray-100 dark:border-slate-700/50 transition-colors ${
                       inMonth ? 'cursor-pointer hover:bg-muted/30 dark:hover:bg-slate-700/20' : ''

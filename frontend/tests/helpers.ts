@@ -7,6 +7,9 @@ const EN_TRANSLATIONS = {
     pets: 'Pets',
     settings: 'Settings',
     calendar: 'Calendar',
+    admin: 'Admin',
+    uiSystem: 'UI System',
+    menu: 'Menu',
     newSchedule: 'New Schedule',
   },
   calendar: { month: 'Month', week: 'Week', today: 'Today', thisWeek: 'This Week', weekOf: 'Week of', more: '+{count} more', showLess: 'Show less' },
@@ -40,6 +43,8 @@ const EN_TRANSLATIONS = {
     dominance: 'Dominance Level',
     vaccinations: 'Vaccinations',
     addVaccination: 'Add Vaccination',
+    saveAndAddAnother: 'Save & Add Another',
+    addedSuccessfully: '{name} added successfully',
     speciesOptions: { dog: 'Dog', cat: 'Cat' },
     temperamentOptions: { calm: 'Calm', playful: 'Playful', aggressive: 'Aggressive' },
     sexOptions: { male: 'Male', female: 'Female' },
@@ -248,12 +253,39 @@ const ES_TRANSLATIONS = {
 };
 
 async function mockI18nEndpoints(page: Page) {
+  // Load the real translations from the e2e backend so mocks never
+  // drift from the canonical backend/translations/{en,es}.json. Falls
+  // back to the inline EN_/ES_TRANSLATIONS constants below if the
+  // fetch fails (e.g. backend not yet ready or test running against
+  // a stub backend).
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+  let liveEn: unknown = null;
+  let liveEs: unknown = null;
+  try {
+    const [r1, r2] = await Promise.all([
+      page.request.get(`${apiBase}/translations/en/`),
+      page.request.get(`${apiBase}/translations/es/`),
+    ]);
+    if (r1.ok()) liveEn = await r1.json();
+    if (r2.ok()) liveEs = await r2.json();
+  } catch {
+    // Network or backend unavailable — fall back to constants.
+  }
+
   await page.route('**/translations/en/**', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(EN_TRANSLATIONS) });
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(liveEn ?? EN_TRANSLATIONS),
+    });
   });
 
   await page.route('**/translations/es/**', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(ES_TRANSLATIONS) });
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(liveEs ?? ES_TRANSLATIONS),
+    });
   });
 
   await page.route('**/languages/**', async route => {
@@ -392,7 +424,9 @@ export async function createOwnerViaApi(
 
 /**
  * Navigate to /owners, expand the given owner's card, and open the "Add Pet"
- * pet form modal. Returns the page locator for the form.
+ * pet form modal. Returns the page locator for the form, waited for to
+ * be attached + visible (the owner-detail fetch on expand is async, so
+ * naive click→click chains race the expand panel's mount).
  */
 export async function openAddPetFormForOwner(page: Page, owner: { first_name: string; last_name: string }) {
   await page.goto('/owners', { waitUntil: 'networkidle' });
@@ -401,8 +435,16 @@ export async function openAddPetFormForOwner(page: Page, owner: { first_name: st
     .filter({ hasText: `${owner.first_name} ${owner.last_name}` })
     .first();
   await ownerCard.click();
-  await page.getByRole('button', { name: /add pet|agregar mascota/i }).first().click();
-  return page.locator('.fixed.inset-0 form').first();
+  // The expanded panel mounts asynchronously after ownerDetails fetch
+  // resolves; wait for the Add Pet button to actually appear before
+  // clicking. Locator click() auto-waits for visibility but the
+  // default timeout can race with the e2e backend on cold runs.
+  const addPet = page.getByRole('button', { name: /add pet|agregar mascota/i }).first();
+  await addPet.waitFor({ state: 'visible' });
+  await addPet.click();
+  const form = page.locator('.fixed.inset-0 form').first();
+  await form.waitFor({ state: 'visible' });
+  return form;
 }
 
 async function authedRequest(page: Page) {

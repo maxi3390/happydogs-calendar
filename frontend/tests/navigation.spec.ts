@@ -48,9 +48,11 @@ test.describe('Navigation', () => {
   });
 
   test('should navigate to settings page', async ({ page }) => {
-    // Open profile menu and click settings link
+    // Open profile menu and click the Settings dropdown item.
+    // The item is rendered as <Link role="menuitem"> — explicit role
+    // overrides the default `link` role for ARIA queries.
     await page.getByRole('button').filter({ hasText: 'Test' }).first().click();
-    await page.getByRole('link', { name: /settings/i }).click();
+    await page.getByRole('menuitem', { name: /settings/i }).click();
 
     await expect(page).toHaveURL('/settings');
     await expect(page.getByRole('heading', { level: 2, name: /settings|configuraci[oó]n/i })).toBeVisible();
@@ -71,29 +73,30 @@ test.describe('Navigation', () => {
 
   test('should show sign out button when authenticated', async ({ page }) => {
     await page.getByRole('button').filter({ hasText: 'Test' }).first().click();
-    await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
+    // The dropdown items are rendered with role=menuitem (not button).
+    await expect(page.getByRole('menuitem', { name: /sign out/i })).toBeVisible();
   });
 
   test('should close the profile dropdown with Escape', async ({ page }) => {
     await page.getByRole('button').filter({ hasText: 'Test' }).first().click();
-    // Sign out visible → dropdown is open.
-    await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: /sign out/i })).toBeVisible();
 
     await page.keyboard.press('Escape');
 
-    // Dropdown closed → sign out button no longer reachable.
-    await expect(page.getByRole('button', { name: /sign out/i })).toHaveCount(0);
+    await expect(page.getByRole('menuitem', { name: /sign out/i })).toHaveCount(0);
   });
 
-  test('should NOT expose the Admin top-level link for non-admin users', async ({ page }) => {
-    // Default setupAuthAndLanguage creates a regular user.
-    const adminLink = page.getByRole('banner').getByRole('link', { name: /^admin$|^administraci[oó]n$/i });
-    await expect(adminLink).toHaveCount(0);
+  test('should NOT expose the Admin entry for non-admin users', async ({ page }) => {
+    // Default setupAuthAndLanguage creates a regular user. The admin
+    // entry lives only in the profile dropdown for admins; non-admins
+    // SHALL not see it even after opening the dropdown.
+    await page.getByRole('button').filter({ hasText: 'Test' }).first().click();
+    await expect(page.getByRole('menuitem', { name: /^admin$|^administraci[oó]n$/i })).toHaveCount(0);
   });
 
   test('should NOT expose UI System in the profile dropdown for non-admin users', async ({ page }) => {
     await page.getByRole('button').filter({ hasText: 'Test' }).first().click();
-    await expect(page.getByRole('link', { name: /ui system|sistema de ui/i })).toHaveCount(0);
+    await expect(page.getByRole('menuitem', { name: /ui system|sistema de ui/i })).toHaveCount(0);
   });
 });
 
@@ -102,18 +105,25 @@ test.describe('Navigation (admin)', () => {
     await setupAuthAndLanguage(page, { admin: true });
   });
 
-  test('should expose the Admin top-level link for admin users', async ({ page }) => {
-    const adminLink = page.getByRole('banner').getByRole('link', { name: /^admin$|^administraci[oó]n$/i });
-    await expect(adminLink.first()).toBeVisible();
-    await adminLink.first().click();
-    await expect(page).toHaveURL('/admin/users');
+  test('should expose the Admin entry in the profile dropdown for admin users', async ({ page }) => {
+    // Admin entry is rendered as <Link role="menuitem"> inside the
+    // profile dropdown (kept off the top-level nav to match the
+    // information-hierarchy of the surrounding entries). We assert
+    // the link target via href rather than navigating: the test user
+    // has admin only patched in localStorage, not on the backend, so
+    // following the link triggers a 403 from /api/users/ which the
+    // http client maps to logout → /login. Out of scope for this test.
+    await page.getByRole('button').filter({ hasText: 'Test' }).first().click();
+    const adminItem = page.getByRole('menuitem', { name: /^admin$|^administraci[oó]n$/i });
+    await expect(adminItem.first()).toBeVisible();
+    await expect(adminItem.first()).toHaveAttribute('href', '/admin/users');
   });
 
   test('should expose UI System in the profile dropdown for admin users', async ({ page }) => {
     await page.getByRole('button').filter({ hasText: 'Test' }).first().click();
-    const uiSystemLink = page.getByRole('link', { name: /ui system|sistema de ui/i });
-    await expect(uiSystemLink.first()).toBeVisible();
-    await uiSystemLink.first().click();
+    const uiSystemItem = page.getByRole('menuitem', { name: /ui system|sistema de ui/i });
+    await expect(uiSystemItem.first()).toBeVisible();
+    await uiSystemItem.first().click();
     await expect(page).toHaveURL('/ui-system');
   });
 });

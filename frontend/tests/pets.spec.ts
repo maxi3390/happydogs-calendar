@@ -42,8 +42,13 @@ test.describe('Pet Form (opened from owner list)', () => {
     const owner = await createOwnerViaApi(page);
     const form = await openAddPetFormForOwner(page, owner);
 
-    // Only 4 selects expected: species, temperament, size, sex (no owner select).
-    await expect(form.locator('select')).toHaveCount(4);
+    // 5 selects expected: species, temperament, size, sex, vet_override
+    // (no owner select). The vet_override select is gated behind the
+    // ``vet_management`` feature flag, which seeds enabled=True.
+    await expect(form.locator('select')).toHaveCount(5);
+    // Owner-name label should NOT appear in the form when the owner is
+    // locked (the field is hidden, not just disabled).
+    await expect(form.getByText(/^owner$|^due[oñ]o$/i)).toHaveCount(0);
   });
 
   test('should show new pet form fields', async ({ page }) => {

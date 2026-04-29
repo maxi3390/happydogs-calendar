@@ -11,8 +11,17 @@ const newScheduleRegex = /new schedule|nuevo horario/i;
 const scheduleFormHeadingRegex = /new schedule|nuevo horario/i;
 const cancelRegex = /cancel|cancelar/i;
 
-function newScheduleNavButton(page: Page) {
-  return page.locator('button').filter({ has: page.locator('svg.lucide-calendar-days') }).first();
+/**
+ * The "New Schedule" affordance lives in the DaySchedule panel
+ * (rendered after a calendar day is selected), not in the top
+ * navigation. This helper performs the two-step open: click today's
+ * day cell on the home-page calendar, then click "+ New Schedule"
+ * in the resulting day panel.
+ */
+async function openScheduleFormViaDayPanel(page: Page) {
+  const today = new Date().toISOString().slice(0, 10);
+  await page.locator(`[data-testid="calendar-day-${today}"]`).click();
+  await page.getByRole('button', { name: newScheduleRegex }).first().click();
 }
 
 test.describe('Schedule Creation', () => {
@@ -22,7 +31,7 @@ test.describe('Schedule Creation', () => {
 
   test('should open schedule form from nav button', async ({ page }) => {
     // Click New Schedule button in navigation
-    await newScheduleNavButton(page).click();
+    await openScheduleFormViaDayPanel(page);
 
     // Form should be visible
     await expect(page.getByRole('heading', { name: scheduleFormHeadingRegex })).toBeVisible();
@@ -30,7 +39,7 @@ test.describe('Schedule Creation', () => {
 
   test('should show pet selection in schedule form', async ({ page }) => {
     // Click New Schedule button
-    await newScheduleNavButton(page).click();
+    await openScheduleFormViaDayPanel(page);
 
     // Pet dropdown should be visible (first select in the form)
     await expect(page.getByText(/pet|mascota/i).first()).toBeVisible();
@@ -38,7 +47,7 @@ test.describe('Schedule Creation', () => {
 
   test('should show date and time fields', async ({ page }) => {
     // Click New Schedule button
-    await newScheduleNavButton(page).click();
+    await openScheduleFormViaDayPanel(page);
 
     // Date fields should be visible
     await expect(page.getByText(/start date|fecha de inicio/i)).toBeVisible();
@@ -51,7 +60,7 @@ test.describe('Schedule Creation', () => {
 
   test('should close form on cancel', async ({ page }) => {
     // Click New Schedule button
-    await newScheduleNavButton(page).click();
+    await openScheduleFormViaDayPanel(page);
 
     // Form should be visible
     await expect(page.getByRole('heading', { name: scheduleFormHeadingRegex })).toBeVisible();
@@ -152,8 +161,10 @@ test.describe('Day Schedule Panel', () => {
   });
 
   test('should show selected date info in panel', async ({ page }) => {
-    // Panel should show a formatted weekday/date heading
-    await expect(page.getByText(/^[A-Za-z]+,\s+[A-Za-z]+\s+\d{1,2},\s+\d{4}$/).first()).toBeVisible();
+    // Panel renders the heading as "<weekday>, dd/MM/yyyy" via
+    // date-fns ``EEEE, dd/MM/yyyy``. Same shape in both languages
+    // (the locale only changes the weekday word).
+    await expect(page.getByText(/^[A-Za-zÀ-ÿ]+,\s+\d{2}\/\d{2}\/\d{4}$/).first()).toBeVisible();
   });
 
   test('should update status dropdown for schedules', async ({ page }) => {

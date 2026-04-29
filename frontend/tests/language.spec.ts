@@ -95,21 +95,24 @@ test.describe('Language Switching', () => {
     await languageSwitcher(page).selectOption('es');
     await page.waitForTimeout(500);
 
-    // Navigation should be in Spanish
-    await expect(page.getByText(/dueños/i)).toBeVisible();
-    await expect(page.getByText(/mascotas/i)).toBeVisible();
+    // Navigation should be in Spanish — scope to the banner because
+    // other strings ("mascotas" in the footer tagline, etc.) also
+    // contain these words once full translations are loaded.
+    const banner = page.getByRole('banner');
+    await expect(banner.getByRole('link', { name: /dueños/i })).toBeVisible();
+    await expect(banner.getByRole('link', { name: /mascotas/i })).toBeVisible();
   });
 
   test('should translate app title and tagline', async ({ page }) => {
-    // Check English title
-    await expect(page.getByText(/happy pet nursery/i)).toBeVisible();
+    // Check English title — match the H1 specifically.
+    await expect(page.getByRole('heading', { level: 1, name: /happy pet nursery/i })).toBeVisible();
 
     // Switch to Spanish
     await languageSwitcher(page).selectOption('es');
     await page.waitForTimeout(500);
 
-    // Title should be in Spanish
-    await expect(page.getByText(/guarder[ií]a happy dogs/i)).toBeVisible();
+    // Title should be in Spanish.
+    await expect(page.getByRole('heading', { level: 1, name: /guarder[ií]a happy dogs/i })).toBeVisible();
   });
 });
 

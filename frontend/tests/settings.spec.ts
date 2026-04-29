@@ -50,8 +50,9 @@ test.describe('Settings Page', () => {
   });
 
   test('should show vaccination types section', async ({ page }) => {
-    // Vaccination types section should be visible
-    await expect(page.getByText(/vaccination types/i)).toBeVisible();
+    // Match the section heading specifically — the description
+    // paragraph also contains "vaccination types" as plain prose.
+    await expect(page.getByRole('heading', { name: /vaccination types|tipos de vacunas/i })).toBeVisible();
   });
 
   test('should show add vaccination type button', async ({ page }) => {
@@ -81,8 +82,9 @@ test.describe('Settings Page', () => {
     // Navigation header should be visible
     await expect(page.locator('header')).toBeVisible();
 
-    // Open profile menu where settings link is rendered
+    // Open profile menu where the Settings dropdown item lives.
+    // The item is rendered as <Link role="menuitem">.
     await page.getByRole('button').filter({ hasText: 'Test' }).first().click();
-    await expect(page.getByRole('link', { name: /settings|configuraci[oó]n/i })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: /settings|configuraci[oó]n/i })).toBeVisible();
   });
 });
