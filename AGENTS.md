@@ -58,10 +58,11 @@ Backend mounts `./backend:/app` as a volume so file edits hot-reload.
 
 Frontend Playwright tests run against an isolated, ephemeral stack defined in `docker-compose.e2e.yml`. It lives in its own compose project (`happy-calendar-e2e`) and on its own bridge network (also `happy-calendar-e2e`), so it never touches the dev stack. See `openspec/specs/tooling/e2e-isolation/spec.md`.
 
-| Service       | Image / Build      | Notes                                                                                  |
-|---------------|--------------------|----------------------------------------------------------------------------------------|
-| `db-e2e`      | postgres:18-alpine | `tmpfs` data dir. Wiped unconditionally on container stop.                             |
-| `backend-e2e` | `./backend`        | Same image as `backend`, talks to `db-e2e`. Reachable only as `backend-e2e:8000` on the e2e network. |
+| Service        | Image / Build      | Notes                                                                                  |
+|----------------|--------------------|----------------------------------------------------------------------------------------|
+| `db-e2e`       | postgres:18-alpine | `tmpfs` data dir. Wiped unconditionally on container stop.                             |
+| `backend-e2e`  | `./backend`        | Same image as `backend`, talks to `db-e2e`. Reachable only as `backend-e2e:8000` on the e2e network. |
+| `frontend-e2e` | `./frontend`       | Same source as `frontend`, **built with `NEXT_PUBLIC_API_URL=http://backend-e2e:8000/api`** so browser-side fetches go to the e2e backend (no `page.route` mocks needed). Reachable as `frontend-e2e:3000`. |
 
 Brought up by `make test-frontend` (via `scripts/run-e2e-tests.sh`); torn down on exit unless `KEEP_E2E_DATA=1` is set.
 
