@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { Clock, AlertTriangle, Edit2, Trash2, CheckCircle, XCircle, Plus } from 'lucide-react';
 import { api, Schedule } from '@/lib/api';
@@ -8,6 +8,7 @@ import { useTranslation } from '@/lib/translations';
 import { getDateLocale, formatIsoDate } from '@/lib/dateLocale';
 import { translateSpecies, translateTemperament } from '@/domain/pets/labels';
 import { computeStayDays } from '@/domain/schedules/stayDays';
+import { useResourceList } from '@/hooks/useResourceList';
 import { Button } from '@/components/ui/Button';
 
 interface DayScheduleProps {
@@ -34,26 +35,14 @@ const statusIcons: Record<string, React.ReactNode> = {
 export default function DaySchedule({ date, onEditSchedule, refreshTrigger, onNewSchedule }: DayScheduleProps) {
   const { t, language } = useTranslation();
   const dateLocale = getDateLocale(language);
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { items: schedules, loading, setItems: setSchedules } = useResourceList<Schedule>(
+    async () => {
+      const data = await api.schedules.list({ date: format(date, 'yyyy-MM-dd') });
+      return data.sort((a, b) => a.start_time.localeCompare(b.start_time));
+    },
+    [date, refreshTrigger],
+  );
   const [deletingId, setDeletingId] = useState<number | null>(null);
-
-  const fetchSchedules = async () => {
-    setLoading(true);
-    try {
-      const dateStr = format(date, 'yyyy-MM-dd');
-      const data = await api.schedules.list({ date: dateStr });
-      setSchedules(data.sort((a, b) => a.start_time.localeCompare(b.start_time)));
-    } catch (error) {
-      console.error('Failed to fetch schedules:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSchedules();
-  }, [date, refreshTrigger]);
 
   const handleDelete = async (id: number) => {
     if (!confirm(t('confirmations.deleteSchedule'))) {

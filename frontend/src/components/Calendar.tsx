@@ -7,6 +7,7 @@ import { api, Schedule } from '@/lib/api';
 import ScheduleDetailsPopup from './ScheduleDetailsPopup';
 import { useTranslation } from '@/lib/translations';
 import { getDateLocale } from '@/lib/dateLocale';
+import { useResourceList } from '@/hooks/useResourceList';
 
 interface CalendarProps {
   onDateSelect: (date: Date) => void;
@@ -74,8 +75,6 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
   const { t, language } = useTranslation();
   const dateLocale = getDateLocale(language);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [loading, setLoading] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set());
 
@@ -108,26 +107,16 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
   const calendarStart = useMemo(() => startOfWeek(monthStart), [monthStart]);
   const calendarEnd = useMemo(() => endOfWeek(monthEnd), [monthEnd]);
 
-  useEffect(() => {
-    const fetchSchedules = async () => {
-      setLoading(true);
-      try {
-        // Fetch over the WHOLE visible window — including the
-        // leading / trailing days from adjacent months — so a
-        // schedule that starts on Mar 30 and ends Apr 5 still
-        // renders its bar in April's first row.
-        const start = format(calendarStart, 'yyyy-MM-dd');
-        const end = format(calendarEnd, 'yyyy-MM-dd');
-        const data = await api.schedules.list({ start_date: start, end_date: end });
-        setSchedules(data);
-      } catch (error) {
-        console.error('Failed to fetch schedules:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSchedules();
-  }, [calendarStart, calendarEnd, refreshTrigger]);
+  // Fetch over the WHOLE visible window — including the leading /
+  // trailing days from adjacent months — so a schedule that starts on
+  // Mar 30 and ends Apr 5 still renders its bar in April's first row.
+  const { items: schedules, loading } = useResourceList<Schedule>(
+    () => api.schedules.list({
+      start_date: format(calendarStart, 'yyyy-MM-dd'),
+      end_date: format(calendarEnd, 'yyyy-MM-dd'),
+    }),
+    [calendarStart, calendarEnd, refreshTrigger],
+  );
 
   // Build calendar grid: every cell is a real Date — no nulls. The
   // out-of-month leading / trailing days are rendered with reduced

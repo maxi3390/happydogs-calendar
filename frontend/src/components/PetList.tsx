@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Edit2, Trash2, Dog, Cat, Bird, Rabbit, HelpCircle, ChevronDown,
   FileText, Search, X, SlidersHorizontal,
@@ -10,6 +10,7 @@ import { useTranslation } from '@/lib/translations';
 import { useFeatureFlag } from '@/lib/feature-flags';
 import { formatIsoDate } from '@/lib/dateLocale';
 import { translateSpecies } from '@/domain/pets/labels';
+import { useResourceList } from '@/hooks/useResourceList';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
@@ -144,8 +145,10 @@ export default function PetList({ onEdit, refreshTrigger, onViewOwner }: PetList
   const { t } = useTranslation();
   const vetManagementEnabled = useFeatureFlag('vet_management');
   const dewormingTrackingEnabled = useFeatureFlag('deworming_tracking');
-  const [pets, setPets] = useState<Pet[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { items: pets, loading, setItems: setPets } = useResourceList<Pet>(
+    () => api.pets.list(),
+    [refreshTrigger],
+  );
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [expandedPetId, setExpandedPetId] = useState<number | null>(null);
   const [filters, setFilters] = useState<PetFilters>(defaultFilters);
@@ -156,22 +159,6 @@ export default function PetList({ onEdit, refreshTrigger, onViewOwner }: PetList
   // time.
   const [openVetId, setOpenVetId] = useState<number | null>(null);
   const [editingVet, setEditingVet] = useState<Vet | undefined>();
-
-  const fetchPets = async () => {
-    setLoading(true);
-    try {
-      const data = await api.pets.list();
-      setPets(data);
-    } catch (error) {
-      console.error('Failed to fetch pets:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPets();
-  }, [refreshTrigger]);
 
   const handleDelete = async (id: number) => {
     if (!confirm(t('confirmations.deletePet'))) {
