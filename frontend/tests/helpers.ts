@@ -550,11 +550,12 @@ export async function createPetViaApi(
     size: string;
     sex: string;
     neutered: boolean;
+    weight: number;
   }> = {},
 ) {
   const { apiBase, headers } = await authedRequest(page);
   const unique = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  const body = {
+  const body: Record<string, unknown> = {
     name: overrides.name ?? `Pet_${unique}`,
     species: overrides.species ?? 'dog',
     breed: overrides.breed ?? 'Mixed',
@@ -566,6 +567,9 @@ export async function createPetViaApi(
     neutered: overrides.neutered ?? true,
     owner: ownerId,
   };
+  if (overrides.weight !== undefined) {
+    body.weight = overrides.weight;
+  }
   const res = await page.request.post(`${apiBase}/pets/`, { headers, data: body });
   if (!res.ok()) throw new Error(`Failed to create pet: ${res.status()} ${await res.text()}`);
   return res.json() as Promise<{ id: number; name: string }>;

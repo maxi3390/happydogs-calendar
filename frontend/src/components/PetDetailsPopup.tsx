@@ -35,10 +35,20 @@ const temperamentColors: Record<string, string> = {
   friendly: 'bg-emerald-100 text-emerald-800',
 };
 
-function formatWeight(weight: number | null | undefined): string | null {
+function formatWeight(weight: number | string | null | undefined): string | null {
   if (weight === null || weight === undefined) return null;
+  // The Pet API returns ``weight`` as a STRING (Django's
+  // ``DecimalField`` serializes to ``"13.30"``, not ``13.30``), but the
+  // form-side / WeightInput pipeline produces a real number. Coerce
+  // here so both shapes render correctly. ``Number()`` returns ``NaN``
+  // on invalid strings (vs ``parseFloat`` which would silently accept
+  // ``"13kg"`` as ``13``); a NaN result short-circuits to "no weight"
+  // so a malformed payload renders the em-dash instead of crashing
+  // the whole dialog body with ``e.toFixed is not a function``.
+  const num = typeof weight === 'string' ? Number(weight) : weight;
+  if (!Number.isFinite(num)) return null;
   // Mirror the WeightInput display format (padStart to NN.NN).
-  const s = weight.toFixed(2);
+  const s = num.toFixed(2);
   const [intPart, decPart] = s.split('.');
   return `${intPart.padStart(2, '0')}.${decPart} kg`;
 }
