@@ -93,19 +93,21 @@ frontend/
 
 ## Pages
 
-The application defines **9 pages**:
-
 | Route | File | Protection | Description |
 |---|---|---|---|
 | `/` | `page.tsx` | None | Main calendar. Shows `PublicCalendar` when unauthenticated; full dashboard (`Calendar`/`WeekView` + `DaySchedule`) when authenticated |
-| `/login` | `login/page.tsx` | None | Email + password login. Password visibility toggle, error display. Redirects to `/` if already authenticated |
-| `/register` | `register/page.tsx` | None | Name, email, password + confirmation (min 8 chars). Redirects to `/` if already authenticated |
-| `/pets` | `pets/page.tsx` | `withAuth` | Pet management — `PetList` + `PetForm` modal |
-| `/owners` | `owners/page.tsx` | `withAuth` | Owner management — search, expandable cards, batch and individual scheduling |
-| `/settings` | `settings/page.tsx` | `withAuth` | System logo upload, daily capacity limit, incompatibility rules (localStorage), vaccination types, notifications config |
-| `/notifications` | `notifications/page.tsx` | `withAuth` | Staff inbox of daily reminders. Mark-read / dismiss + forward-to-owner via mailto / WhatsApp deep links. Hidden when the master `notifications` flag is off. |
-| `/admin/users` | `admin/users/page.tsx` | `withAdmin` | Admin user management — stats cards, user table, CRUD modals, role/status badges |
-| `/ui-system` | `ui-system/page.tsx` | None | UI component showcase page |
+| `/login` | `login/page.tsx` | None | Email + password login. Password visibility toggle (`aria-label` + `aria-pressed`). Renders the system logo (square or circle per `logo_shape`). Redirects to `/` if already authenticated. |
+| `/register` | `register/page.tsx` | None | Name, email, password + confirmation (min 8 chars). Live password-strength meter. Redirects to `/` if already authenticated. |
+| `/profile` | `profile/page.tsx` | `withAuth` | Per-user profile editor: language preference, password change (with strength meter), data backup tile (gated by `data_backup` flag) |
+| `/pets` | `pets/page.tsx` | `withAuth` | Pet management — `PetList` (multi-axis filter accordion) + `PetForm` modal |
+| `/owners` | `owners/page.tsx` | `withAuth` | Owner management — search via `useSearchableList`, expandable cards, batch and individual scheduling, cross-entity drill-down to `PetDetailsPopup` and `VetDetailsPopup` |
+| `/vets` | `vets/page.tsx` | `withAuth` | Vet directory CRUD (gated by the `vet_management` flag). Hidden from primary nav when off; entry lives in the profile menu instead. |
+| `/settings` | `settings/page.tsx` | `withAuth` | System logo upload + shape toggle, daily capacity limit, incompatibility rules (localStorage), vaccination types, notifications config |
+| `/notifications` | `notifications/page.tsx` | `withAuth` | Staff inbox of daily reminders. Mark-read + forward-to-owner via WhatsApp deep links. Hidden when the master `notifications` flag is off. |
+| `/admin/users` | `admin/users/page.tsx` | `withAdmin` | Admin user management — stats cards, filterable user table, bulk select (deactivate / reactivate / delete), per-user role promote/demote, hard delete with typed confirmation, admin password reset modal with strength meter |
+| `/admin/activity` | `admin/activity/page.tsx` | `withAdmin` | Cross-entity audit-log feed sourced from `/api/audit/activity/`. Hidden when the `activity_logs` flag is off. |
+| `/admin/feature-flags` | `admin/feature-flags/page.tsx` | `withAdmin` | Toggle the runtime feature flags catalogued in [overview.md §18](../overview.md#18-feature-flags). |
+| `/ui-system` | `ui-system/page.tsx` | None | UI component showcase. Hidden by `ui_system` flag — useful for design review without exposing it on production. |
 
 ## Component Architecture
 
@@ -246,13 +248,32 @@ Displayed on the main page (`/`) when no user is authenticated. Shows a read-onl
 
 ### UI Component Library (`ui/`)
 
+Atoms (`src/components/ui/`):
+
 | Component | Description |
 |---|---|
-| `Button.tsx` | 5 variants (primary, secondary, outline, ghost, destructive) × 4 sizes (sm, md, lg, icon) |
-| `Input.tsx` | Text input with label, left/right icon slots, and error message support |
+| `Button.tsx` | 5 variants (primary, secondary, outline, ghost, destructive) × 4 sizes (sm, md, lg, icon). `disabled:opacity-60` to keep contrast at WCAG 2.1 AA. |
+| `Input.tsx` | Text input with label (`htmlFor`-bound via `useId`), left/right icon slots, error message wired to the input via `aria-describedby` + `aria-invalid` |
+| `Select.tsx` | Styled select dropdown with the same `htmlFor` / error-id wiring as `Input` |
 | `Card.tsx` | Composable card with `Card`, `CardHeader`, `CardTitle`, `CardContent`, `CardFooter` sub-components |
-| `Select.tsx` | Styled select dropdown |
 | `Badge.tsx` | Status/label badges with color variants |
+| `Toast.tsx` | Provider + `useToast` hook for transient notifications |
+
+Higher-order primitives (extracted in the `refactor/reuse-and-a11y` pass):
+
+| Component | Description |
+|---|---|
+| `Modal.tsx` | Shared dialog shell — backdrop + `role="dialog"` container + `aria-modal` + `aria-labelledby` + header + body slot + optional footer band. Owns focus-on-mount on the close button, Escape, backdrop-click. Takes `inert` for nested-modal coordination, `layer: 'base' \| 'nested'` for z-50 / z-60 stacking, `size: 'md' \| 'lg'` for the wider PetForm layout, and `bodyAndFooterWrapper` to let `FormModal` wrap both regions in a single `<form>`. |
+| `DetailsModal<T>.tsx` | Built on `Modal`. Adds the fetch lifecycle (`fetcher` + `loadingMessage` + `loadFailedFallback`) and the standard Close + Edit footer. Replaces ~450 lines of duplicated shell across `PetDetailsPopup`, `OwnerDetailsPopup`, and `VetDetailsPopup`. `ScheduleDetailsPopup` is intentionally NOT migrated (read-only with simpler close semantics). |
+| `FormModal.tsx` | Built on `Modal`. Wraps the body and footer in a single `<form>` with a Cancel + Save footer; pairs with `useFormSubmit` for the loading/error state. Renders `role="alert"` on the error block so screen readers announce submit failures. Used by `PetForm`, `OwnerForm`, and `VetForm`. `ScheduleForm` is NOT migrated (its conflict-detection state machine doesn't fit the one-form-one-submit contract). |
+
+Custom hooks (`src/hooks/`):
+
+| Hook | Description |
+|---|---|
+| `useFormSubmit` | Wraps the standard `setLoading(true) → try → operation → catch → setError(t('errors.saveFailed')) → setLoading(false)` cycle. Returns `{ loading, error, submit, clearError }`. |
+| `useResourceList<T>` | `setLoading(true) → fetcher() → setItems / log error → setLoading(false)`, with proper request cancellation on dep change or unmount (the eight hand-rolled fetch effects it replaced did not have one). Caller passes the dependency array; the fetcher itself is intentionally NOT in the deps to avoid an infinite refetch loop. |
+| `useSearchableList<T>` | Memoised, case-insensitive substring filter over a list. Returns `{ searchTerm, setSearchTerm, filtered }`. Used by `VetList` and the `/owners` page. |
 
 ## State Management
 
@@ -386,25 +407,40 @@ All pages and components are responsive using Tailwind breakpoints:
 
 ### Playwright E2E Tests
 
-End-to-end tests live in the `tests/` directory and cover:
+End-to-end tests live in `frontend/tests/` and cover the full user experience. Each spec runs against a fully isolated stack (`docker-compose.e2e.yml`) — see [Deployment → E2E isolation](../deployment.md#e2e-test-isolation) for the full topology.
 
 | Test File | Coverage |
 |---|---|
 | `auth.spec.ts` | Login, registration, logout, auth redirects |
 | `calendar.spec.ts` | Calendar navigation, view switching, date selection |
-| `pets.spec.ts` | Pet CRUD, form validation, owner gating |
-| `schedule.spec.ts` | Schedule creation, conflict detection, status changes |
+| `calendar-cell-size.spec.ts` | Fixed-size month cells + entry-time order in week view |
+| `pets.spec.ts` | Pet CRUD, form validation, owner gating, Save & Add Another |
+| `pet-details-popup.spec.ts` | `PetDetailsPopup` renders weight (string from API) without crashing; null-weight em-dash placeholder |
+| `schedule.spec.ts` | Schedule creation, conflict detection, status changes, multi-pet, same-pet overlap |
 | `language.spec.ts` | Language switching, translation loading, persistence |
-| `navigation.spec.ts` | Desktop/mobile nav, route protection, admin visibility |
+| `language-per-user.spec.ts` | Per-user language preference vs. device-wide localStorage fallback |
+| `navigation.spec.ts` | Desktop/mobile nav, route protection, admin visibility, profile menu |
 | `settings.spec.ts` | Settings CRUD, incompatibility rules |
-| `helpers.ts` | Shared test utilities (login helpers, selectors, fixtures) |
+| `notifications.spec.ts` | Bell badge, full page, mark-read, forward-to-WhatsApp tracking |
+| `password.spec.ts` + `password-strength.spec.ts` | Password change flow + strength meter scoring |
+| `admin-user-management.spec.ts` | Admin user CRUD, filters, bulk select, role promote/demote, hard delete |
+| `admin-activity-feed.spec.ts` | `/admin/activity` cross-entity timeline + filters |
+| `feature-flag-ui-system-and-activity-logs.spec.ts` | Flag-gating of `/ui-system` and `/admin/activity` |
+| `logo-shape.spec.ts` | Logo shape toggle (square / circle), first-paint cache hydration |
+| `accessibility.spec.ts` | axe-core scan over the 10 main routes (login, register, /, pets, owners, settings, profile, admin/users, admin/activity, vets) |
+| `helpers.ts` | Shared test utilities — `setupAuthAndLanguage`, `createOwnerViaApi`, `createPetViaApi`, `createScheduleViaApi`, `mockI18nEndpoints`, `stubFeatureFlags`, etc. |
 
-Tests are configured via `playwright.config.ts` and can be run with:
+Tests are configured via `playwright.config.ts` (Chromium / Firefox / mobile-chrome projects) and can be run with:
 
 ```bash
 make test-frontend          # Run all E2E tests (headless)
 make test-frontend-debug    # Run with Playwright UI for debugging
+KEEP_E2E_DATA=1 make test-frontend  # Leave the e2e stack up after the run for inspection
 ```
+
+### Accessibility (axe-core)
+
+`frontend/tests/accessibility.spec.ts` adds a Playwright suite that mounts every main route, runs `@axe-core/playwright`, and asserts there are zero `critical` impact violations. `serious` / `moderate` / `minor` are logged in the test report but do not fail the build (the `serious`-tier color-contrast backlog is being burned down through a design-token pass). Threshold escalation is a one-line change once that backlog clears. See [overview.md §20 — Accessibility](../overview.md#20-accessibility) for the higher-level explanation.
 
 ## Build & Deployment
 
@@ -415,4 +451,3 @@ The frontend Dockerfile uses a **multi-stage build**:
 3. **`runner`** stage: Minimal `node:24-alpine` image, copies only the built output and runs `next start`.
 
 In the Docker Compose setup, Traefik routes all requests matching `/*` (except `/api/*` and `/media/*`) to the frontend container on port 3000.
-er on port 3000.

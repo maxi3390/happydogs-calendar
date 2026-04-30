@@ -317,6 +317,73 @@ Compatibility logic lives in `Pet.is_compatible_with(other_pet)` on the domain m
 - **`Schedule.check_conflicts()`** finds all overlapping schedules via `get_overlapping_schedules()`, then runs `is_compatible_with()` for each pair.
 - **`ScheduleSerializer`** includes a computed `conflicts` field that calls `check_conflicts()` on every read, so the frontend always sees current conflict data.
 - **Conflicts are NON-BLOCKING**: schedules are **always created** regardless of conflicts. The API returns conflict information as **warnings**, not errors. The frontend can display these warnings but the booking is never rejected based on compatibility.
+- **Conflict warnings carry i18n keys**, not raw English text. Each warning is `(rule_key, kwargs)` (e.g. `('pet.compat.aggressive', {'pet_a': 'Bandit', 'pet_b': 'Luna'})`); the frontend resolves the key against the active translation table.
+
+---
+
+## Audit Log
+
+The backend wires `django-simple-history` against every domain model so every create/update/delete is captured with author, timestamp, and field-level diff:
+
+- **Tracked models**: `Pet`, `Owner`, `MedicalNote`, `Vaccination`, `Document`, `Schedule`, `Vet`, `NurserySetting`, `FeatureFlag`.
+- **History table** lives next to the original (e.g. `pets_historicalpet`) and is populated by signal-driven middleware (`audit_log/middleware.py`) that resolves the request user via JWT.
+- **Per-entity history endpoints** are provided by `audit_log.views.HistoryViewSetMixin`; the route pattern is `<entity>/<id>/history/` (`/api/pets/<id>/history/`, `/api/owners/<id>/history/`, etc.). Each event in the response includes `id`, `history_type` (one of `+`, `~`, `-` for create/update/delete), `history_user`, `history_date`, and a `changes` array describing field-level deltas.
+- **Cross-entity feed endpoint**: `GET /api/audit/activity/?since=<iso>&entity=<name>&action=<+|~|->&user=<id>&page=<n>` powers the admin activity timeline (`/admin/activity` on the frontend). Admin-only.
+- **Out of scope of the audit trail**: user account changes (handled by Django's auth signals), data-portability imports (logged via the export manifest), and the audit log itself.
+
+---
+
+## Notifications
+
+Daily reminder system implemented in the `notifications/` app:
+
+- **Model**: `Notification` (per-user) with fields `user`, `kind`, `title`, `body`, `payload` (JSON), `read_at`, `forwarded_at`, `created_at`. Also `NotificationCron` (singleton) holds the configured run-time.
+- **Generator**: `python manage.py generate_notifications` queries today's schedules, picks the active staff users (`is_active=True`, `last_login` within `NOTIFICATIONS_ACTIVE_USER_WINDOW_DAYS = 30` of today), and writes one `Notification` row per (user × event). The command is idempotent — re-running on the same day creates no duplicates because rows are upserted by `(user, kind, payload_signature, date)`.
+- **Cron service**: `notification-cron` (Compose) is a long-running scheduler that polls `NotificationCron.run_time` once a minute and fires the management command when the wall clock matches. Sharing the backend image keeps the model and translation imports identical.
+- **Email delivery**: when `EMAIL_BACKEND` is the SMTP backend, the generator also sends emails to each user. The default is `django.core.mail.backends.console.EmailBackend`; the cron emits a one-shot warning at startup if it boots with the console backend AND the `notifications` flag is on, so silent prod-on-stdout isn't invisible.
+- **Endpoints**:
+    - `GET /api/notifications/` — list current user's notifications (paginated, newest first).
+    - `POST /api/notifications/<id>/mark_read/` — flip `read_at` to now.
+    - `POST /api/notifications/<id>/forward/` — set `forwarded_at` and bump the bell-icon counter for the *other* staff users (so they see the message has already been passed along).
+    - `GET /api/notifications/unread_count/` — minimal endpoint for the bell badge.
+- **Feature-flag gating**: when the `notifications` flag is off, the cron skips its tick and the frontend hides the bell icon and `/notifications` page. Existing rows are preserved.
+
+---
+
+## Feature Flags
+
+Runtime toggles backed by a small singleton-style table:
+
+- **Model**: `FeatureFlag` with fields `key`, `enabled` (bool), `description`, `updated_at`. Seeded by data migration; new flags land via subsequent migrations.
+- **Endpoints**:
+    - `GET /api/feature-flags/` — `AllowAny` (the login page must read the catalogue to display only the languages a deployment serves).
+    - `PATCH /api/feature-flags/<key>/` — admin-only; toggles the `enabled` field.
+- **Seeded flags**: `multiday_schedule`, `custom_pet_species`, `vet_management`, `medical_notes`, `data_backup`, `compatibility_warnings`, `notifications`, `ui_system`, `activity_logs`, `deworming_tracking`. Each flag's effect is documented in `openspec/specs/backend/feature-flags/spec.md`.
+- **Gating contract**: flags hide UI surfaces but **never remove tables, migrations, or endpoints**. Toggling is a single DB write, not a redeploy.
+
+---
+
+## Data Portability
+
+JSON / ZIP export + atomic import for the operator's own data:
+
+- `GET /api/data-portability/export/` — JSON manifest + every domain row as a flat object. Auth required.
+- `GET /api/data-portability/export/?format=zip` — same as above plus the entire `media/` directory zipped in.
+- `POST /api/data-portability/import/` — multipart upload of a JSON or ZIP. The whole import runs inside a single `transaction.atomic()`; any per-row error rolls back the entire operation. Returns a per-entity counter so the operator can verify what arrived.
+- **Scope**: domain data only — owners, pets, schedules, vets, vaccinations, medical notes, documents, settings, feature flags. User accounts and the audit history are explicitly **excluded** (a backup of the data, not of the runtime state).
+
+---
+
+## File Storage
+
+The backend's file storage backend is environment-driven so the same image runs against three modes:
+
+- **Filesystem (default)**: `django.core.files.storage.FileSystemStorage` writes to `MEDIA_ROOT = backend/media/`. Static asset behavior unchanged.
+- **S3-compatible (opt-in)**: when `S3_ENDPOINT_URL` + `S3_ACCESS_KEY_ID` + `S3_SECRET_ACCESS_KEY` + `S3_BUCKET_NAME` are all set + non-empty, `STORAGES['default']` is rewired to `storages.backends.s3boto3.S3Boto3Storage` (from `django-storages[s3]`). Optional knobs: `S3_PUBLIC_ENDPOINT_URL` for behind-Traefik public URLs, `S3_REGION_NAME`, `S3_ADDRESSING_STYLE` (`path` for Garage/MinIO, `virtual` for AWS), `S3_QUERYSTRING_AUTH` (presigned URLs).
+- **Bundled Garage**: `docker compose --profile s3 up -d garage` brings up a single-node Garage 1.0.1 instance on the `proxy` network. `make s3-init` provisions bucket + key idempotently using the bundled `garage` CLI (the script handles the one-shot `layout assign` step Garage 1.0 requires before any bucket op works).
+- **Half-applied config**: when only some `S3_*` vars are set, the backend falls back to filesystem and emits a startup warning naming the missing var. This is enforced in `_build_storages_config()` (`backend/nursery/settings.py:117`).
+
+The same `Pet.profile_picture`, `Document.file`, `NurserySetting.logo`, etc. fields work transparently across all three modes — there's one storage abstraction.
 
 ---
 
@@ -410,20 +477,55 @@ Compatibility logic lives in `Pet.is_compatible_with(other_pet)` on the domain m
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/users/` | List all users |
+| `GET` | `/api/users/` | List all users (filters: `role`, `is_active`, `search`) |
 | `GET` | `/api/users/{id}/` | Get user details |
-| `PATCH` | `/api/users/{id}/` | Update user (role, etc.) |
-| `DELETE` | `/api/users/{id}/` | Delete user |
+| `PATCH` | `/api/users/{id}/` | Update user (role, `is_active`, etc.) — promote/demote admin via the `role` field |
+| `POST` | `/api/users/{id}/set_password/` | Admin password reset — sets a new password without requiring the current one |
+| `DELETE` | `/api/users/{id}/` | Hard-delete user (UI requires typed confirmation; cascades to authored audit-log entries) |
 | `GET` | `/api/users/me/` | Get current authenticated user |
+| `POST` | `/api/users/bulk/deactivate/` | Bulk deactivate by `ids` array (operator may not deactivate themselves) |
+| `POST` | `/api/users/bulk/reactivate/` | Bulk reactivate by `ids` array |
+| `POST` | `/api/users/bulk/delete/` | Bulk delete by `ids` array (UI gates with typed confirmation) |
 
 ### Nursery Settings — `/api/settings/`
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/settings/` | Get nursery settings (daily booking limit, logo URL) |
-| `PUT` / `PATCH` | `/api/settings/update/` | Update nursery settings |
+| `GET` | `/api/settings/` | Get nursery settings (daily booking limit, logo URL, logo shape) |
+| `PUT` / `PATCH` | `/api/settings/update/` | Update nursery settings (including `logo_shape: 'square' \| 'circle'`) |
 | `POST` | `/api/settings/upload_logo/` | Upload or replace system logo (multipart, JPEG/PNG/GIF/WEBP, max 5 MB) |
 | `DELETE` | `/api/settings/delete_logo/` | Remove the current system logo |
+
+### Feature Flags — `/api/feature-flags/`
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/feature-flags/` | List flag catalogue (`AllowAny` — login page must read this before sign-in) |
+| `PATCH` | `/api/feature-flags/{key}/` | Toggle a flag's `enabled` field (admin only) |
+
+### Notifications — `/api/notifications/`
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/notifications/` | List the signed-in user's notifications, newest first |
+| `GET` | `/api/notifications/unread_count/` | Bell-badge endpoint — returns `{count: N}` |
+| `POST` | `/api/notifications/{id}/mark_read/` | Stamp `read_at = now()` |
+| `POST` | `/api/notifications/{id}/forward/` | Stamp `forwarded_at` and signal sibling staff via the bell counter |
+
+### Audit Log — `/api/audit/` and entity-scoped sub-routes
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/audit/activity/` | Cross-entity timeline (admin only). Filters: `since`, `entity`, `action`, `user`, `page` |
+| `GET` | `/api/{entity}/{id}/history/` | Per-entity history (works for `pets`, `owners`, `medical-notes`, `vaccinations`, `documents`, `schedules`, `vets`, `feature-flags`, `settings`) |
+
+### Data Portability — `/api/data-portability/`
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/data-portability/export/` | JSON export (manifest + every domain row). Auth required. |
+| `GET` | `/api/data-portability/export/?format=zip` | ZIP export (JSON + entire `media/` directory) |
+| `POST` | `/api/data-portability/import/` | Atomic import — JSON or ZIP multipart body. Per-row errors rollback the whole transaction. |
 
 ### Translations
 

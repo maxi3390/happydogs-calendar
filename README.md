@@ -78,21 +78,68 @@ Consistent navigation across all pages:
 
 ### User Authentication & RBAC
 Complete authentication system with role-based access control:
-- **JWT Authentication**: Secure token-based authentication with access/refresh tokens
+- **JWT Authentication**: Secure token-based authentication with access/refresh tokens (60-min access / 7-day refresh, rotation + blacklist)
 - **User Roles**: Admin and User roles with different permission levels
 - **Registration**: New user signup with email validation
 - **Login/Logout**: Secure session management with token blacklisting
 - **Profile Management**: View and update user profile information
-- **Password Change**: Secure password update functionality
-- **Admin Panel**: Admin users can manage all users and modify roles
+- **Password Change**: `PUT /api/auth/change-password/` for the signed-in user
+- **Admin Password Reset**: `POST /api/users/<id>/set_password/` lets admins reset another user's password
+- **Password-strength meter**: Live zxcvbn-style scoring on `/profile` and on the admin reset modal
+- **Admin User Management**: Filters, bulk select, deactivation, deletion, role promote/demote on `/admin/users`
+
+### Audit Log
+Per-entity history wired via `django-simple-history`:
+- **Tracked models**: Pet, Owner, MedicalNote, Vaccination, Document, Schedule, Vet, NurserySetting, FeatureFlag
+- **Per-entity history endpoints**: `GET /api/pets/<id>/history/` and equivalents return create / update / delete events with author, timestamp, and field-level diff
+- **Admin activity feed**: cross-entity timeline at `/admin/activity` (gated by the `activity_logs` feature flag)
+
+### Notifications
+Daily reminder system for staff:
+- **Cron-driven**: a long-running `notification-cron` service polls the nursery's configured run-time once per minute and fires `python manage.py generate_notifications`
+- **Per-user fan-out**: notifications are written to recently-active users only (defaults to the last 30 days)
+- **In-app + optional email**: bell icon with unread count, full `/notifications` page, optional SMTP via `EMAIL_BACKEND` env vars
+- **Forwarded tracking**: deep-link to the owner's WhatsApp via `api.whatsapp.com/send` and record `forwarded_at` so other staff see who already passed the message along
+
+### File Storage
+Two backends, switchable by environment variable:
+- **Filesystem** (default): uploads land under `backend/media/`. Backup with rsync.
+- **S3-compatible** (opt-in): set `S3_ENDPOINT_URL`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET_NAME` to switch to any S3 implementation (AWS, MinIO, Backblaze, Garage)
+- **Bundled Garage** (opt-in): `docker compose --profile s3 up -d` brings up a single-node Garage on the same host; `make s3-init` provisions bucket + key idempotently
+- A half-applied S3 config (some vars set, some empty) falls back to filesystem with a startup warning
+
+### Feature Flags
+Six runtime toggles editable from `/admin/feature-flags/`:
+`multiday_schedule`, `custom_pet_species`, `vet_management`, `medical_notes`, `data_backup`, `compatibility_warnings`, `notifications`, `ui_system`, `activity_logs`, `deworming_tracking`. Tables and migrations always exist; flipping a flag is a single DB write, not a redeploy.
+
+### Data Portability
+- **Export**: `GET /api/data-portability/export/` (JSON) or `?format=zip` (full ZIP including `media/`)
+- **Import**: `POST /api/data-portability/import/` with multipart upload; atomic — full rollback on any error
+- Scope: domain data (owners, pets, schedules, vets, vaccinations, medical notes, documents, settings, feature flags). Auth users and audit history NOT exported.
+
+### Accessibility
+- WCAG 2.1 AA target enforced by `frontend/tests/accessibility.spec.ts` (axe-core via Playwright)
+- 10 routes scanned in CI; tests hard-fail on `critical` violations and log `serious` / `moderate` / `minor` for follow-up
+
+### Tooling
+- **`make init`** sets up a fresh checkout end-to-end (`env` → `volume-ensure` → `build` → `up` → `migrate` → `create-admin`).
+- **`make backup` / `make restore`** for gzipped `pg_dump` / typed-confirmation restore.
+- **`make upgrade`** runs the production-safe pre-pull `pg_dump` → `git pull` → `build` → `up` → `migrate`. `SKIP_BACKUP=1` and `SKIP_PULL=1` available as opt-outs.
+- **`make seed-example-data`** populates a deterministic demo dataset (owners + pets + schedules + vets + multi-day stays + override conflicts).
+- **`make security`** runs the OWASP-Top-10 suite (bandit + pip-audit + npm audit + Django `check --deploy` + gitleaks + opt-in ZAP baseline). Each run lands a `security-reports/<timestamp>/REPORT.md` with `latest/` symlink.
+- **`make test-frontend`** spins up an isolated `db-e2e` + `backend-e2e` + `frontend-e2e` stack (`docker-compose.e2e.yml`) so Playwright never touches your dev DB. `KEEP_E2E_DATA=1` keeps the stack up for inspection.
 
 ## Tech Stack
 
-- **Frontend**: Next.js 15 with React 19, TypeScript, TailwindCSS, Lucide icons
-- **Backend**: Django 5.1 with Django REST Framework
-- **Database**: PostgreSQL 16
-- **Container**: Docker & Docker Compose
-- **Styling**: TailwindCSS with dark mode support
+- **Frontend**: Next.js 16 with React 19, TypeScript, TailwindCSS 3, Lucide icons, date-fns
+- **Backend**: Django 5.1 with Django REST Framework, djangorestframework-simplejwt, drf-spectacular, django-storages, django-simple-history
+- **Database**: PostgreSQL 18 (Alpine)
+- **Reverse proxy**: Traefik 3.6 (with optional Let's Encrypt via Cloudflare DNS-01)
+- **Container runtime**: Docker & Docker Compose (Compose profiles `dev`, `docs`, `s3`)
+- **Frontend container base**: `node:24-alpine`
+- **Optional bundled object storage**: Garage 1.0 (S3-compatible) under the `s3` profile
+- **Testing**: Playwright + axe-core (frontend E2E and accessibility), Django test runner + coverage (backend), bandit + pip-audit + gitleaks + opt-in OWASP ZAP DAST (`make security`)
+- **Styling**: TailwindCSS with `class`-strategy dark mode
 
 ## Quick Start
 
