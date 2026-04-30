@@ -15,6 +15,14 @@ services:
   db-e2e:
     image: postgres:18-alpine
     environment:
+      # Hardcoded literals (NOT ``${VAR:-default}``) on purpose. The
+      # e2e stack must be deterministic regardless of the operator's
+      # ``.env`` — compose reads ``.env`` by default even with
+      # ``-f docker-compose.e2e.yml``, so templating these would let
+      # an operator's POSTGRES_PASSWORD override the e2e creds and
+      # then ``backend-e2e`` (whose creds below are still literal)
+      # would fail to connect. The dev stack in ``docker-compose.yml``
+      # is templated; the e2e stack stays intentionally isolated.
       POSTGRES_DB: nursery
       POSTGRES_USER: nursery
       POSTGRES_PASSWORD: nursery
