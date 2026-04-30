@@ -42,15 +42,20 @@
   - All four required env vars set → `default_storage` resolves to `S3Storage`.
   - None set → `default_storage` resolves to `FileSystemStorage`.
   - Partial (e.g. only `S3_ENDPOINT_URL` set) → `FileSystemStorage` + a warning log.
-- [x] 6.2 Run the full backend suite to verify nothing else regresses. Baseline is 293 tests + 3 new = 296.
+- [x] 6.2 Run the full backend suite to verify nothing else regresses. Baseline is 528 tests + 11 new = 539.
 
 ## 7. Specs
 - [x] 7.1 `openspec/changes/s3-file-storage/specs/backend/file-storage/spec.md` — new capability: storage backend abstraction, env-var contract, fallback rule, URL semantics.
 - [x] 7.2 `openspec/changes/s3-file-storage/specs/tooling/object-storage/spec.md` — new capability: Garage service lifecycle, bootstrap, volume external-ness, optional Traefik routing.
 
 ## 8. Verification
-- [x] 8.1 `tsc --noEmit` unaffected (no frontend changes) — still 0 errors.
-- [x] 8.2 Backend tests — 296 pass.
-- [x] 8.3 Manual: on a clean checkout WITHOUT `S3_*` env vars, upload a profile picture, confirm it lands under `backend/media/profile_pictures/...` as today (regression check).
-- [x] 8.4 Manual: WITH `S3_*` env vars + `docker compose --profile s3 up -d` + `make s3-init`, upload a profile picture, confirm it appears in Garage (`/garage bucket info $S3_BUCKET_NAME` or `aws --endpoint-url $S3_ENDPOINT_URL s3 ls`) and that `profile_picture.url` on the API response points at the public endpoint.
-- [x] 8.5 Manual: remove one required env var and restart the backend — confirm the log says "falling back to filesystem" and uploads still work against the local volume.
+- [x] 8.1 `tsc --noEmit` unaffected (no frontend changes).
+- [x] 8.2 Backend tests — 539 pass (528 baseline + 11 new in `test_storage_backend_selection.py`).
+- [x] 8.3 Backend lint — `flake8` clean.
+- [ ] 8.4 Manual: on a clean checkout WITHOUT `S3_*` env vars, upload a profile picture, confirm it lands under `backend/media/profile_pictures/...` as today (regression check). _(Operator-side verification; no host env on the dev machine to run against.)_
+- [ ] 8.5 Manual: WITH `S3_*` env vars + `docker compose --profile s3 up -d` + `make s3-init`, upload a profile picture, confirm it appears in Garage (`/garage bucket info $S3_BUCKET_NAME` or `aws --endpoint-url $S3_ENDPOINT_URL s3 ls`) and that `profile_picture.url` on the API response points at the public endpoint. _(Operator-side verification; needs Garage secrets in the deployer's `.env`.)_
+- [ ] 8.6 Manual: remove one required env var and restart the backend — confirm the log says "falling back to filesystem" and uploads still work against the local volume. _(Operator-side verification.)_
+
+## 9. Commit
+- [x] Implementation commit on `plan/s3-file-storage` on top of the plan-only commit
+- [x] Merged into master (operator approval received post-review)
