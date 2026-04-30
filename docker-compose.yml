@@ -258,24 +258,32 @@ services:
     image: dxflrs/garage:v1.0.1
     restart: unless-stopped
     environment:
-      # Bootstrap-time secrets pulled from the operator's ``.env``.
-      # Both default to a dev-friendly (empty) value so a misconfigured
-      # ``.env`` is loud rather than insecure: Garage refuses to start
-      # without an RPC secret.
-      - GARAGE_RPC_SECRET=${GARAGE_RPC_SECRET:-}
-      - GARAGE_ADMIN_TOKEN=${GARAGE_ADMIN_TOKEN:-}
-      - GARAGE_METRICS_TOKEN=${GARAGE_METRICS_TOKEN:-}
+      # Dev-default Garage secrets so ``docker compose --profile s3 up``
+      # works on a fresh checkout without the operator having to
+      # generate them with ``openssl rand`` first. Production
+      # deployments MUST override every one of these in ``.env`` —
+      # they're committed to the repo, so anyone with code access
+      # could read them.
+      #
+      # ``GARAGE_RPC_SECRET`` is required by Garage to be a 64-hex-char
+      # value (256-bit) — Garage refuses to start otherwise.
+      - GARAGE_RPC_SECRET=${GARAGE_RPC_SECRET:-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadead}
+      - GARAGE_ADMIN_TOKEN=${GARAGE_ADMIN_TOKEN:-happy-calendar-dev-admin-token-change-in-production}
+      - GARAGE_METRICS_TOKEN=${GARAGE_METRICS_TOKEN:-happy-calendar-dev-metrics-token-change-in-production}
     volumes:
       - garage_meta:/var/lib/garage/meta
       - garage_data:/var/lib/garage/data
       - ./infra/garage/garage.toml:/etc/garage.toml:ro
     healthcheck:
-      # Garage exposes a minimal health endpoint on the admin port; ``wget``
-      # is part of the Alpine-based base image.
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3903/health"]
+      # The Garage image is distroless — no ``wget`` / ``curl`` / shell.
+      # The bundled ``/garage`` CLI is the only thing we can call, and
+      # ``status`` returns 0 only when the daemon is up and the local
+      # node is reachable. Authenticated against the admin token.
+      test: ["CMD", "/garage", "status"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
     labels:
       # Traefik routing is OFF unless the operator opts in via
       # ``S3_TRAEFIK_ENABLED=true``. The labels stay committed so flipping
