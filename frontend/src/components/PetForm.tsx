@@ -162,7 +162,6 @@ export default function PetForm({ pet, lockedOwnerId, onClose, onSave, onSaveAnd
     <FormModal
       titleId="pet-form-title"
       title={pet ? t('pet.editPet') : t('pet.addPet')}
-      formId="pet-form"
       onSubmit={handleSubmit}
       submitLabel={pet ? t('pet.editPet') : t('pet.addPet')}
       loading={loading}

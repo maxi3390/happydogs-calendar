@@ -10,10 +10,6 @@ export interface FormModalProps {
   titleId: string;
   /** Header title (already translated). */
   title: string;
-  /** Stable id used by the underlying ``<form>`` element. The submit button
-   * lives in Modal's footer (outside the form) and is wired back to it via
-   * ``form={formId}``. */
-  formId: string;
   /** Submit handler. Receives the form event; FormModal does NOT call
    * ``preventDefault`` for you (consumers usually do their own validation
    * before kicking off the async operation). */
@@ -43,12 +39,12 @@ export interface FormModalProps {
 }
 
 /**
- * Modal that wraps its body in a ``<form>`` and renders a standard
- * Cancel + Save footer. The submit button is rendered in Modal's footer slot
- * (outside the form) and bound back to the form via the HTML ``form="..."``
- * attribute, which keeps the visual layout identical to the previous
- * "everything inside one ``<form>``" pattern while letting Modal own the
- * footer band.
+ * Modal that wraps its body + footer in a single ``<form>`` and renders a
+ * standard Cancel + Save footer. The form spans both regions via Modal's
+ * ``bodyAndFooterWrapper`` prop, so the submit button is genuinely a
+ * descendant of the form — no ``form="<id>"`` indirection — which means
+ * the existing ``form.getByRole('button', { name: 'Save' })`` Playwright
+ * selectors keep working.
  *
  * Pair with ``useFormSubmit`` from ``src/hooks/useFormSubmit`` for the
  * loading/error state management.
@@ -56,7 +52,6 @@ export interface FormModalProps {
 export default function FormModal({
   titleId,
   title,
-  formId,
   onSubmit,
   submitLabel,
   savingLabel,
@@ -69,7 +64,6 @@ export default function FormModal({
   children,
 }: FormModalProps) {
   const { t } = useTranslation();
-  const spaceY = size === 'lg' ? 'space-y-6' : 'space-y-4';
 
   return (
     <Modal
@@ -83,28 +77,29 @@ export default function FormModal({
             {t('common.cancel')}
           </Button>
           {extraActions}
-          <Button type="submit" form={formId} variant="primary" disabled={loading || submitDisabled}>
+          <Button type="submit" variant="primary" disabled={loading || submitDisabled}>
             {loading ? (savingLabel ?? t('common.saving')) : submitLabel}
           </Button>
         </>
       }
+      bodyAndFooterWrapper={(inner) => (
+        <form onSubmit={onSubmit}>{inner}</form>
+      )}
     >
-      <form id={formId} onSubmit={onSubmit} className={spaceY}>
-        {error && (
-          // ``role="alert"`` makes screen readers announce the message
-          // when it appears (and when it changes between submit attempts);
-          // without it, the user has to manually navigate to the error
-          // div to discover the form failed.
-          <div
-            role="alert"
-            className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300"
-          >
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <span className="text-sm">{error}</span>
-          </div>
-        )}
-        {children}
-      </form>
+      {error && (
+        // ``role="alert"`` makes screen readers announce the message
+        // when it appears (and when it changes between submit attempts);
+        // without it, the user has to manually navigate to the error
+        // div to discover the form failed.
+        <div
+          role="alert"
+          className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300"
+        >
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <span className="text-sm">{error}</span>
+        </div>
+      )}
+      {children}
     </Modal>
   );
 }

@@ -63,7 +63,6 @@ export default function VetForm({ vet, onClose, onSave }: VetFormProps) {
     <FormModal
       titleId="vet-form-title"
       title={vet ? t('vet.editVet') : t('vet.addVet')}
-      formId="vet-form"
       onSubmit={handleSubmit}
       submitLabel={vet ? t('vet.editVet') : t('vet.addVet')}
       loading={loading}

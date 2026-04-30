@@ -25,6 +25,16 @@ export interface ModalProps {
   children: React.ReactNode;
   /** Footer content (typically a row of Buttons). Rendered inside a ``border-t`` band. */
   footer?: React.ReactNode;
+  /** Optional wrapper around the body + footer regions. Lets ``FormModal``
+   * render a single ``<form>`` that contains BOTH the fields (in the body)
+   * and the Cancel/Save buttons (in the footer), so a ``form.getByRole``
+   * Playwright query still finds the submit button — and so the
+   * surrounding form is the only element responsible for the submit
+   * semantics, no ``form="<id>"`` indirection. The wrapper receives the
+   * body + footer as its children and is responsible for rendering them
+   * both (typically passing through). Defaults to a passthrough fragment
+   * for the read-only details modal. */
+  bodyAndFooterWrapper?: (children: React.ReactNode) => React.ReactNode;
 }
 
 /**
@@ -43,6 +53,7 @@ export default function Modal({
   onClose,
   children,
   footer,
+  bodyAndFooterWrapper,
 }: ModalProps) {
   const { t } = useTranslation();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -96,13 +107,25 @@ export default function Modal({
           </button>
         </div>
 
-        <div className={`${padding} ${size === 'lg' ? 'space-y-6' : 'space-y-4'}`}>{children}</div>
-
-        {footer && (
-          <div className={`flex justify-end gap-3 ${padding} border-t border-border`}>
-            {footer}
-          </div>
-        )}
+        {(() => {
+          const body = (
+            <div className={`${padding} ${size === 'lg' ? 'space-y-6' : 'space-y-4'}`}>
+              {children}
+            </div>
+          );
+          const footerNode = footer && (
+            <div className={`flex justify-end gap-3 ${padding} border-t border-border`}>
+              {footer}
+            </div>
+          );
+          const inner = (
+            <>
+              {body}
+              {footerNode}
+            </>
+          );
+          return bodyAndFooterWrapper ? bodyAndFooterWrapper(inner) : inner;
+        })()}
       </div>
     </div>
   );

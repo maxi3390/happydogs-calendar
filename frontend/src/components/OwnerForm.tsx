@@ -91,7 +91,6 @@ export default function OwnerForm({ owner, onClose, onSave }: OwnerFormProps) {
     <FormModal
       titleId="owner-form-title"
       title={owner ? t('owner.editOwner') : t('owner.addOwner')}
-      formId="owner-form"
       onSubmit={handleSubmit}
       submitLabel={owner ? t('owner.editOwner') : t('owner.addOwner')}
       loading={loading}
