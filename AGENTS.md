@@ -284,7 +284,7 @@ Generate `.env` once with `make env` (interactive, safe to re-run, never overwri
 | `CF_DNS_API_TOKEN`    | No                       | Production-only. Cloudflare API token for Let's Encrypt DNS-01 challenge. Blank for local dev. |
 | `ACME_EMAIL`          | No                       | Production-only. Email for Let's Encrypt certificate notifications. Blank for local dev. |
 | `S3_ENDPOINT_URL`<br>`S3_ACCESS_KEY_ID`<br>`S3_SECRET_ACCESS_KEY`<br>`S3_BUCKET_NAME` | No (all four together) | Opt in to S3-compatible file storage. All four must be set + non-empty for the backend to switch off filesystem mode. Half-applied → falls back to filesystem with a warning. See the "File storage" section below for the full contract. |
-| `GARAGE_RPC_SECRET`<br>`GARAGE_ADMIN_TOKEN`<br>`GARAGE_METRICS_TOKEN` | No (only when running `--profile s3`) | Internal secrets for the bundled Garage instance. Generate with `openssl rand -hex 32`. Required only when bringing up the bundled Garage; ignored when pointing at an external S3 service. |
+| `GARAGE_RPC_SECRET`<br>`GARAGE_ADMIN_TOKEN`<br>`GARAGE_METRICS_TOKEN` | No (committed dev defaults work for development) | Internal secrets for the bundled Garage instance. Dev defaults are baked into `docker-compose.yml`, so `--profile s3 up -d` works on a fresh checkout without manual secret generation. **Production deployments MUST override these in `.env`** — the committed defaults are public. Generate with `openssl rand -hex 32`. Ignored when pointing at an external S3 service. |
 
 Full per-variable guidance lives as comments in `.env.example` itself; `make env` reads those comments and shows them at each prompt. The invariants are tracked in `openspec/specs/tooling/env-bootstrap/`.
 
@@ -315,7 +315,7 @@ A half-applied env update (e.g. `S3_ENDPOINT_URL` set but credentials missing) *
 
 The repo ships a single-node [Garage](https://garagehq.deuxfleurs.fr/) instance under the `s3` Compose profile. Operators who want self-hosted object storage in one machine:
 
-1. Generate fresh secrets and fill `.env` with the `S3_*` and `GARAGE_*` keys (see `.env.example` for the full list and `openssl rand` recipes).
+1. Pick an `S3_BUCKET_NAME`, `S3_ACCESS_KEY_ID`, and `S3_SECRET_ACCESS_KEY` and set them in `.env`. (The `GARAGE_*` internal secrets have committed dev defaults, so dev environments don't need to set them; production deployments **must** override them per the comments in `.env.example`.)
 2. Bring up Garage: `docker compose --profile s3 up -d`.
 3. Bootstrap bucket + key: `make s3-init` (idempotent; safe to re-run).
 4. Restart the backend so it picks up the new env: `make restart`.

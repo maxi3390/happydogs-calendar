@@ -49,6 +49,27 @@ fi
 
 echo "[s3-init] Garage is up. Bootstrapping bucket=$S3_BUCKET_NAME key=$S3_ACCESS_KEY_ID..."
 
+# Step 1.5 — assign single-node layout if the cluster has none. Garage
+# 1.0 requires a layout before bucket / key operations work; without
+# one, every CLI command returns "Could not reach quorum". The layout
+# stays in metadata after the first apply, so subsequent runs detect
+# "NO ROLE ASSIGNED" missing and skip this step.
+if garage status 2>&1 | grep -q 'NO ROLE ASSIGNED'; then
+  NODE_ID=$(garage status 2>&1 | awk '/^[a-f0-9]+/ { print $1; exit }')
+  if [[ -z "$NODE_ID" ]]; then
+    echo "[s3-init] ERROR: could not parse node id from 'garage status'." >&2
+    exit 1
+  fi
+  # Node id has to come BEFORE the multi-value ``--tag`` flag,
+  # otherwise the CLI parser reads it as a tag value and the
+  # ``<node-ids>...`` positional ends up empty.
+  garage layout assign "$NODE_ID" --capacity 100G --zone dc1 --tag local >/dev/null
+  garage layout apply --version 1 >/dev/null
+  echo "[s3-init]   single-node layout assigned (100G, zone=dc1)."
+else
+  echo "[s3-init]   layout already assigned — skipping."
+fi
+
 # Step 2 — create bucket if missing.
 if garage bucket info "$S3_BUCKET_NAME" &>/dev/null; then
   echo "[s3-init]   bucket '$S3_BUCKET_NAME' already exists — skipping."
