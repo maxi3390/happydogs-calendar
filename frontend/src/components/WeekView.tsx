@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay } from 'date-fns';
 import { ChevronLeft, ChevronRight, AlertTriangle, CalendarDays, CalendarRange } from 'lucide-react';
 import { api, Schedule } from '@/lib/api';
@@ -8,6 +8,7 @@ import ScheduleDetailsPopup from './ScheduleDetailsPopup';
 import { useTranslation } from '@/lib/translations';
 import { getDateLocale } from '@/lib/dateLocale';
 import { translateSpecies, translateTemperament } from '@/domain/pets/labels';
+import { useResourceList } from '@/hooks/useResourceList';
 
 interface WeekViewProps {
   selectedDate: Date;
@@ -52,32 +53,21 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
   const { t, language } = useTranslation();
   const dateLocale = getDateLocale(language);
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(selectedDate));
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [loading, setLoading] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
 
   const weekEnd = endOfWeek(currentWeekStart);
   const weekDays = eachDayOfInterval({ start: currentWeekStart, end: weekEnd });
 
-  useEffect(() => {
-    const fetchSchedules = async () => {
-      setLoading(true);
-      try {
-        const start = format(currentWeekStart, 'yyyy-MM-dd');
-        const end = format(weekEnd, 'yyyy-MM-dd');
-        const data = await api.schedules.list({ start_date: start, end_date: end });
-        setSchedules(data);
-      } catch (error) {
-        console.error('Failed to fetch schedules:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSchedules();
-    // `refreshTrigger` re-runs the fetch after the parent records a
-    // schedule mutation (create / edit / delete). Same pattern as the
-    // monthly Calendar component.
-  }, [currentWeekStart, refreshTrigger]);
+  // ``refreshTrigger`` re-runs the fetch after the parent records a
+  // schedule mutation (create / edit / delete). Same pattern as the
+  // monthly Calendar component.
+  const { items: schedules, loading } = useResourceList<Schedule>(
+    () => api.schedules.list({
+      start_date: format(currentWeekStart, 'yyyy-MM-dd'),
+      end_date: format(weekEnd, 'yyyy-MM-dd'),
+    }),
+    [currentWeekStart, refreshTrigger],
+  );
 
   const goToPreviousWeek = () => setCurrentWeekStart(subWeeks(currentWeekStart, 1));
   const goToNextWeek = () => setCurrentWeekStart(addWeeks(currentWeekStart, 1));
@@ -194,6 +184,7 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
             <div className="flex gap-2 justify-center">
               <button
                 onClick={goToPreviousWeek}
+                aria-label={t('calendar.previousWeek')}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
               >
                 <ChevronLeft className="w-5 h-5" />
@@ -206,6 +197,7 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
               </button>
               <button
                 onClick={goToNextWeek}
+                aria-label={t('calendar.nextWeek')}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
               >
                 <ChevronRight className="w-5 h-5" />

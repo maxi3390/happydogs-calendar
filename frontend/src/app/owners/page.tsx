@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/Input';
 import { useTranslation } from '@/lib/translations';
 import { useFeatureFlag } from '@/lib/feature-flags';
 import { translateSpecies, translateTemperament, translateSize } from '@/domain/pets/labels';
+import { useSearchableList } from '@/hooks/useSearchableList';
 import { withAuth } from '@/lib/withAuth';
 
 function OwnersPage() {
@@ -23,7 +24,6 @@ function OwnersPage() {
   const vetManagementEnabled = useFeatureFlag('vet_management');
   const [owners, setOwners] = useState<Owner[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [showOwnerForm, setShowOwnerForm] = useState(false);
   const [editingOwner, setEditingOwner] = useState<Owner | undefined>();
   const [expandedOwner, setExpandedOwner] = useState<number | null>(null);
@@ -112,11 +112,10 @@ function OwnersPage() {
     setShowScheduleForm(true);
   };
 
-  const filteredOwners = owners.filter(owner => {
-    const fullName = `${owner.first_name} ${owner.last_name}`.toLowerCase();
-    const search = searchTerm.toLowerCase();
-    return fullName.includes(search) || owner.email.toLowerCase().includes(search) || owner.phone.includes(search);
-  });
+  const { searchTerm, setSearchTerm, filtered: filteredOwners } = useSearchableList(
+    owners,
+    owner => [`${owner.first_name} ${owner.last_name}`, owner.email, owner.phone],
+  );
 
   const speciesIcons: Record<string, string> = {
     dog: '🐕',

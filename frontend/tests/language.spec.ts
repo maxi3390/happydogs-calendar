@@ -77,17 +77,21 @@ test.describe('Language Switching', () => {
   });
 
   test('should translate calendar view buttons', async ({ page }) => {
-    // Check English buttons first
-    await expect(page.getByRole('button', { name: /month/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /today/i })).toBeVisible();
+    // Anchor-match the toggle button text exactly so we don't pick up the
+    // ``Previous month`` / ``Next month`` aria-labels on the navigation
+    // chevrons (which were added for screen-reader users in the a11y
+    // pass and now ALSO contain the word "month").
+    await expect(page.getByRole('button', { name: /^month$/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^today$/i })).toBeVisible();
 
     // Switch to Spanish
     await languageSwitcher(page).selectOption('es');
     await page.waitForTimeout(500);
 
-    // Buttons should be in Spanish
-    await expect(page.getByRole('button', { name: /mes/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /hoy/i })).toBeVisible();
+    // Buttons should be in Spanish — same anchor-match avoids the
+    // ``Mes anterior`` / ``Mes siguiente`` chevron labels.
+    await expect(page.getByRole('button', { name: /^mes$/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^hoy$/i })).toBeVisible();
   });
 
   test('should translate navigation links', async ({ page }) => {

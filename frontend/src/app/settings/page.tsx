@@ -518,6 +518,7 @@ function SettingsPage() {
                       onClick={() => handleDeleteRule(rule.id)}
                       variant="ghost"
                       size="icon"
+                      aria-label={t('settings.deleteRule')}
                     >
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
@@ -645,6 +646,8 @@ function SettingsPage() {
                         variant="ghost"
                         size="icon"
                         title={vaxType.enabled ? t('settings.enabled') : t('settings.disabled')}
+                        aria-label={vaxType.enabled ? t('settings.disable') : t('settings.enable')}
+                        aria-pressed={vaxType.enabled}
                       >
                         {vaxType.enabled ? <ToggleRight className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /> : <ToggleLeft className="w-5 h-5 text-muted-foreground" />}
                       </Button>
@@ -652,6 +655,7 @@ function SettingsPage() {
                         onClick={() => handleDeleteVaxType(vaxType.id)}
                         variant="ghost"
                         size="icon"
+                        aria-label={t('settings.deleteVaxType')}
                       >
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>

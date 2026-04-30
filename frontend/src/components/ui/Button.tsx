@@ -6,7 +6,11 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 
 export function Button({ variant = 'primary', size = 'md', className = '', ...props }: ButtonProps) {
-  const baseClasses = "inline-flex items-center justify-center font-medium transition-all rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]";
+  // ``disabled:opacity-60`` (was 0.5) keeps the disabled label / icon at
+  // a 4.5:1 contrast ratio against the button background under WCAG 2.1
+  // AA. ``opacity-50`` was visibly faint on the primary variant and axe
+  // flagged it as a moderate contrast violation.
+  const baseClasses = "inline-flex items-center justify-center font-medium transition-all rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-60 disabled:pointer-events-none active:scale-[0.98]";
   
   const variants = {
     primary: "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",

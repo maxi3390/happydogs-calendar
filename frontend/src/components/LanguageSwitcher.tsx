@@ -4,7 +4,7 @@ import { useTranslation, Language } from '@/lib/translations';
 import { Globe } from 'lucide-react';
 
 export default function LanguageSwitcher() {
-  const { language, setLanguage, availableLanguages } = useTranslation();
+  const { language, setLanguage, availableLanguages, t } = useTranslation();
 
   return (
     <div className="relative inline-flex items-center">
@@ -12,6 +12,7 @@ export default function LanguageSwitcher() {
       <select
         value={language}
         onChange={(e) => setLanguage(e.target.value as Language)}
+        aria-label={t('common.language')}
         className="appearance-none bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg pl-8 pr-8 py-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
       >
         {availableLanguages.map((lang) => (

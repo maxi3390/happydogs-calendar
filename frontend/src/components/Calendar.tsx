@@ -7,6 +7,7 @@ import { api, Schedule } from '@/lib/api';
 import ScheduleDetailsPopup from './ScheduleDetailsPopup';
 import { useTranslation } from '@/lib/translations';
 import { getDateLocale } from '@/lib/dateLocale';
+import { useResourceList } from '@/hooks/useResourceList';
 
 interface CalendarProps {
   onDateSelect: (date: Date) => void;
@@ -74,8 +75,6 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
   const { t, language } = useTranslation();
   const dateLocale = getDateLocale(language);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [loading, setLoading] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set());
 
@@ -108,26 +107,16 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
   const calendarStart = useMemo(() => startOfWeek(monthStart), [monthStart]);
   const calendarEnd = useMemo(() => endOfWeek(monthEnd), [monthEnd]);
 
-  useEffect(() => {
-    const fetchSchedules = async () => {
-      setLoading(true);
-      try {
-        // Fetch over the WHOLE visible window — including the
-        // leading / trailing days from adjacent months — so a
-        // schedule that starts on Mar 30 and ends Apr 5 still
-        // renders its bar in April's first row.
-        const start = format(calendarStart, 'yyyy-MM-dd');
-        const end = format(calendarEnd, 'yyyy-MM-dd');
-        const data = await api.schedules.list({ start_date: start, end_date: end });
-        setSchedules(data);
-      } catch (error) {
-        console.error('Failed to fetch schedules:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSchedules();
-  }, [calendarStart, calendarEnd, refreshTrigger]);
+  // Fetch over the WHOLE visible window — including the leading /
+  // trailing days from adjacent months — so a schedule that starts on
+  // Mar 30 and ends Apr 5 still renders its bar in April's first row.
+  const { items: schedules, loading } = useResourceList<Schedule>(
+    () => api.schedules.list({
+      start_date: format(calendarStart, 'yyyy-MM-dd'),
+      end_date: format(calendarEnd, 'yyyy-MM-dd'),
+    }),
+    [calendarStart, calendarEnd, refreshTrigger],
+  );
 
   // Build calendar grid: every cell is a real Date — no nulls. The
   // out-of-month leading / trailing days are rendered with reduced
@@ -287,6 +276,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
           <div className="flex gap-2 justify-center">
             <button
               onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+              aria-label={t('calendar.previousMonth')}
               className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -303,6 +293,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
             </button>
             <button
               onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+              aria-label={t('calendar.nextMonth')}
               className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
             >
               <ChevronRight className="w-5 h-5" />
@@ -352,7 +343,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                   className={`border-r last:border-r-0 border-gray-100 dark:border-slate-700/50 pt-1 px-0.5 sm:px-1 transition-colors ${
                     inMonth ? 'cursor-pointer hover:bg-muted/50 dark:hover:bg-slate-700/30' : ''
                   } ${isSelected && inMonth ? 'bg-primary/10/50 dark:bg-indigo-900/10' : ''} ${
-                    !inMonth ? 'opacity-30' : ''
+                    !inMonth ? 'opacity-50' : ''
                   }`}
                   // Out-of-month days are visible (so the grid looks
                   // complete) but not clickable for selection — same
@@ -409,7 +400,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                     className={`border-r last:border-r-0 border-gray-100 dark:border-slate-700/50 transition-colors ${
                       inMonth ? 'cursor-pointer hover:bg-muted/30 dark:hover:bg-slate-700/20' : ''
                     } ${isSelected && inMonth ? 'bg-primary/10/50 dark:bg-indigo-900/10' : ''} ${
-                      !inMonth ? 'opacity-30' : ''
+                      !inMonth ? 'opacity-50' : ''
                     }`}
                     style={{ minHeight: `${barAreaPx}px` }}
                   />
@@ -462,6 +453,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                   <button
                     key={`more-${colIdx}`}
                     type="button"
+                    aria-label={t('calendar.more').replace('{count}', String(hiddenCount))}
                     className="absolute text-[10px] sm:text-xs text-muted-foreground font-medium px-1 sm:px-1.5 cursor-pointer hover:text-primary dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-sm bg-card dark:bg-slate-800"
                     style={{
                       left: `${(colIdx / 7) * 100}%`,

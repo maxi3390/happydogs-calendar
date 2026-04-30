@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Edit2, Trash2, Stethoscope, MapPin, Mail, Phone, Search } from 'lucide-react';
 import { api, Vet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
+import { useResourceList } from '@/hooks/useResourceList';
+import { useSearchableList } from '@/hooks/useSearchableList';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
@@ -21,26 +23,15 @@ function addressSummary(vet: Vet): string {
 
 export default function VetList({ onEdit, onAdd, refreshTrigger }: VetListProps) {
   const { t } = useTranslation();
-  const [vets, setVets] = useState<Vet[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const { items: vets, loading, setItems: setVets } = useResourceList<Vet>(
+    () => api.vets.list(),
+    [refreshTrigger],
+  );
+  const { searchTerm, setSearchTerm, filtered: filteredVets } = useSearchableList(
+    vets,
+    vet => [vet.name, vet.email, vet.city],
+  );
   const [deletingId, setDeletingId] = useState<number | null>(null);
-
-  const fetchVets = async () => {
-    setLoading(true);
-    try {
-      const data = await api.vets.list();
-      setVets(data);
-    } catch (error) {
-      console.error('Failed to fetch vets:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchVets();
-  }, [refreshTrigger]);
 
   const handleDelete = async (id: number) => {
     if (!confirm(t('confirmations.deleteVet'))) return;
@@ -56,15 +47,6 @@ export default function VetList({ onEdit, onAdd, refreshTrigger }: VetListProps)
       setDeletingId(null);
     }
   };
-
-  const filteredVets = vets.filter(vet => {
-    const search = searchTerm.toLowerCase();
-    return (
-      vet.name.toLowerCase().includes(search) ||
-      vet.email.toLowerCase().includes(search) ||
-      vet.city.toLowerCase().includes(search)
-    );
-  });
 
   if (loading) {
     return (

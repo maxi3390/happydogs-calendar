@@ -550,7 +550,7 @@ function UsersAdminPage() {
                       data-testid="select-all"
                       checked={allSelected}
                       onChange={toggleSelectAll}
-                      aria-label="Select all"
+                      aria-label={t('admin.selectAll')}
                       className="w-4 h-4 text-primary border-border rounded focus:ring-ring"
                     />
                   </th>
@@ -583,7 +583,7 @@ function UsersAdminPage() {
                           checked={selectedIds.has(user.id)}
                           onChange={() => toggleSelectOne(user.id)}
                           disabled={isSelf}
-                          aria-label={`Select ${user.full_name}`}
+                          aria-label={t('admin.selectUser').replace('{name}', user.full_name)}
                           className="w-4 h-4 text-primary border-border rounded focus:ring-ring disabled:opacity-40"
                         />
                       </td>
