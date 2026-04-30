@@ -242,8 +242,10 @@ Each variable has a dev default baked into `docker-compose.yml`'s `${VAR:-defaul
 | http://localhost:8000/api/docs/  | Swagger UI                         |
 | http://localhost:8000/api/redoc/ | ReDoc                              |
 | http://localhost:8000/api/schema/| OpenAPI 3.0 schema (YAML)          |
-| http://localhost:3001            | Docusaurus docs (`--profile docs`) |
-| http://localhost:5050            | pgAdmin (`--profile dev`)          |
+| https://localhost/docs/          | Docusaurus docs via Traefik (`--profile docs`) |
+| http://localhost:3001/docs/      | Docusaurus docs direct (`--profile docs`) |
+| https://localhost/pgadmin/       | pgAdmin via Traefik (`--profile dev`) |
+| http://localhost:5050/pgadmin/   | pgAdmin direct (`--profile dev`)   |
 
 ---
 

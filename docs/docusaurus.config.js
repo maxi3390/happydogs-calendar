@@ -7,8 +7,16 @@ export default {
 
   // Set the production url of your site here
   url: 'https://happy-calendar-docs.example.com',
-  // Set the /<baseUrl>/ pathname under which your site is served
-  baseUrl: '/',
+  // The pathname under which the site is served. Read from
+  // ``DOCS_BASE_URL`` so the same image can be deployed at the root
+  // (``/``) for direct port-forward access (the historical
+  // ``http://localhost:3001/`` workflow) or behind a sub-path
+  // (``/docs/``) when Traefik proxies it under the main domain
+  // (``https://${DOMAIN}/docs/``). Docusaurus needs this value at
+  // BUILD TIME — it bakes it into every absolute asset URL — so the
+  // env var has to be set before ``npm run build`` runs in the
+  // container's CMD. Trailing slash is required by Docusaurus.
+  baseUrl: process.env.DOCS_BASE_URL || '/',
 
   // GitHub pages deployment config.
   organizationName: 'maximiliano', // Adjust as needed
