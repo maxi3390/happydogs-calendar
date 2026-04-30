@@ -44,7 +44,11 @@
       "sat": "S"
     },
     "more": "+{count} más",
-    "showLess": "Mostrar menos"
+    "showLess": "Mostrar menos",
+    "previousMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "previousWeek": "Semana anterior",
+    "nextWeek": "Semana siguiente"
   },
   "schedule": {
     "title": "Horario",
@@ -109,7 +113,8 @@
     "dayCount": {
       "one": "1 día",
       "other": "{count} días"
-    }
+    },
+    "statusFor": "Estado de {name}"
   },
   "pet": {
     "title": "Mascotas",
@@ -318,7 +323,8 @@
     "dom": "Dom",
     "pets": "Mascotas",
     "kg": "kg",
-    "dismiss": "Descartar"
+    "dismiss": "Descartar",
+    "language": "Idioma"
   },
   "errors": {
     "fetchFailed": "Error al obtener datos",
@@ -386,7 +392,11 @@
     "logoShape": "Forma del logo",
     "logoShapeSquare": "Cuadrado",
     "logoShapeCircle": "Círculo",
-    "logoShapeInfo": "Elegí cómo se recorta el logo en todas las pantallas donde aparece. Cuadrado conserva la relación de aspecto completa de la imagen dentro de un rectángulo con esquinas redondeadas. Círculo recorta la imagen a un círculo y la rellena por completo — recomendado para logos cuadrados o casi cuadrados."
+    "logoShapeInfo": "Elegí cómo se recorta el logo en todas las pantallas donde aparece. Cuadrado conserva la relación de aspecto completa de la imagen dentro de un rectángulo con esquinas redondeadas. Círculo recorta la imagen a un círculo y la rellena por completo — recomendado para logos cuadrados o casi cuadrados.",
+    "deleteRule": "Eliminar regla",
+    "deleteVaxType": "Eliminar tipo de vacuna",
+    "enable": "Habilitar",
+    "disable": "Deshabilitar"
   },
   "admin": {
     "title": "Gestión de Usuarios",

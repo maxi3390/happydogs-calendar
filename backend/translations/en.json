@@ -44,7 +44,11 @@
       "sat": "S"
     },
     "more": "+{count} more",
-    "showLess": "Show less"
+    "showLess": "Show less",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week"
   },
   "schedule": {
     "title": "Schedule",
@@ -109,7 +113,8 @@
     "dayCount": {
       "one": "1 day",
       "other": "{count} days"
-    }
+    },
+    "statusFor": "Status for {name}"
   },
   "pet": {
     "title": "Pets",
@@ -318,7 +323,8 @@
     "dom": "Dom",
     "pets": "Pets",
     "kg": "kg",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "language": "Language"
   },
   "errors": {
     "fetchFailed": "Failed to fetch data",
@@ -386,7 +392,11 @@
     "logoShape": "Logo shape",
     "logoShapeSquare": "Square",
     "logoShapeCircle": "Circle",
-    "logoShapeInfo": "Choose how the logo image is clipped wherever it appears. Square keeps the image's full aspect ratio inside a rounded-corner rectangle. Circle crops the image to a circle so it fills the shape — best for square or near-square logos."
+    "logoShapeInfo": "Choose how the logo image is clipped wherever it appears. Square keeps the image's full aspect ratio inside a rounded-corner rectangle. Circle crops the image to a circle so it fills the shape — best for square or near-square logos.",
+    "deleteRule": "Delete rule",
+    "deleteVaxType": "Delete vaccination type",
+    "enable": "Enable",
+    "disable": "Disable"
   },
   "admin": {
     "title": "User Management",

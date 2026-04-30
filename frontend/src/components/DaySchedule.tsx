@@ -159,6 +159,7 @@ export default function DaySchedule({ date, onEditSchedule, refreshTrigger, onNe
                     <select
                       value={schedule.status}
                       onChange={e => handleStatusChange(schedule, e.target.value)}
+                      aria-label={t('schedule.statusFor').replace('{name}', schedule.pet_details.name)}
                       className={`text-xs px-2 py-1 rounded-full border cursor-pointer ${statusColors[schedule.status]}`}
                     >
                       <option value="scheduled">{t('schedule.statuses.scheduled')}</option>

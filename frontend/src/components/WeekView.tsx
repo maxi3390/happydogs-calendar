@@ -184,6 +184,7 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
             <div className="flex gap-2 justify-center">
               <button
                 onClick={goToPreviousWeek}
+                aria-label={t('calendar.previousWeek')}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
               >
                 <ChevronLeft className="w-5 h-5" />
@@ -196,6 +197,7 @@ export default function WeekView({ selectedDate, onDateSelect, calendarView = 'w
               </button>
               <button
                 onClick={goToNextWeek}
+                aria-label={t('calendar.nextWeek')}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
               >
                 <ChevronRight className="w-5 h-5" />

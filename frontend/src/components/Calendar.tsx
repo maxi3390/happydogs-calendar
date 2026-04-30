@@ -276,6 +276,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
           <div className="flex gap-2 justify-center">
             <button
               onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+              aria-label={t('calendar.previousMonth')}
               className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -292,6 +293,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
             </button>
             <button
               onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+              aria-label={t('calendar.nextMonth')}
               className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
             >
               <ChevronRight className="w-5 h-5" />
