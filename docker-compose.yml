@@ -3,13 +3,18 @@ services:
     image: postgres:18-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: nursery
-      POSTGRES_USER: nursery
-      POSTGRES_PASSWORD: nursery
+      # Dev defaults match the historical hardcoded values, so a fresh
+      # checkout still works with no ``.env``. Production deployments
+      # MUST override ``POSTGRES_PASSWORD`` (and usually the db name +
+      # user too) via ``.env``; the default password is committed and
+      # therefore public.
+      POSTGRES_DB: ${POSTGRES_DB:-nursery}
+      POSTGRES_USER: ${POSTGRES_USER:-nursery}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nursery}
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U nursery -d nursery"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nursery} -d ${POSTGRES_DB:-nursery}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -20,13 +25,18 @@ services:
     build: ./backend
     restart: unless-stopped
     environment:
-      - DEBUG=True
-      - POSTGRES_DB=nursery
-      - POSTGRES_USER=nursery
-      - POSTGRES_PASSWORD=nursery
-      - POSTGRES_HOST=db
-      - POSTGRES_PORT=5432
-      - DJANGO_SECRET_KEY=dev-secret-key-change-in-production
+      # Dev defaults so a fresh checkout boots with no ``.env``.
+      # Production deployments MUST override ``DJANGO_SECRET_KEY`` and
+      # ``POSTGRES_PASSWORD`` via ``.env`` — the committed values are
+      # public. ``DEBUG`` defaults to True for local dev; flip via
+      # ``.env`` for any internet-facing deployment.
+      - DEBUG=${DEBUG:-True}
+      - POSTGRES_DB=${POSTGRES_DB:-nursery}
+      - POSTGRES_USER=${POSTGRES_USER:-nursery}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-nursery}
+      - POSTGRES_HOST=${POSTGRES_HOST:-db}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-dev-secret-key-change-in-production}
       # File-storage backend selection. All four S3_* vars unset =>
       # FileSystemStorage (today's behaviour). All four set => the
       # backend talks to whatever S3-compatible bucket the operator
@@ -78,13 +88,15 @@ services:
     build: ./backend
     restart: unless-stopped
     environment:
-      - DEBUG=True
-      - POSTGRES_DB=nursery
-      - POSTGRES_USER=nursery
-      - POSTGRES_PASSWORD=nursery
-      - POSTGRES_HOST=db
-      - POSTGRES_PORT=5432
-      - DJANGO_SECRET_KEY=dev-secret-key-change-in-production
+      # Same defaults as the ``backend`` service above; both run the
+      # same Django app and need to agree on db creds + secret key.
+      - DEBUG=${DEBUG:-True}
+      - POSTGRES_DB=${POSTGRES_DB:-nursery}
+      - POSTGRES_USER=${POSTGRES_USER:-nursery}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-nursery}
+      - POSTGRES_HOST=${POSTGRES_HOST:-db}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-dev-secret-key-change-in-production}
       - EMAIL_BACKEND=${EMAIL_BACKEND:-django.core.mail.backends.console.EmailBackend}
       - EMAIL_HOST=${EMAIL_HOST:-localhost}
       - EMAIL_PORT=${EMAIL_PORT:-25}

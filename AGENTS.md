@@ -210,17 +210,19 @@ Don't churn nearby code just to apply this rule. Touch what your change touches 
 
 ## Environment variables
 
-### Backend (set in `docker-compose.yml`)
+### Backend / Database (dev defaults in `docker-compose.yml`, overridable via `.env`)
 
-| Variable            | Default (docker)                      | Notes                          |
+Each variable has a dev default baked into `docker-compose.yml`'s `${VAR:-default}` interpolation, so a fresh checkout boots with no `.env`. Production deployments override the same names from `.env`.
+
+| Variable            | Default (docker)                      | Production override            |
 |---------------------|---------------------------------------|--------------------------------|
-| `DJANGO_SECRET_KEY` | `dev-secret-key-change-in-production` | Must be changed for production |
-| `DEBUG`             | `True`                                |                                |
-| `POSTGRES_DB`       | `nursery`                             |                                |
-| `POSTGRES_USER`     | `nursery`                             |                                |
-| `POSTGRES_PASSWORD` | `nursery`                             |                                |
-| `POSTGRES_HOST`     | `db`                                  |                                |
-| `POSTGRES_PORT`     | `5432`                                |                                |
+| `DJANGO_SECRET_KEY` | `dev-secret-key-change-in-production` | **Required** (committed default is public; would let attackers forge sessions / signed URLs) |
+| `DEBUG`             | `True`                                | **Required** — set `False`. Leaves stack traces and settings in error pages otherwise. |
+| `POSTGRES_PASSWORD` | `nursery`                             | **Required** — committed default is public.   |
+| `POSTGRES_DB`       | `nursery`                             | Optional — pick any name.                     |
+| `POSTGRES_USER`     | `nursery`                             | Optional — pick any name.                     |
+| `POSTGRES_HOST`     | `db`                                  | Override only when pointing at an external Postgres (managed RDS, etc.). |
+| `POSTGRES_PORT`     | `5432`                                | Optional.                                     |
 
 ### Frontend
 
@@ -283,6 +285,8 @@ Generate `.env` once with `make env` (interactive, safe to re-run, never overwri
 | `DOCKER_SOCKET`       | Yes (`/var/run/docker.sock`) | Path Traefik mounts to discover services. Change only on non-standard docker installs. |
 | `CF_DNS_API_TOKEN`    | No                       | Production-only. Cloudflare API token for Let's Encrypt DNS-01 challenge. Blank for local dev. |
 | `ACME_EMAIL`          | No                       | Production-only. Email for Let's Encrypt certificate notifications. Blank for local dev. |
+| `DJANGO_SECRET_KEY`<br>`POSTGRES_PASSWORD`<br>`DEBUG` | No (dev defaults work) | **Required for production** — see the "Backend / Database" table above. Dev defaults in `docker-compose.yml` boot a fresh checkout without `.env`; production MUST override these three. |
+| `POSTGRES_DB`<br>`POSTGRES_USER`<br>`POSTGRES_HOST`<br>`POSTGRES_PORT` | No (dev defaults work) | Optional in production. Override `POSTGRES_HOST` only when pointing at an external Postgres; the others are cosmetic / network-internal. |
 | `S3_ENDPOINT_URL`<br>`S3_ACCESS_KEY_ID`<br>`S3_SECRET_ACCESS_KEY`<br>`S3_BUCKET_NAME` | No (all four together) | Opt in to S3-compatible file storage. All four must be set + non-empty for the backend to switch off filesystem mode. Half-applied → falls back to filesystem with a warning. See the "File storage" section below for the full contract. |
 | `GARAGE_RPC_SECRET`<br>`GARAGE_ADMIN_TOKEN`<br>`GARAGE_METRICS_TOKEN` | No (only when running `--profile s3`) | Internal secrets for the bundled Garage instance. Generate with `openssl rand -hex 32`. Required only when bringing up the bundled Garage; ignored when pointing at an external S3 service. |
 
