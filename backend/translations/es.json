@@ -471,7 +471,9 @@
       "notifications": "Se descartarán {count} notificaciones.",
       "auditLog": "Se anonimizarán {count} entradas del registro de auditoría (las filas se conservan pero el 'quién' se vuelve anónimo).",
       "noImpact": "Sin datos relacionados — este usuario no tiene notificaciones ni entradas en el registro de auditoría."
-    }
+    },
+    "selectAll": "Seleccionar todos",
+    "selectUser": "Seleccionar {name}"
   },
   "public": {
     "welcome": "Bienvenido a Guardería Happy Dogs",
@@ -538,7 +540,9 @@
     "profile": "Perfil",
     "admin": "Administrador",
     "user": "Usuario",
-    "changePassword": "Cambiar contraseña"
+    "changePassword": "Cambiar contraseña",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña"
   },
   "vet": {
     "title": "Veterinarios",

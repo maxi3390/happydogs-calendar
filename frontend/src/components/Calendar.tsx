@@ -341,7 +341,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                   className={`border-r last:border-r-0 border-gray-100 dark:border-slate-700/50 pt-1 px-0.5 sm:px-1 transition-colors ${
                     inMonth ? 'cursor-pointer hover:bg-muted/50 dark:hover:bg-slate-700/30' : ''
                   } ${isSelected && inMonth ? 'bg-primary/10/50 dark:bg-indigo-900/10' : ''} ${
-                    !inMonth ? 'opacity-30' : ''
+                    !inMonth ? 'opacity-50' : ''
                   }`}
                   // Out-of-month days are visible (so the grid looks
                   // complete) but not clickable for selection — same
@@ -398,7 +398,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                     className={`border-r last:border-r-0 border-gray-100 dark:border-slate-700/50 transition-colors ${
                       inMonth ? 'cursor-pointer hover:bg-muted/30 dark:hover:bg-slate-700/20' : ''
                     } ${isSelected && inMonth ? 'bg-primary/10/50 dark:bg-indigo-900/10' : ''} ${
-                      !inMonth ? 'opacity-30' : ''
+                      !inMonth ? 'opacity-50' : ''
                     }`}
                     style={{ minHeight: `${barAreaPx}px` }}
                   />
@@ -451,6 +451,7 @@ export default function Calendar({ onDateSelect, selectedDate, calendarView = 'm
                   <button
                     key={`more-${colIdx}`}
                     type="button"
+                    aria-label={t('calendar.more').replace('{count}', String(hiddenCount))}
                     className="absolute text-[10px] sm:text-xs text-muted-foreground font-medium px-1 sm:px-1.5 cursor-pointer hover:text-primary dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-sm bg-card dark:bg-slate-800"
                     style={{
                       left: `${(colIdx / 7) * 100}%`,

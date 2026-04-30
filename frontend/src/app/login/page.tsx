@@ -128,6 +128,8 @@ export default function LoginPage() {
               endIcon={
                 <button
                   type="button"
+                  aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                  aria-pressed={showPassword}
                   onClick={() => setShowPassword(!showPassword)}
                   className="p-1 pt-2 w-full h-full hover:text-foreground text-muted-foreground transition-colors"
                 >

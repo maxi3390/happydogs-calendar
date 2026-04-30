@@ -471,7 +471,9 @@
       "notifications": "{count} notifications will be discarded.",
       "auditLog": "{count} audit-log entries will be anonymized (the rows survive but the 'who' becomes anonymous).",
       "noImpact": "No related data — this user has no notifications and no audit-log entries."
-    }
+    },
+    "selectAll": "Select all",
+    "selectUser": "Select {name}"
   },
   "public": {
     "welcome": "Welcome to Happy Pet Nursery",
@@ -538,7 +540,9 @@
     "profile": "Profile",
     "admin": "Admin",
     "user": "User",
-    "changePassword": "Change password"
+    "changePassword": "Change password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "vet": {
     "title": "Vets",

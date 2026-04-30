@@ -16,6 +16,10 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     // through, which forces tests to use brittle structural selectors.
     const generatedId = React.useId();
     const inputId = id ?? generatedId;
+    // Companion id for the error <p>, wired to the input via
+    // ``aria-describedby`` so screen readers announce the error message
+    // when the field gains focus. Only emitted when ``error`` is set.
+    const errorId = `${inputId}-error`;
     return (
       <div className={`${fullWidth ? 'w-full' : ''}`}>
         {label && (
@@ -35,7 +39,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             id={inputId}
-            className={`flex h-10 w-full rounded-xl border border-border/50 bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50 transition-colors ${
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? errorId : undefined}
+            className={`flex h-10 w-full rounded-xl border border-border/50 bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 disabled:cursor-not-allowed disabled:opacity-60 transition-colors ${
               icon ? 'pl-10' : ''
             } ${
               endIcon ? 'pr-10' : ''
@@ -50,7 +56,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             </div>
           )}
         </div>
-        {error && <p className="mt-1.5 text-xs text-destructive">{error}</p>}
+        {error && <p id={errorId} className="mt-1.5 text-xs text-destructive">{error}</p>}
       </div>
     );
   }
