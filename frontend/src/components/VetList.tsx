@@ -5,6 +5,7 @@ import { Edit2, Trash2, Stethoscope, MapPin, Mail, Phone, Search } from 'lucide-
 import { api, Vet } from '@/lib/api';
 import { useTranslation } from '@/lib/translations';
 import { useResourceList } from '@/hooks/useResourceList';
+import { useSearchableList } from '@/hooks/useSearchableList';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
@@ -26,7 +27,10 @@ export default function VetList({ onEdit, onAdd, refreshTrigger }: VetListProps)
     () => api.vets.list(),
     [refreshTrigger],
   );
-  const [searchTerm, setSearchTerm] = useState('');
+  const { searchTerm, setSearchTerm, filtered: filteredVets } = useSearchableList(
+    vets,
+    vet => [vet.name, vet.email, vet.city],
+  );
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const handleDelete = async (id: number) => {
@@ -43,15 +47,6 @@ export default function VetList({ onEdit, onAdd, refreshTrigger }: VetListProps)
       setDeletingId(null);
     }
   };
-
-  const filteredVets = vets.filter(vet => {
-    const search = searchTerm.toLowerCase();
-    return (
-      vet.name.toLowerCase().includes(search) ||
-      vet.email.toLowerCase().includes(search) ||
-      vet.city.toLowerCase().includes(search)
-    );
-  });
 
   if (loading) {
     return (
