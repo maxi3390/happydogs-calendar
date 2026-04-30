@@ -144,8 +144,30 @@ services:
       - "3001:3000"
     environment:
       - NODE_ENV=production
+      # Docusaurus needs the URL prefix at BUILD time. Setting it here
+      # makes the container's ``npm run build && npm run serve``
+      # produce HTML that references ``/docs/`` for every asset, which
+      # matches the Traefik PathPrefix below. Direct port-forward
+      # access becomes ``http://localhost:3001/docs/`` rather than
+      # ``http://localhost:3001/`` — that's the cost of serving the
+      # same build behind a sub-path.
+      - DOCS_BASE_URL=/docs/
+    networks:
+      - proxy
     profiles:
       - docs
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.docs.loadbalancer.server.port=3000
+
+      # Router: matches ``/docs`` and everything beneath it. Traefik
+      # picks the longest-PathPrefix match as the most specific, so
+      # this beats the frontend's ``PathPrefix(`/`)`` catch-all.
+      - traefik.http.routers.docs.rule=Host(`${DOMAIN}`) && PathPrefix(`/docs`)
+      - traefik.http.routers.docs.entrypoints=websecure
+      - traefik.http.routers.docs.tls=true
+      # Uncomment the line below to use Let's Encrypt instead of self-signed:
+      # - traefik.http.routers.docs.tls.certresolver=letsencrypt
 
   pgadmin:
     image: dpage/pgadmin4
@@ -154,6 +176,15 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: admin
+      # Tells pgAdmin its URL prefix; without it pgAdmin emits root-
+      # absolute asset URLs (``/img/...``, ``/login?next=/``) that
+      # Traefik would route to the frontend instead of back to
+      # pgadmin. With this set, every URL pgAdmin emits is
+      # ``/pgadmin/...`` so the existing PathPrefix routing works.
+      # Direct port-forward access becomes
+      # ``http://localhost:5050/pgadmin/`` rather than
+      # ``http://localhost:5050/``.
+      SCRIPT_NAME: /pgadmin
     networks:
       - proxy
     depends_on:
@@ -161,6 +192,17 @@ services:
         condition: service_healthy
     profiles:
       - dev
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.pgadmin.loadbalancer.server.port=80
+
+      # Router: matches ``/pgadmin`` and everything beneath it. Same
+      # priority logic as the ``docs`` router above.
+      - traefik.http.routers.pgadmin.rule=Host(`${DOMAIN}`) && PathPrefix(`/pgadmin`)
+      - traefik.http.routers.pgadmin.entrypoints=websecure
+      - traefik.http.routers.pgadmin.tls=true
+      # Uncomment the line below to use Let's Encrypt instead of self-signed:
+      # - traefik.http.routers.pgadmin.tls.certresolver=letsencrypt
 
   # ---------------------------------------------------------------------------
   # Docker Socket Proxy — grants Traefik read-only, scoped access to the

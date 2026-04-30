@@ -308,8 +308,8 @@ The frontend tracks a WCAG 2.1 AA target enforced by automated tests:
 
 Optional services (via Docker Compose profiles):
   - s3:      Garage 1.0.1 (profile: s3)    → S3-compatible storage on :3900
-  - docs:    Docusaurus  (profile: docs)   → :3001
-  - dev:     pgAdmin 4   (profile: dev)    → :5050
+  - docs:    Docusaurus  (profile: docs)   → :3001/docs/  AND  Traefik /docs/
+  - dev:     pgAdmin 4   (profile: dev)    → :5050/pgadmin/  AND  Traefik /pgadmin/
 
 Security:
   - docker-socket-proxy: Read-only Docker API access for Traefik
@@ -389,8 +389,8 @@ The daily booking limit (configured in nursery settings) is **informational only
    - Traefik Dashboard: `http://localhost:8080`
 4. **Optional services**:
    ```bash
-   docker compose --profile docs up docs       # Docusaurus at :3001
-   docker compose --profile dev up pgadmin     # pgAdmin at :5050
+   docker compose --profile docs up -d docs    # Docusaurus at https://${DOMAIN}/docs/ (or :3001/docs/)
+   docker compose --profile dev  up -d pgadmin # pgAdmin    at https://${DOMAIN}/pgadmin/ (or :5050/pgadmin/)
    ```
 
 See the [Deployment Guide](deployment.md) for detailed configuration and production setup instructions.

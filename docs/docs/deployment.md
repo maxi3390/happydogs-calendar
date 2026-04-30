@@ -34,8 +34,10 @@ That's it. `make init` runs the full initialization sequence — building images
 | **Swagger UI** | `https://localhost/api/docs/` | Interactive API docs |
 | **ReDoc** | `https://localhost/api/redoc/` | Alternative API docs |
 | **Traefik Dashboard** | `http://localhost:8080` | Traefik admin UI |
-| **Documentation** | `http://localhost:3001` | Requires `--profile docs` |
-| **pgAdmin** | `http://localhost:5050` | Requires `--profile dev` |
+| **Documentation** (via Traefik) | `https://${DOMAIN}/docs/` | Requires `--profile docs` |
+| **Documentation** (direct) | `http://localhost:3001/docs/` | Same container, bypasses Traefik |
+| **pgAdmin** (via Traefik) | `https://${DOMAIN}/pgadmin/` | Requires `--profile dev` |
+| **pgAdmin** (direct) | `http://localhost:5050/pgadmin/` | Same container, bypasses Traefik |
 
 > **Note:** Local development uses a self-signed TLS certificate. Your browser will show a security warning — this is expected. Accept the certificate to proceed.
 
@@ -119,14 +121,18 @@ graph TB
 ### `docs` — Documentation Site (optional)
 
 - **Build context**: `./docs` (Docusaurus 3.10+, `node:24-alpine`)
-- **Port**: `3001:3000`
-- **Profile**: `docs` — only starts when explicitly requested with `--profile docs`
+- **Port**: `3001:3000` (direct access; reaches the same content as the Traefik route)
+- **Profile**: `docs` — only starts with `--profile docs`
+- **Build-time env**: `DOCS_BASE_URL=/docs/` is passed in so Docusaurus emits absolute asset URLs prefixed with `/docs/`. This matches the Traefik PathPrefix below; no `StripPrefix` middleware needed.
+- **Traefik labels**: `Host(${DOMAIN}) && PathPrefix(/docs)` → `docs:3000`. Active only while the container is up.
 
 ### `pgadmin` — Database Admin UI (optional)
 
 - **Image**: `dpage/pgadmin4`
-- **Port**: `5050:80`
-- **Profile**: `dev` — only starts when explicitly requested with `--profile dev`
+- **Port**: `5050:80` (direct access; reaches the same UI as the Traefik route)
+- **Profile**: `dev` — only starts with `--profile dev`
+- **Env**: `SCRIPT_NAME=/pgadmin` tells pgAdmin its URL prefix so every emitted URL (login redirect, asset paths, AJAX endpoints) carries `/pgadmin/`. Defaults `PGADMIN_DEFAULT_EMAIL=admin@admin.com` / `PGADMIN_DEFAULT_PASSWORD=admin`.
+- **Traefik labels**: `Host(${DOMAIN}) && PathPrefix(/pgadmin)` → `pgadmin:80`. Active only while the container is up.
 
 ### `docker-socket-proxy` — Secure Docker API Access
 
@@ -232,7 +238,7 @@ The full per-variable guidance lives as comments in `.env.example` itself; `make
 
 ## Routing
 
-Traefik handles all incoming HTTP/HTTPS traffic and routes based on path:
+Traefik handles all incoming HTTP/HTTPS traffic and routes based on path-prefix specificity (Traefik picks the longest-matching `PathPrefix` as the most specific, so longer prefixes always win over the catch-all):
 
 ```mermaid
 flowchart LR
@@ -240,16 +246,22 @@ flowchart LR
 
     Traefik -->|"/api/*"| Backend["backend:8000"]
     Traefik -->|"/media/*"| Backend
-    Traefik -->|"/* (everything else)"| Frontend["frontend:3000"]
+    Traefik -->|"/docs/*<br/>(profile: docs)"| Docs["docs:3000"]
+    Traefik -->|"/pgadmin/*<br/>(profile: dev)"| PgAdmin["pgadmin:80"]
+    Traefik -->|"/* (catch-all)"| Frontend["frontend:3000"]
 
     style Traefik fill:#e3f2fd
     style Backend fill:#e8f5e9
     style Frontend fill:#f3e5f5
+    style Docs fill:#fff3e0
+    style PgAdmin fill:#fff3e0
 ```
 
-- All requests to `/api/*` and `/media/*` are proxied to the Django backend.
-- All other requests are proxied to the Next.js frontend.
-- HTTP requests on port 80 are automatically redirected to HTTPS on port 443.
+- `/api/*` and `/media/*` → Django backend
+- `/docs/*` → Docusaurus docs container (only when the `docs` profile is up; baked-in `baseUrl=/docs/`)
+- `/pgadmin/*` → pgAdmin container (only when the `dev` profile is up; `SCRIPT_NAME=/pgadmin`)
+- everything else → Next.js frontend (catch-all, lowest priority)
+- HTTP on port 80 redirects to HTTPS on 443 globally
 
 ## Makefile Commands
 
@@ -495,20 +507,31 @@ For production, configure automatic TLS certificates via Cloudflare DNS challeng
 Start the documentation site alongside the main stack:
 
 ```bash
-docker compose --profile docs up
+docker compose --profile docs up -d
 ```
 
-Access at `http://localhost:3001`.
+Access via Traefik at `https://${DOMAIN}/docs/` (TLS-terminated, behind the same domain as the app), or directly at `http://localhost:3001/docs/`.
+
+The site is served behind a sub-path because Docusaurus needs `baseUrl` set at BUILD time. The compose file passes `DOCS_BASE_URL=/docs/` to the build, and `docs/docusaurus.config.js` reads it via `process.env.DOCS_BASE_URL`. This means absolute asset URLs (e.g. `<link href="/docs/assets/css/styles.css">`) match what Traefik routes — no `StripPrefix` middleware needed. The cost is that direct port-forward access has the same prefix (`http://localhost:3001/docs/`, not `http://localhost:3001/`).
 
 ### pgAdmin
 
 Start pgAdmin for database administration:
 
 ```bash
-docker compose --profile dev up
+docker compose --profile dev up -d
 ```
 
-Access at `http://localhost:5050`.
+Access via Traefik at `https://${DOMAIN}/pgadmin/`, or directly at `http://localhost:5050/pgadmin/`.
+
+Sub-path serving works because the compose file sets `SCRIPT_NAME=/pgadmin` on the pgadmin container. pgAdmin reads this and emits every URL (login redirects, asset paths, AJAX endpoints) with the `/pgadmin/` prefix, so the existing PathPrefix routing works without an extra `StripPrefix` middleware. As with docs, direct port access is also at `/pgadmin/`.
+
+Default credentials (override via `PGADMIN_DEFAULT_EMAIL` / `PGADMIN_DEFAULT_PASSWORD` in `docker-compose.yml`):
+
+- **Email:** `admin@admin.com`
+- **Password:** `admin`
+
+After login, register a new connection to the `db` host with user `nursery`, password `nursery`, database `nursery` (or whatever you set in `.env`).
 
 ## Troubleshooting
 
