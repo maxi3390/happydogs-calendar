@@ -1,6 +1,8 @@
-.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend test-frontend test-frontend-debug lint lint-backend clean rebuild create-admin seed-example-data env env-check init upgrade backup restore volume-ensure destroy-db notifications-run e2e-up e2e-down
+.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend test-frontend test-frontend-debug lint lint-backend clean rebuild create-admin seed-example-data env env-check init upgrade backup restore volume-ensure volume-ensure-s3 s3-init destroy-db notifications-run e2e-up e2e-down
 
 POSTGRES_VOLUME_NAME := happy-calendar_postgres_data
+GARAGE_META_VOLUME_NAME := happy-calendar_garage_meta
+GARAGE_DATA_VOLUME_NAME := happy-calendar_garage_data
 
 # Default target
 help:
@@ -38,6 +40,9 @@ help:
 	@echo "Notifications:"
 	@echo "  make notifications-run - Run the daily notification cron once (idempotent; NOTIF_ARGS=\"--today YYYY-MM-DD --no-email\" supported)"
 	@echo ""
+	@echo "Object storage (s3 profile):"
+	@echo "  make s3-init        - Bootstrap the bundled Garage instance: create bucket, import key, grant R/W (idempotent)"
+	@echo ""
 	@echo "Testing:"
 	@echo "  make test              - Run all tests (backend + frontend)"
 	@echo "  make test-backend      - Run backend tests only"
@@ -72,6 +77,13 @@ build-no-cache:
 # prerequisite of every target that starts the stack or talks to db.
 volume-ensure:
 	@docker volume create $(POSTGRES_VOLUME_NAME) >/dev/null
+
+# Same shape as volume-ensure but for the Garage volumes (s3 profile).
+# Idempotent. Wired into `make s3-init` so an operator going through the
+# documented onboarding never has to remember to create them by hand.
+volume-ensure-s3:
+	@docker volume create $(GARAGE_META_VOLUME_NAME) >/dev/null
+	@docker volume create $(GARAGE_DATA_VOLUME_NAME) >/dev/null
 
 up: volume-ensure
 	docker compose up -d
@@ -162,6 +174,13 @@ SEED_ARGS ?=
 
 seed-example-data:
 	docker compose exec -T backend python manage.py seed_example_data $(SEED_ARGS)
+
+# Bootstrap the bundled Garage S3 instance: create bucket + key + grant
+# read/write. Idempotent — safe to re-run after a partial bring-up. The
+# heavy lifting lives in scripts/s3-init.sh; the Makefile only handles
+# the volume guarantee and the script invocation.
+s3-init: volume-ensure-s3
+	@bash scripts/s3-init.sh
 
 # Notifications — fire the daily cron command once. The notification-cron
 # docker service runs this on a polling loop in normal operation; this

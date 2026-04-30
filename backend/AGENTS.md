@@ -192,6 +192,8 @@ File uploads for pets and owners with type/size validation.
 
 Key decisions: Polymorphic linking via nullable FKs (pet OR owner, not both). Shared file validators for size (5 MB) and MIME type.
 
+The actual storage backend (filesystem vs S3-compatible) is selected at startup from `S3_*` env vars — see the "File storage" section in the repo-root `AGENTS.md`. The capability spec lives at `openspec/specs/backend/file-storage/spec.md`; switching modes is an env edit + restart, no migration.
+
 ### 8. Medical Notes
 
 Per-pet medical notes with title and description.

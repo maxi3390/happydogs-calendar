@@ -49,6 +49,7 @@ happy-calendar/
 | `db`       | postgres:18-alpine | 5432  | (default)  | DB/user/password all `nursery`. Volume `postgres_data`. |
 | `backend`  | `./backend`        | 8000  | (default)  | Runs `migrate` then `runserver` on start.           |
 | `frontend` | `./frontend`       | 3000  | (default)  | Next.js standalone build.                           |
+| `garage`   | dxflrs/garage:v1.0.1 | 3900 | `s3`       | Single-node S3-compatible object storage. Optional; only with `--profile s3`. Bootstrap with `make s3-init`. |
 | `docs`     | `./docs`           | 3001  | `docs`     | Docusaurus site. Only with `--profile docs`.        |
 | `pgadmin`  | dpage/pgadmin4     | 5050  | `dev`      | Only with `--profile dev`.                          |
 
@@ -282,6 +283,8 @@ Generate `.env` once with `make env` (interactive, safe to re-run, never overwri
 | `DOCKER_SOCKET`       | Yes (`/var/run/docker.sock`) | Path Traefik mounts to discover services. Change only on non-standard docker installs. |
 | `CF_DNS_API_TOKEN`    | No                       | Production-only. Cloudflare API token for Let's Encrypt DNS-01 challenge. Blank for local dev. |
 | `ACME_EMAIL`          | No                       | Production-only. Email for Let's Encrypt certificate notifications. Blank for local dev. |
+| `S3_ENDPOINT_URL`<br>`S3_ACCESS_KEY_ID`<br>`S3_SECRET_ACCESS_KEY`<br>`S3_BUCKET_NAME` | No (all four together) | Opt in to S3-compatible file storage. All four must be set + non-empty for the backend to switch off filesystem mode. Half-applied → falls back to filesystem with a warning. See the "File storage" section below for the full contract. |
+| `GARAGE_RPC_SECRET`<br>`GARAGE_ADMIN_TOKEN`<br>`GARAGE_METRICS_TOKEN` | No (only when running `--profile s3`) | Internal secrets for the bundled Garage instance. Generate with `openssl rand -hex 32`. Required only when bringing up the bundled Garage; ignored when pointing at an external S3 service. |
 
 Full per-variable guidance lives as comments in `.env.example` itself; `make env` reads those comments and shows them at each prompt. The invariants are tracked in `openspec/specs/tooling/env-bootstrap/`.
 
@@ -296,6 +299,42 @@ Full per-variable guidance lives as comments in `.env.example` itself; `make env
 `make upgrade` runs `make backup` as its first of five steps. If the backup fails, the upgrade halts before any mutation. Use `SKIP_BACKUP=1 make upgrade` only when a pre-upgrade backup was taken out-of-band and the step would be redundant. The `git pull` (step 2) can likewise be skipped with `SKIP_PULL=1` when the operator has already pulled the latest code by hand or is rebuilding deliberately against the current local tree.
 
 The invariants are tracked in `openspec/specs/tooling/backup/` and (for the `make upgrade` integration) in `openspec/specs/tooling/upgrade/`.
+
+---
+
+## File storage (filesystem vs S3-compatible)
+
+Uploaded files (pet / owner profile pictures, the system logo, pet documents) live in one of two places, chosen at backend-startup time from environment variables:
+
+- **Filesystem** (default). Files are written under `MEDIA_ROOT = backend/media/` and served by Django/Traefik on `/media`. Works out of the box with no env config — the historical behaviour. Best for single-host deployments that don't need horizontal scaling.
+- **S3-compatible**. When all four of `S3_ENDPOINT_URL`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET_NAME` are set + non-empty, the backend writes uploads to that bucket via `django-storages[s3]`. Works with any S3-compatible service (the bundled Garage instance under the `s3` Compose profile, MinIO, AWS S3, Backblaze B2, …).
+
+A half-applied env update (e.g. `S3_ENDPOINT_URL` set but credentials missing) **falls back to filesystem with a startup warning** rather than crashing — operators see a clear log line naming the missing vars instead of a boot loop.
+
+### Self-hosted: bring up the bundled Garage
+
+The repo ships a single-node [Garage](https://garagehq.deuxfleurs.fr/) instance under the `s3` Compose profile. Operators who want self-hosted object storage in one machine:
+
+1. Generate fresh secrets and fill `.env` with the `S3_*` and `GARAGE_*` keys (see `.env.example` for the full list and `openssl rand` recipes).
+2. Bring up Garage: `docker compose --profile s3 up -d`.
+3. Bootstrap bucket + key: `make s3-init` (idempotent; safe to re-run).
+4. Restart the backend so it picks up the new env: `make restart`.
+
+`make s3-init` creates the bucket if missing, imports the access key, and grants R/W on the bucket. Re-running on an already-bootstrapped Garage is a no-op.
+
+### External S3 service
+
+To point at AWS S3 / MinIO / Backblaze instead of the bundled Garage:
+
+- Skip `docker compose --profile s3 up -d` and the `GARAGE_*` vars.
+- Set `S3_ENDPOINT_URL` and `S3_PUBLIC_ENDPOINT_URL` to the external host.
+- For AWS specifically: set `S3_REGION_NAME` to a real region (e.g. `us-east-1`) and `S3_ADDRESSING_STYLE=virtual`.
+
+### Switching modes
+
+Toggling between filesystem and S3 is a `.env` edit + `make restart` away — no migration, no rebuild. **Existing files do not auto-migrate**: when an operator switches to S3, files already on disk stay on disk and their old `.url` paths stop resolving once the FS mount is removed. Migrating is a one-shot operator task (e.g. `aws s3 cp --recursive` or `rclone sync`); the project deliberately doesn't bundle that into `make upgrade`. See the proposal's "Out of scope" section for the rationale.
+
+The full contract lives in `openspec/specs/backend/file-storage/spec.md` and the Garage / Compose lifecycle in `openspec/specs/tooling/object-storage/spec.md`.
 
 ---
 

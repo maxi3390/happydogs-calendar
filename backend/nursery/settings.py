@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 from datetime import timedelta
@@ -95,6 +96,114 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# ── File storage backend ────────────────────────────────────────────────────
+# Pick the Django ``STORAGES['default']`` backend at startup based on the
+# four required ``S3_*`` env vars. When all are present the backend uses
+# any S3-compatible bucket (Garage / MinIO / AWS S3 / …). When none — or
+# only some — are set it falls back to ``FileSystemStorage`` and writes
+# under ``MEDIA_ROOT`` exactly as before, so a fresh checkout / a
+# half-applied env update never bricks uploads. See
+# ``openspec/specs/backend/file-storage/spec.md`` for the full contract.
+
+_S3_REQUIRED_KEYS = (
+    'S3_ENDPOINT_URL',
+    'S3_ACCESS_KEY_ID',
+    'S3_SECRET_ACCESS_KEY',
+    'S3_BUCKET_NAME',
+)
+
+
+def _build_storages_config(env, media_root):
+    """Build the ``STORAGES`` dict from an environment mapping.
+
+    Pulled out of module-level code so the selection-logic tests can
+    exercise it directly without re-importing settings — testing a
+    Django settings module under ``override_settings`` would only
+    validate the override path, not the env-var dispatch we care about.
+
+    Returns ``(storages, log_level, log_message)`` so the caller can
+    decide *how* to surface the chosen backend; tests assert all three.
+    """
+    raw = {key: env.get(key, '').strip() for key in _S3_REQUIRED_KEYS}
+    present = {k: v for k, v in raw.items() if v}
+    missing = sorted(k for k, v in raw.items() if not v)
+
+    fs_storages = {
+        'default': {
+            'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    }
+
+    if not missing:
+        # All four required vars set — build the S3 config.
+        public_endpoint = (
+            env.get('S3_PUBLIC_ENDPOINT_URL', '').strip()
+            or raw['S3_ENDPOINT_URL']
+        )
+        # ``custom_domain`` for django-storages is a host (no scheme);
+        # the backend prepends ``https://`` unconditionally unless
+        # ``url_protocol`` is also set. Splitting both so
+        # ``http://garage:3900`` and ``https://s3.example.com`` both
+        # round-trip cleanly.
+        if '://' in public_endpoint:
+            proto, _, host = public_endpoint.partition('://')
+            custom_domain = host
+            url_protocol = f'{proto}:'
+        else:
+            custom_domain = public_endpoint
+            url_protocol = 'https:'
+
+        s3_storages = {
+            'default': {
+                'BACKEND': 'storages.backends.s3.S3Storage',
+                'OPTIONS': {
+                    'bucket_name': raw['S3_BUCKET_NAME'],
+                    'access_key': raw['S3_ACCESS_KEY_ID'],
+                    'secret_key': raw['S3_SECRET_ACCESS_KEY'],
+                    'endpoint_url': raw['S3_ENDPOINT_URL'],
+                    'region_name': env.get('S3_REGION_NAME', 'garage').strip() or 'garage',
+                    'addressing_style': env.get('S3_ADDRESSING_STYLE', 'path').strip() or 'path',
+                    'querystring_auth': env.get('S3_QUERYSTRING_AUTH', 'False') == 'True',
+                    'custom_domain': custom_domain,
+                    'url_protocol': url_protocol,
+                    # Mirror today's "every uploaded file is publicly
+                    # readable via /media" behaviour.
+                    'default_acl': 'public-read',
+                    'file_overwrite': False,
+                },
+            },
+            'staticfiles': {
+                'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+            },
+        }
+        msg = (
+            f'File storage: S3 (endpoint={raw["S3_ENDPOINT_URL"]}, '
+            f'bucket={raw["S3_BUCKET_NAME"]})'
+        )
+        return s3_storages, 'info', msg
+
+    if present:
+        # Half-applied env update — fall back to FS but flag loudly so
+        # the operator notices something's off.
+        msg = (
+            'S3 partially configured but credentials missing — falling back '
+            f'to filesystem. Missing: {", ".join(missing)}'
+        )
+        return fs_storages, 'warning', msg
+
+    # Nothing set — pure filesystem path, the historical default.
+    return fs_storages, 'info', f'File storage: filesystem (MEDIA_ROOT={media_root})'
+
+
+_logger = logging.getLogger(__name__)
+STORAGES, _storage_log_level, _storage_log_message = _build_storages_config(
+    os.environ, MEDIA_ROOT,
+)
+getattr(_logger, _storage_log_level)(_storage_log_message)
 
 # Upload validation constants
 MAX_UPLOAD_SIZE_MB = 5

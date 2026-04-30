@@ -27,6 +27,19 @@ services:
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
       - DJANGO_SECRET_KEY=dev-secret-key-change-in-production
+      # File-storage backend selection. All four S3_* vars unset =>
+      # FileSystemStorage (today's behaviour). All four set => the
+      # backend talks to whatever S3-compatible bucket the operator
+      # provided (Garage / MinIO / AWS / …). See
+      # ``openspec/specs/backend/file-storage/spec.md``.
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL:-}
+      - S3_PUBLIC_ENDPOINT_URL=${S3_PUBLIC_ENDPOINT_URL:-}
+      - S3_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID:-}
+      - S3_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY:-}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME:-}
+      - S3_REGION_NAME=${S3_REGION_NAME:-garage}
+      - S3_ADDRESSING_STYLE=${S3_ADDRESSING_STYLE:-path}
+      - S3_QUERYSTRING_AUTH=${S3_QUERYSTRING_AUTH:-False}
     depends_on:
       traefik:
         condition: service_started
@@ -231,6 +244,55 @@ services:
       - socket-proxy
       - proxy
 
+  # ---------------------------------------------------------------------------
+  # Garage — single-node S3-compatible object storage. Profile-gated so
+  # ``docker compose up -d`` (no profile) leaves it dormant. Operators
+  # opt in with ``docker compose --profile s3 up -d``, then run
+  # ``make s3-init`` to create the bucket and access key. The backend
+  # discovers Garage via ``S3_ENDPOINT_URL=http://garage:3900`` set on
+  # the operator's ``.env``.
+  #
+  # Spec: ``openspec/specs/tooling/object-storage/spec.md``.
+  # ---------------------------------------------------------------------------
+  garage:
+    image: dxflrs/garage:v1.0.1
+    restart: unless-stopped
+    environment:
+      # Bootstrap-time secrets pulled from the operator's ``.env``.
+      # Both default to a dev-friendly (empty) value so a misconfigured
+      # ``.env`` is loud rather than insecure: Garage refuses to start
+      # without an RPC secret.
+      - GARAGE_RPC_SECRET=${GARAGE_RPC_SECRET:-}
+      - GARAGE_ADMIN_TOKEN=${GARAGE_ADMIN_TOKEN:-}
+      - GARAGE_METRICS_TOKEN=${GARAGE_METRICS_TOKEN:-}
+    volumes:
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
+      - ./infra/garage/garage.toml:/etc/garage.toml:ro
+    healthcheck:
+      # Garage exposes a minimal health endpoint on the admin port; ``wget``
+      # is part of the Alpine-based base image.
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3903/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    labels:
+      # Traefik routing is OFF unless the operator opts in via
+      # ``S3_TRAEFIK_ENABLED=true``. The labels stay committed so flipping
+      # the flag is the only step needed; while the flag is off the
+      # ``traefik.enable=false`` line wins and Traefik ignores the rest.
+      - traefik.enable=${S3_TRAEFIK_ENABLED:-false}
+      - traefik.http.services.garage.loadbalancer.server.port=3900
+      - traefik.http.routers.garage.rule=Host(`s3.${DOMAIN:-localhost}`)
+      - traefik.http.routers.garage.entrypoints=websecure
+      - traefik.http.routers.garage.tls=true
+      # Uncomment to use Let's Encrypt instead of self-signed:
+      # - traefik.http.routers.garage.tls.certresolver=letsencrypt
+    networks:
+      - proxy
+    profiles:
+      - s3
+
 volumes:
   # External named volume: declared outside this compose project so that
   # `docker compose down -v` — and therefore `make clean` — cannot remove
@@ -240,6 +302,15 @@ volumes:
   postgres_data:
     external: true
     name: happy-calendar_postgres_data
+  # Garage volumes follow the same external-volume convention so
+  # ``make clean`` cannot delete the bucket data. Created idempotently
+  # by ``make volume-ensure-s3``.
+  garage_meta:
+    external: true
+    name: happy-calendar_garage_meta
+  garage_data:
+    external: true
+    name: happy-calendar_garage_data
   traefik-certs:
 
 networks:

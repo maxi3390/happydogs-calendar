@@ -1,0 +1,53 @@
+# Garage single-node config — bundled with the ``s3`` Compose profile.
+#
+# Designed for a single-machine Happy Pet Nursery deployment: SQLite
+# for metadata (no external dep, fine up to millions of objects) and
+# the LMDB block store for the actual blobs (also bundle-friendly,
+# zero ops). Operators who outgrow this can swap the engines without
+# changing anything on the backend side — the S3 API contract is the
+# same.
+#
+# Secrets (admin tokens, the metric token) live in environment
+# variables on the ``garage`` Compose service; no credentials are
+# embedded in this file. Values referenced via ``$VAR`` are expanded
+# by Garage on startup.
+#
+# Reference: https://garagehq.deuxfleurs.fr/documentation/reference-manual/configuration/
+
+metadata_dir = "/var/lib/garage/meta"
+data_dir = "/var/lib/garage/data"
+
+# Single-node deployments use ``replication_factor = 1``. Garage
+# refuses to run multi-node configs without an explicit factor; we
+# pin to single-node so a misconfigured cluster doesn't silently lose
+# data.
+replication_factor = 1
+
+# RPC layer secret — required even for single-node setups so future
+# multi-node expansion has a stable identity. Generate once with
+# ``openssl rand -hex 32`` and set it in ``.env`` as
+# ``GARAGE_RPC_SECRET``.
+rpc_secret = "$GARAGE_RPC_SECRET"
+rpc_bind_addr = "[::]:3901"
+rpc_public_addr = "garage:3901"
+
+# Compression for objects on disk. ``zstd`` strikes a good ratio /
+# CPU balance for image payloads; pet photos compress modestly but
+# every byte saved on disk pays off over time.
+compression_level = 1
+
+# S3 API on the standard Garage port. Backend reaches it as
+# ``http://garage:3900`` over the internal ``proxy`` Docker network.
+[s3_api]
+s3_region = "garage"
+api_bind_addr = "[::]:3900"
+root_domain = ".s3.garage.local"
+
+# Admin / metric API used by ``make s3-init`` and the healthcheck
+# (``GET /health`` on :3903). Token gates the destructive actions
+# (bucket / key creation); admin-only paths are reserved for the
+# operator's bootstrap.
+[admin]
+api_bind_addr = "[::]:3903"
+admin_token = "$GARAGE_ADMIN_TOKEN"
+metrics_token = "$GARAGE_METRICS_TOKEN"
