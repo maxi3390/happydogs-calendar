@@ -34,7 +34,7 @@ happy-calendar/
 |------------|-------------------------------------------------------------------------|
 | Frontend   | Next.js 16, React 19, TypeScript, TailwindCSS 3, Lucide React, date-fns |
 | Backend    | Django 5.1, Django REST Framework 3.15, djangorestframework-simplejwt   |
-| Database   | PostgreSQL 16                                                           |
+| Database   | PostgreSQL 18                                                           |
 | Auth       | JWT (access 60 min / refresh 7 days, refresh rotation + blacklist)      |
 | API Docs   | drf-spectacular (OpenAPI 3.0, Swagger UI, ReDoc)                        |
 | Testing    | Playwright (frontend E2E), Django test runner + coverage (backend)      |

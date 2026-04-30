@@ -95,18 +95,34 @@ graph TB
 
 ### `frontend` — Next.js Application
 
-- **Build context**: `./frontend`
+- **Build context**: `./frontend` (`node:24-alpine` base)
 - **Environment**: `NEXT_PUBLIC_API_URL`
 - **Depends on**: `traefik`, `backend`
 - **Traefik labels**: Routes `/*` (catch-all) to `frontend:3000`
 
-### `docs` — Documentation Site
+### `notification-cron` — Daily Notification Scheduler
 
-- **Build context**: `./docs`
+- **Build context**: `./backend` (shares the backend image)
+- **Purpose**: Polls `NotificationCron.run_time` once per minute and fires `python manage.py generate_notifications` when the wall clock matches. Required for the staff inbox / email reminders.
+- **Environment**: same Postgres + email + secret-key vars as `backend`.
+- **Always on**: not behind a Compose profile. If the `notifications` feature flag is off, the cron's tick is a no-op (so disabling the feature doesn't require taking the service down).
+
+### `garage` — S3-Compatible Object Storage (optional)
+
+- **Image**: `dxflrs/garage:v1.0.1`
+- **Profile**: `s3` — only starts with `--profile s3 up -d`
+- **Purpose**: Single-node S3-compatible storage backend for the bundled-self-hosted deployment path. The backend talks to it over the `proxy` network at `http://garage:3900`.
+- **Bootstrap**: `make s3-init` runs the one-shot `layout assign` + bucket-create + key-import steps; the script is idempotent and safe to re-run. See [File Storage](#file-storage) below.
+- **Volumes**: `garage_meta` and `garage_data` for the metadata DB and the bucket payload.
+- **Healthcheck**: Garage's image is distroless (no `wget`/`curl`); the healthcheck calls `/garage status` and gives 30s as `start_period`.
+
+### `docs` — Documentation Site (optional)
+
+- **Build context**: `./docs` (Docusaurus 3.10+, `node:24-alpine`)
 - **Port**: `3001:3000`
 - **Profile**: `docs` — only starts when explicitly requested with `--profile docs`
 
-### `pgadmin` — Database Admin UI
+### `pgadmin` — Database Admin UI (optional)
 
 - **Image**: `dpage/pgadmin4`
 - **Port**: `5050:80`
@@ -144,33 +160,75 @@ graph TB
 
 ## Environment Variables
 
-### Backend
+Generate `.env` once with `make env` (interactive, idempotent, never overwrites). Every variable below has a `${VAR:-default}` interpolation in `docker-compose.yml`, so a fresh checkout boots with no `.env` at all — production deployments override the relevant vars in their own `.env`.
 
-| Variable | Description | Default |
-|---|---|---|
-| `DEBUG` | Django debug mode | `True` (development) |
-| `DJANGO_SECRET_KEY` | Django secret key | Set in compose file |
-| `POSTGRES_DB` | Database name | `nursery` |
-| `POSTGRES_USER` | Database user | `nursery` |
-| `POSTGRES_PASSWORD` | Database password | `nursery` |
-| `POSTGRES_HOST` | Database host | `db` |
-| `POSTGRES_PORT` | Database port | `5432` |
+### Backend / Database
+
+| Variable | Description | Default | Production override |
+|---|---|---|---|
+| `DEBUG` | Django debug mode | `True` (dev) | **Required** — set `False` |
+| `DJANGO_SECRET_KEY` | Django secret key | `dev-secret-key-change-in-production` | **Required** — generate via `python -c 'import secrets; print(secrets.token_urlsafe(50))'` |
+| `POSTGRES_DB` | Database name | `nursery` | Optional |
+| `POSTGRES_USER` | Database user | `nursery` | Optional |
+| `POSTGRES_PASSWORD` | Database password | `nursery` | **Required** — committed default is public |
+| `POSTGRES_HOST` | Database host | `db` | Override only when pointing at an external Postgres |
+| `POSTGRES_PORT` | Database port | `5432` | Optional |
 
 ### Frontend
 
 | Variable | Description | Default |
 |---|---|---|
-| `NEXT_PUBLIC_API_URL` | Backend API base URL | Set via Docker Compose |
+| `NEXT_PUBLIC_API_URL` | Backend API base URL the browser uses | Set via Docker Compose |
+
+### Email (notifications)
+
+| Variable | Description | Default |
+|---|---|---|
+| `EMAIL_BACKEND` | Django mail backend | `django.core.mail.backends.console.EmailBackend` (logs to stdout) |
+| `EMAIL_HOST` | SMTP host | `localhost` |
+| `EMAIL_PORT` | SMTP port (`587` STARTTLS, `465` SMTPS, `25` plaintext) | `25` |
+| `EMAIL_HOST_USER` | SMTP auth username | empty |
+| `EMAIL_HOST_PASSWORD` | SMTP auth password | empty |
+| `EMAIL_USE_TLS` | Issue STARTTLS on connect | `False` |
+| `DEFAULT_FROM_EMAIL` | From address for outgoing mail | `happy-calendar@localhost` |
+
+When `EMAIL_BACKEND` stays on the console backend in production AND the `notifications` flag is on, the cron emits a one-shot startup warning so silent stdout-only delivery isn't invisible.
+
+### Object storage (the `s3` profile)
+
+Opt in to S3-compatible storage for uploaded files. When all four required vars are set + non-empty, the backend switches off filesystem mode at startup. Half-applied configs fall back to filesystem with a warning naming the missing var.
+
+| Variable | Description | Required |
+|---|---|---|
+| `S3_ENDPOINT_URL` | URL the BACKEND uses to reach the bucket. For bundled Garage: `http://garage:3900`. For AWS: `https://s3.<region>.amazonaws.com`. | Yes |
+| `S3_PUBLIC_ENDPOINT_URL` | URL baked into client-facing `.url()` responses. Set when Garage is exposed via a Traefik subdomain different from the internal one. Falls back to `S3_ENDPOINT_URL` when unset. | No |
+| `S3_ACCESS_KEY_ID` | Access key. For bundled Garage: `GK[a-f0-9]{24}` (26 chars). AWS / MinIO accept any base64. | Yes |
+| `S3_SECRET_ACCESS_KEY` | Secret key. For bundled Garage: `[a-f0-9]{64}`. AWS / MinIO accept any base64. | Yes |
+| `S3_BUCKET_NAME` | Target bucket. `make s3-init` creates it on the bundled Garage when missing. | Yes |
+| `S3_REGION_NAME` | Region label. Default suits Garage; AWS requires a real region (`us-east-1`). | No (defaults `garage`) |
+| `S3_ADDRESSING_STYLE` | `path` for Garage / MinIO / local dev; `virtual` for AWS S3. | No (defaults `path`) |
+| `S3_QUERYSTRING_AUTH` | When `True`, `.url()` returns time-limited presigned URLs. Defaults `False` (matches the historical "uploads are public" behaviour). | No |
+| `S3_TRAEFIK_ENABLED` | When `true`, enables a Traefik route that exposes Garage at `https://s3.${DOMAIN}`. Off by default; backend ↔ Garage stays inside the Docker network. | No |
+
+Garage internal secrets (only used by the bundled Garage instance, NOT by the Django backend):
+
+| Variable | Description |
+|---|---|
+| `GARAGE_RPC_SECRET` | RPC secret (must be 64 hex chars). Dev default committed in compose; **production must override**. |
+| `GARAGE_ADMIN_TOKEN` | Bearer token for the Garage admin API. Dev default committed; production must override. |
+| `GARAGE_METRICS_TOKEN` | Bearer token for Prometheus metrics. Dev default committed; production must override. |
 
 ### Docker Compose / Traefik
 
 | Variable | Description | Usage |
 |---|---|---|
-| `DOMAIN` | Production domain name | Traefik routing rules |
+| `DOMAIN` | Public hostname (Traefik `Host()` rule) | Traefik routing rules |
 | `NEXT_PUBLIC_API_URL` | API URL passed to frontend | Frontend build |
-| `CF_DNS_API_TOKEN` | Cloudflare DNS API token | Let's Encrypt DNS challenge |
+| `CF_DNS_API_TOKEN` | Cloudflare DNS API token | Let's Encrypt DNS-01 challenge |
 | `ACME_EMAIL` | Email for Let's Encrypt | Certificate registration |
 | `DOCKER_SOCKET` | Path to Docker socket | docker-socket-proxy mount |
+
+The full per-variable guidance lives as comments in `.env.example` itself; `make env` reads those comments and shows them at each prompt.
 
 ## Routing
 
@@ -201,14 +259,15 @@ The project includes a comprehensive Makefile in the repository root for common 
 
 | Command | Description |
 |---|---|
-| `make init` | First-time setup: build, up, migrate, create-admin |
+| `make env` | Interactive `.env` bootstrap from `.env.example`. Idempotent; never overwrites. |
+| `make init` | First-time setup: `env-check` → `volume-ensure` → `build` → `up` → `migrate` → `create-admin` |
 | `make build` | Build all Docker images |
-| `make up` | Start all services |
-| `make down` | Stop all services |
+| `make up` / `make down` | Start / stop all services |
 | `make restart` | Restart all services |
 | `make rebuild` | Rebuild and restart all services |
-| `make clean` | Stop services and remove volumes |
+| `make clean` | Stop services and remove containers (the `postgres_data` volume is preserved) |
 | `make status` | Show status of all containers |
+| `make seed-example-data` | Populate a deterministic demo dataset (idempotent). `SEED_ARGS=--reset` wipes the seeded rows first; `SEED_ARGS=--allow-production` bypasses the `DEBUG=False` guard. |
 
 ### Logs
 
@@ -235,23 +294,35 @@ The project includes a comprehensive Makefile in the repository root for common 
 | `make makemigrations` | Generate new migration files |
 | `make createsuperuser` | Create a Django superuser interactively |
 | `make create-admin` | Create the default admin user |
+| `make backup` | Full gzipped `pg_dump` → `backups/nursery-<YYYY-MM-DD-HHMMSS>.sql.gz` |
+| `make restore` | Restore the DB from the latest backup (or `BACKUP_FILE=path make restore`). Destructive; requires typed `yes` (or `RESTORE_I_UNDERSTAND=yes` in CI). |
+| `make destroy-db` | Irreversibly remove the `happy-calendar_postgres_data` volume. The only path that does so. Requires typed confirmation. |
+| `make upgrade` | `backup → git pull → build → up → migrate`. `SKIP_BACKUP=1` to skip step 1; `SKIP_PULL=1` to skip step 2. |
 
 ### Testing
 
 | Command | Description |
 |---|---|
-| `make test` | Run all tests (backend + frontend) |
-| `make test-backend` | Run backend tests only |
-| `make test-frontend` | Run frontend Playwright E2E tests |
-| `make test-frontend-debug` | Run frontend tests with Playwright UI |
-| `make test-coverage` | Run tests with coverage reporting |
+| `make test` | Run all tests (`test-backend` + `test-frontend`) |
+| `make test-backend` | Run backend tests only (Django runner + SQLite in-memory). 539 tests in ~2.5 s. |
+| `make test-frontend` | Run frontend Playwright E2E tests against an isolated `db-e2e` + `backend-e2e` + `frontend-e2e` stack (`docker-compose.e2e.yml`). 163 tests in ~60 s. `KEEP_E2E_DATA=1` keeps the e2e stack up after the run for inspection. |
+| `make test-frontend-debug` | Same as above with `PLAYWRIGHT_ARGS=--trace=on` |
+| `make test-coverage` | Backend tests with coverage reporting |
+| `make e2e-up` / `make e2e-down` | Manually drive the isolated e2e stack. Rarely needed — `make test-frontend` handles the lifecycle. |
 
-### Code Quality
+### Code Quality & Security
 
 | Command | Description |
 |---|---|
-| `make lint` | Run linters on all code |
+| `make lint` | Run `flake8` on the backend |
 | `make format` | Auto-format all code |
+| `make security` | OWASP-Top-10 suite: bandit + pip-audit + npm audit + Django `check --deploy` + gitleaks + opt-in OWASP ZAP baseline. Lands `security-reports/<timestamp>/REPORT.md`; `security-reports/latest/REPORT.md` symlinks the most recent. Exits non-zero on `critical` findings. Override retention via `SECURITY_REPORT_KEEP` (default 10). |
+
+### S3 / Object storage
+
+| Command | Description |
+|---|---|
+| `make s3-init` | Bootstrap the bundled Garage instance: layout assign + bucket create + access-key import. Idempotent; safe to re-run. Requires the `s3` profile to be up. |
 
 ## Database Management
 
@@ -283,6 +354,115 @@ make clean
 # Rebuild from scratch
 make init
 ```
+
+## File Storage
+
+The backend's storage backend is environment-driven (see [Architecture → File Storage](architecture.md#file-storage) for the diagram). Three modes:
+
+### Mode 1 — Filesystem (default)
+
+Uploads land under `backend/media/`. Zero configuration. Backed up via rsync.
+
+### Mode 2 — External S3-compatible service
+
+Set the four required `S3_*` env vars in `.env`. The backend switches to `django-storages[s3]` at startup. Works against AWS S3, MinIO, Backblaze B2, or any S3-compatible service.
+
+```env
+S3_ENDPOINT_URL=https://s3.us-east-1.amazonaws.com
+S3_ACCESS_KEY_ID=AKIA...
+S3_SECRET_ACCESS_KEY=...
+S3_BUCKET_NAME=happy-calendar-media
+S3_REGION_NAME=us-east-1
+S3_ADDRESSING_STYLE=virtual    # AWS only; use `path` for everything else
+```
+
+Restart the backend (`make restart`) and verify with the startup log: it should announce `STORAGES['default'] = S3Boto3Storage(...)`. If the backend logs a warning about a missing var, the config is half-applied — uploads are silently going to filesystem.
+
+### Mode 3 — Bundled Garage (`s3` Compose profile)
+
+For self-hosted single-host deployments, the repo ships a `garage` service under the `s3` Compose profile. Bring it up and bootstrap with:
+
+```bash
+# 1. Pick an S3_BUCKET_NAME, S3_ACCESS_KEY_ID (matching GK[a-f0-9]{24}),
+#    and S3_SECRET_ACCESS_KEY (matching [a-f0-9]{64}) and write them to .env.
+#    GARAGE_RPC_SECRET / GARAGE_ADMIN_TOKEN / GARAGE_METRICS_TOKEN have
+#    committed dev defaults, so dev environments don't need to set them;
+#    production deployments MUST override per the comments in .env.example.
+
+# 2. Bring up Garage:
+docker compose --profile s3 up -d garage
+
+# 3. Bootstrap bucket + key (idempotent — safe to re-run):
+make s3-init
+
+# 4. Restart the backend so it picks up the new env:
+make restart
+```
+
+The script does the one-shot Garage 1.0 `layout assign` + `apply` step before bucket/key operations. Re-running is a no-op once the layout exists.
+
+To expose Garage at `https://s3.${DOMAIN}` (e.g. so the backend's `.url()` responses point at a public S3 URL instead of the Docker network address), set `S3_TRAEFIK_ENABLED=true` and `S3_PUBLIC_ENDPOINT_URL=https://s3.${DOMAIN}` in `.env` and restart.
+
+## Security Testing
+
+`make security` runs an OWASP-Top-10-style suite that combines static analysis, dependency CVE auditing, deployment-config checks, secret scanning, and an opt-in DAST run:
+
+```bash
+make security                      # Full suite (default)
+SECURITY_ZAP=1 make security       # Add the OWASP ZAP baseline pass
+SECURITY_REPORT_KEEP=20 make security  # Keep the last 20 reports (default 10)
+```
+
+What it runs:
+
+| Tool | Scope |
+|---|---|
+| `bandit` | Python static analysis on `backend/` (SQL injection patterns, weak crypto, hardcoded secrets, `shell=True`, pickle on untrusted data) |
+| `pip-audit` | Python dep CVEs against the runtime + dev requirements |
+| `npm audit` | Node dep CVEs against `frontend/package-lock.json` and `docs/package-lock.json` |
+| Django `check --deploy` | Production-readiness flags (DEBUG, SECRET_KEY length, CORS, SECURE_* headers, …) |
+| `gitleaks` | Whole-tree secret scan (current working tree + recent git history). The repo ships a `.gitleaks.toml` with project-specific allowlists for the dev defaults committed into `docker-compose.yml`. |
+| Custom Django tests | OWASP-aligned cases: CSRF, reflected XSS, SSRF in upload paths, IDOR on per-entity history endpoints, etc. |
+| OWASP ZAP baseline (opt-in) | Spider + passive scan of the running backend. Off by default because it spins up a separate ZAP container. |
+
+Each run lands a `security-reports/<timestamp>/REPORT.md` plus per-tool sub-reports; `security-reports/latest/REPORT.md` symlinks the newest. The make target exits non-zero on any `critical` finding so it can gate CI.
+
+## E2E Test Isolation
+
+Playwright tests never touch the dev database. They run against a fully separate Compose stack defined in `docker-compose.e2e.yml`:
+
+```mermaid
+graph TB
+    subgraph "Dev stack (docker-compose.yml)"
+        DevDB["db<br/>(volume: postgres_data)"]
+        DevBackend["backend"]
+        DevFrontend["frontend"]
+    end
+
+    subgraph "E2E stack (docker-compose.e2e.yml)"
+        E2EDB["db-e2e<br/>(tmpfs)"]
+        E2EBackend["backend-e2e"]
+        E2EFrontend["frontend-e2e<br/>(NEXT_PUBLIC_API_URL baked in)"]
+        E2ENet["happy-calendar-e2e bridge network"]
+        E2EDB --- E2ENet
+        E2EBackend --- E2ENet
+        E2EFrontend --- E2ENet
+    end
+
+    Playwright["Playwright container<br/>--network=happy-calendar-e2e"]
+    Playwright --> E2EFrontend
+
+    style DevDB fill:#e8f5e8
+    style E2EDB fill:#fff3e0
+    style Playwright fill:#fce4ec
+```
+
+- **Own Compose project** (`happy-calendar-e2e`) and bridge network — running e2e never touches the dev compose project.
+- **`db-e2e`** uses `tmpfs` for its data directory, so the database is fully ephemeral. Stopping the container wipes every byte.
+- **`backend-e2e`** runs migrations on every cold boot.
+- **`frontend-e2e`** is built with `NEXT_PUBLIC_API_URL=http://backend-e2e:8000/api` baked into the Next.js bundle so browser-side API calls resolve correctly without `page.route` mocking.
+- **Lifecycle**: `make test-frontend` brings the e2e stack up, runs Playwright against it, and tears it down on exit. Set `KEEP_E2E_DATA=1` to leave the stack running for inspection — `make e2e-down` cleans up later.
+- **Live spec**: `openspec/specs/tooling/e2e-isolation/spec.md`.
 
 ## Production Deployment
 

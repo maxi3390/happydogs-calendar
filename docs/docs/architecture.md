@@ -130,29 +130,35 @@ graph TB
 
 ### Backend Architecture
 
-The backend is a **Django 5.1.4** project with **3 Django apps** and a **domain model package**:
+The backend is a **Django 5.1.4** project. It is organised as a small set of cross-cutting Django apps plus a **domain model package** that holds every business entity:
 
 ```mermaid
 graph TB
     subgraph "Django Project (nursery/)"
-        Settings["nursery/settings.py<br/>Configuration"]
+        Settings["nursery/settings.py<br/>Config + storage layer<br/>(_build_storages_config)"]
         URLs["nursery/urls.py<br/>URL routing"]
     end
 
-    subgraph "Django Apps"
-        Accounts["accounts/<br/>User model, JWT auth,<br/>registration, user management"]
+    subgraph "Cross-cutting Apps"
+        Accounts["accounts/<br/>User model, JWT auth,<br/>registration, user management,<br/>password change + admin reset"]
         Pets["pets/<br/>Views, serializers, admin<br/>Re-exports domain models"]
-        NurserySettings["nursery_settings/<br/>Singleton config model,<br/>daily booking limit, logo"]
+        NurserySettings["nursery_settings/<br/>Singleton config model,<br/>daily booking limit, logo, logo_shape"]
+        FeatureFlags["feature_flags/<br/>FeatureFlag model + endpoint"]
+        Notifications["notifications/<br/>Notification + NotificationCron<br/>+ generate_notifications cmd"]
+        AuditLog["audit_log/<br/>simple-history wiring,<br/>per-entity history endpoints,<br/>cross-entity activity feed"]
+        DataPortability["data_portability/<br/>JSON / ZIP exporter +<br/>atomic importer"]
     end
 
     subgraph "Domain Models (backend/domain/)"
         DomainOwners["domain/owners/<br/>Owner model"]
         DomainPets["domain/pets/<br/>Pet model + is_compatible_with()"]
         DomainSchedules["domain/schedules/<br/>Schedule model + conflict check"]
+        DomainVets["domain/vets/<br/>Vet model"]
         DomainVaccinations["domain/vaccinations/<br/>VaccinationType + Vaccination"]
         DomainDocuments["domain/documents/<br/>Document model"]
         DomainNotes["domain/notes/<br/>Note (abstract) + MedicalNote"]
         DomainFiles["domain/files/<br/>File validators (size, type)"]
+        DomainAddresses["domain/addresses/<br/>Address abstract mixin"]
     end
 
     subgraph "Translations"
@@ -160,26 +166,111 @@ graph TB
     end
 
     URLs --> Accounts & Pets & NurserySettings & TranslationsApp
-    Pets -->|"re-exports"| DomainOwners & DomainPets & DomainSchedules
+    URLs --> FeatureFlags & Notifications & AuditLog & DataPortability
+    Pets -->|"re-exports"| DomainOwners & DomainPets & DomainSchedules & DomainVets
     Pets -->|"re-exports"| DomainVaccinations & DomainDocuments & DomainNotes
+    DomainOwners --> DomainAddresses
+    DomainVets --> DomainAddresses
     DomainPets --> DomainFiles
     DomainDocuments --> DomainFiles
     DomainOwners --> DomainFiles
+    AuditLog -.signals.-> DomainPets & DomainOwners & DomainSchedules & DomainVets
 
     style Settings fill:#fce4ec
     style Accounts fill:#e3f2fd
     style Pets fill:#f3e5f5
     style NurserySettings fill:#e8f5e8
+    style FeatureFlags fill:#fff3e0
+    style Notifications fill:#fff3e0
+    style AuditLog fill:#fff3e0
+    style DataPortability fill:#fff3e0
     style DomainPets fill:#fff3e0
     style DomainSchedules fill:#fff3e0
 ```
 
 **Key design decisions:**
 
-- **Domain model package**: All business models live in `backend/domain/` (owners, pets, schedules, vaccinations, documents, notes, files), each with `app_label = 'pets'` so Django manages them under a single migration history
-- **Model re-export**: `pets/models.py` re-exports all domain models, making them accessible via `pets.Owner`, `pets.Pet`, `pets.Schedule`, etc.
-- **Singleton settings**: `NurserySetting` enforces `pk=1` in its `save()` method, ensuring exactly one configuration row
-- **No separate schedules app**: Schedules are a domain model under `domain/schedules/`, with views handled by `pets/views.py`
+- **Domain model package**: All business entities live in `backend/domain/` (owners, pets, schedules, vets, vaccinations, documents, notes, addresses, files), each with `app_label = 'pets'` so Django manages them under a single migration history.
+- **Address mixin**: `domain/addresses/` exposes an abstract `Address` model that `Owner` and `Vet` inherit. Future entities with a postal address inherit it too.
+- **Model re-export**: `pets/models.py` re-exports the domain models, making them accessible via `pets.Owner`, `pets.Pet`, `pets.Schedule`, `pets.Vet`, etc.
+- **Singleton settings**: `NurserySetting` enforces `pk=1` in its `save()` method, ensuring exactly one configuration row.
+- **Cross-cutting apps own runtime concerns**: feature flags, notifications, audit log, and data portability each live in their own Django app so the domain models stay focused on data.
+- **Audit log is signal-driven**: `audit_log` wires `django-simple-history` against every domain model and resolves the request user via JWT in `audit_log/middleware.py`.
+- **Storage layer is environment-driven**: `_build_storages_config()` in `nursery/settings.py` chooses between filesystem, S3-compatible, and bundled-Garage backends based on `S3_*` env vars; a half-applied config falls back to filesystem with a startup warning. See [§ File Storage](#file-storage) below.
+
+---
+
+## File Storage
+
+The backend's file storage is selected at startup by `_build_storages_config(env, media_root)` in `nursery/settings.py:117`. The same `Pet.profile_picture`, `Document.file`, and `NurserySetting.logo` fields work transparently across three modes:
+
+```mermaid
+graph LR
+    subgraph "Settings boot"
+        Env["env vars<br/>S3_ENDPOINT_URL<br/>S3_ACCESS_KEY_ID<br/>S3_SECRET_ACCESS_KEY<br/>S3_BUCKET_NAME"]
+        Probe["_build_storages_config()"]
+    end
+
+    subgraph "STORAGES['default']"
+        FS["FileSystemStorage<br/>MEDIA_ROOT = backend/media/"]
+        S3["S3Boto3Storage<br/>django-storages[s3]"]
+    end
+
+    subgraph "Optional bundled backend (profile s3)"
+        Garage["garage container<br/>:3900 admin<br/>:3902 S3 API"]
+    end
+
+    Env --> Probe
+    Probe -->|"all 4 vars set"| S3
+    Probe -->|"any var missing"| FS
+    S3 -.->|"endpoint = http://garage:3900"| Garage
+
+    style FS fill:#e8f5e8
+    style S3 fill:#fff3e0
+    style Garage fill:#e3f2fd
+```
+
+- **Filesystem (default)**: zero configuration. Backed up via rsync.
+- **S3-compatible**: any S3 implementation (AWS, MinIO, Backblaze, Garage). Optional knobs include `S3_PUBLIC_ENDPOINT_URL` (when behind Traefik), `S3_REGION_NAME`, `S3_ADDRESSING_STYLE` (`path` for Garage/MinIO, `virtual` for AWS), `S3_QUERYSTRING_AUTH` for presigned URLs.
+- **Bundled Garage** (Compose profile `s3`): `docker compose --profile s3 up -d garage` brings up a single-node Garage 1.0.1 instance. `make s3-init` runs the one-shot `layout assign` + bucket-create + key-import steps; the script is idempotent and safe to re-run. See [Deployment → File storage](deployment.md#file-storage) for the full env-var contract and bootstrap flow.
+
+A half-applied config (some `S3_*` vars set, others empty) is detected at startup, falls back to filesystem, and emits a named warning naming the missing var — so silent "uploads went to the wrong place" is impossible.
+
+---
+
+## Audit Log
+
+`django-simple-history` records create / update / delete on every domain model with author, timestamp, and field-level diff:
+
+- **Tracked models**: `Pet`, `Owner`, `MedicalNote`, `Vaccination`, `Document`, `Schedule`, `Vet`, `NurserySetting`, `FeatureFlag`.
+- **Author resolution**: `audit_log/middleware.py` reads the request's JWT and stamps `_history_user` on the in-flight write so the history row knows who did what.
+- **Per-entity history endpoints**: `GET /api/{entity}/{id}/history/` (e.g. `/api/pets/<id>/history/`) returns paginated event lists scoped to one record. Mounted by `HistoryViewSetMixin` so any new domain model gets a history endpoint by inheriting one mixin.
+- **Cross-entity feed**: `GET /api/audit/activity/` powers the `/admin/activity` frontend timeline. Filterable by `entity`, `action`, `user`, and `since`.
+- **Out of scope**: user account changes (Django auth signals), data-portability imports (logged via the export manifest), and the audit log itself.
+
+---
+
+## Notifications
+
+A daily reminder system that fans out per-user inbox rows so staff don't have to read schedules off a paper calendar:
+
+- **`Notification` model**: `(user, kind, title, body, payload, read_at, forwarded_at, created_at)`. One row per (user × event), upserted by a signature so re-running the generator on the same day is a no-op.
+- **`NotificationCron` model** (singleton): holds `run_time` plus the master `notifications` flag.
+- **`generate_notifications` management command**: queries today's schedules, filters to recently-active users (`last_login` within 30 days), writes one `Notification` row per (user × event), and — when `EMAIL_BACKEND` is the SMTP backend — also dispatches email.
+- **`notification-cron` Compose service**: long-running scheduler that polls every minute and fires the management command when the wall clock matches `run_time`. Shares the backend image so models, translations, and email templates are identical.
+- **Bell + page**: `/api/notifications/unread_count/` powers the bell badge; `/api/notifications/` paginates the inbox; `/api/notifications/<id>/forward/` records `forwarded_at` and bumps the bell counter for the *other* staff (so they see the message has already been passed along).
+- **Feature-flag gating**: when `notifications` is off, the cron skips its tick and the frontend hides the entire surface. Existing rows are preserved.
+
+---
+
+## Feature Flags
+
+Runtime toggles that hide UI surfaces without touching tables or migrations:
+
+- **`FeatureFlag` model**: `(key, enabled, description, updated_at)`. Seeded by data migration; new flags land via subsequent migrations.
+- **`/api/feature-flags/`**: `AllowAny` `GET` (login page must read the catalogue before sign-in), admin-only `PATCH`.
+- **Flag catalogue and effects**: documented in [overview.md §18](overview.md#18-feature-flags).
+- **Gating contract**: flags hide UI surfaces; tables and migrations always exist. Toggling is a single DB write, not a redeploy. The frontend fetches the catalogue once on mount and exposes it via the `useFeatureFlag(key)` hook.
 
 ---
 
