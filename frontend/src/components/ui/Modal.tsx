@@ -16,6 +16,10 @@ export interface ModalProps {
    * this modal renders ABOVE another base modal (e.g. VetDetailsPopup on top of
    * OwnerDetailsPopup). */
   layer?: 'base' | 'nested';
+  /** Dialog max width. ``md`` (default) = max-w-lg with p-4 padding (Pet/Owner/Vet
+   * details, Vet/Owner forms). ``lg`` = max-w-2xl with p-6 padding (PetForm,
+   * which has wider field grids). */
+  size?: 'md' | 'lg';
   onClose: () => void;
   /** Body content. Renders in a scrolling container. */
   children: React.ReactNode;
@@ -35,6 +39,7 @@ export default function Modal({
   title,
   inert = false,
   layer = 'base',
+  size = 'md',
   onClose,
   children,
   footer,
@@ -61,6 +66,8 @@ export default function Modal({
   };
 
   const zIndex = layer === 'nested' ? 'z-[60]' : 'z-50';
+  const maxWidth = size === 'lg' ? 'max-w-2xl' : 'max-w-lg';
+  const padding = size === 'lg' ? 'p-6' : 'p-4';
 
   return (
     <div
@@ -70,8 +77,8 @@ export default function Modal({
       className={`fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 ${zIndex}`}
       onMouseDown={handleBackdropClick}
     >
-      <div className="bg-card text-card-foreground rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto styled-scroll">
-        <div className="flex items-center justify-between p-4 border-b border-border">
+      <div className={`bg-card text-card-foreground rounded-xl shadow-xl ${maxWidth} w-full max-h-[90vh] overflow-y-auto styled-scroll`}>
+        <div className={`flex items-center justify-between ${padding} border-b border-border`}>
           <h2
             id={titleId}
             className="text-xl font-semibold text-gray-800 dark:text-gray-100"
@@ -89,10 +96,10 @@ export default function Modal({
           </button>
         </div>
 
-        <div className="p-4 space-y-4">{children}</div>
+        <div className={`${padding} ${size === 'lg' ? 'space-y-6' : 'space-y-4'}`}>{children}</div>
 
         {footer && (
-          <div className="flex justify-end gap-3 p-4 border-t border-border">
+          <div className={`flex justify-end gap-3 ${padding} border-t border-border`}>
             {footer}
           </div>
         )}
