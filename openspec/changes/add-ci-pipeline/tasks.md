@@ -28,6 +28,6 @@
 
 ## Phase 5 — Spec + archive
 
-- [ ] Promote `specs/tooling/ci/spec.md` into the live
-      `openspec/specs/tooling/ci/` capability on archive.
-- [ ] Archive this change folder.
+- [x] Promote `specs/tooling/ci/spec.md` into the live
+      `openspec/specs/tooling/ci/` capability.
+- [ ] Archive this change folder (deferred until merge).
