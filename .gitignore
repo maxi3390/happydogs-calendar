@@ -62,4 +62,8 @@ frontend/test-results/
 
 # Docker
 .docker/
-docker-compose.override.yml
+# NOTE: docker-compose.override.yml is now a TRACKED dev override (it carries
+# the hot-reload bind-mount, dev image stage, and the insecure Traefik
+# dashboard that the production-shaped docker-compose.yml omits). For personal,
+# machine-specific tweaks use an untracked docker-compose.local.yml instead.
+docker-compose.local.yml

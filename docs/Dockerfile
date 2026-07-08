@@ -11,6 +11,12 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Run as the image's built-in non-root `node` user (parity with the frontend
+# image). chown the app tree so the Docusaurus build can write .docusaurus/
+# and build/ output.
+RUN chown -R node:node /app
+USER node
+
 # Expose port
 EXPOSE 3000
 

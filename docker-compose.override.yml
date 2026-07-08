@@ -1,0 +1,74 @@
+# Local development override — merged automatically by `docker compose`
+# (and therefore `make up`). This file re-adds the dev-only conveniences that
+# the production-shaped docker-compose.yml deliberately omits:
+#
+#   - backend / notification-cron build the `dev` image stage (dev toolchain,
+#     runs as root so the bind-mounted tree stays writable).
+#   - the source tree is bind-mounted for hot-reload.
+#   - the backend runs migrate + Django's runserver instead of gunicorn.
+#   - Traefik exposes its insecure API dashboard on :8080.
+#
+# PRODUCTION: deploy with the base file only, e.g.
+#   docker compose -f docker-compose.yml up -d
+# (or set COMPOSE_FILE=docker-compose.yml) so none of the below applies.
+
+services:
+  backend:
+    build:
+      context: ./backend
+      target: dev
+    environment:
+      # Dev runs the Django dev server, which serves /media only when DEBUG is
+      # on; keep it True locally. Production leaves DEBUG=False (fail-closed).
+      - DEBUG=${DEBUG:-True}
+    volumes:
+      - ./backend:/app
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+
+  notification-cron:
+    build:
+      context: ./backend
+      target: dev
+    environment:
+      - DEBUG=${DEBUG:-True}
+    volumes:
+      - ./backend:/app
+
+  traefik:
+    ports:
+      - "8080:8080"
+    command:
+      # --- API / Dashboard (DEV ONLY — insecure, unauthenticated) ---
+      - --api.dashboard=true
+      - --api.insecure=true
+      - --entrypoints.traefik.address=:8080
+
+      # --- Docker provider (via socket proxy — no direct socket mount) ---
+      - --providers.docker=true
+      - --providers.docker.endpoint=tcp://docker-socket-proxy:2375
+      - --providers.docker.exposedbydefault=false
+
+      # --- Entrypoints ---
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+
+      # Redirect all HTTP → HTTPS globally
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
+
+      # --- TLS: self-signed fallback (used when no ACME cert is available) ---
+      - --entrypoints.websecure.http.tls=true
+
+      # --- ACME / Let's Encrypt via Cloudflare DNS challenge ---
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53
+      - --certificatesresolvers.letsencrypt.acme.storage=/certs/acme.json
+      - --certificatesresolvers.letsencrypt.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
+
+      # --- Logs ---
+      - --log.level=INFO
