@@ -88,12 +88,23 @@ graph TB
 
 ### `backend` — Django API Server
 
-- **Build context**: `./backend`
-- **Environment variables**: `DEBUG`, `DJANGO_SECRET_KEY`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT`
-- **Volume**: `./backend:/app` (live code reload in development)
+- **Build context**: `./backend`. Multi-stage: the default (`prod`) target runs `gunicorn` as a non-root user with runtime dependencies only; the `dev` target adds the lint/security toolchain and is selected by `docker-compose.override.yml`.
+- **Environment variables**: `DEBUG`, `DJANGO_SECRET_KEY`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT`
+- **Volume**: none in production; `./backend:/app` (live code reload) is added by the dev override.
 - **Depends on**: `traefik`, `db` (with `condition: service_healthy`)
-- **Command**: Runs migrations then starts the Django development server
+- **Command**: production serves via `gunicorn nursery.wsgi:application`. The dev override runs `migrate` + Django's `runserver`.
 - **Traefik labels**: Routes `/api/*` and `/media/*` to `backend:8000`
+
+:::note Dev vs production
+`docker compose up` (and `make up`) auto-merge `docker-compose.override.yml`, giving the hot-reload dev stack (dev image, bind-mount, `runserver`, insecure Traefik dashboard on `:8080`). Deploy to production with the **base file only** so none of that applies:
+
+```bash
+docker compose -f docker-compose.yml up -d
+make migrate            # apply migrations as an explicit step
+```
+
+Production does **not** run migrations implicitly on container start, so scaling the backend to multiple replicas never races the migrator — run `make migrate` (or a one-shot init container) as a discrete deploy step.
+:::
 
 ### `frontend` — Next.js Application
 

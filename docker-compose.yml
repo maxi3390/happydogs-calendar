@@ -55,11 +55,11 @@ services:
         condition: service_started
       db:
         condition: service_healthy
-    volumes:
-      - ./backend:/app
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:8000"
+    # Production-shaped: no source bind-mount, and the image's default gunicorn
+    # CMD serves the app. Migrations are applied as an explicit deploy step
+    # (`make migrate`), not implicitly on start, so scaled replicas don't race.
+    # Local dev overrides both (bind-mount + migrate&&runserver) via
+    # docker-compose.override.yml.
     labels:
       - traefik.enable=true
       - traefik.http.services.api.loadbalancer.server.port=8000
@@ -109,8 +109,7 @@ services:
         condition: service_healthy
       backend:
         condition: service_started
-    volumes:
-      - ./backend:/app
+    # Source bind-mount for hot-reload is dev-only (docker-compose.override.yml).
     command: python manage.py run_notification_scheduler
     networks:
       - proxy
@@ -251,7 +250,7 @@ services:
     depends_on:
       - docker-socket-proxy
     ports:
-      - "8080:8080"
+      # The API dashboard (:8080) is published only by the dev override.
       - "80:80"
       - "443:443"
     environment:
@@ -259,10 +258,10 @@ services:
     volumes:
       - traefik-certs:/certs                   # Persistent storage for Let's Encrypt certificates
     command:
-      # --- API / Dashboard (disabled in production) ---
-      - --api.dashboard=true
-      - --api.insecure=true
-      - --entrypoints.traefik.address=:8080
+      # NOTE: the insecure API dashboard is NOT enabled here. The dev override
+      # (docker-compose.override.yml) re-declares this command with the
+      # dashboard flags + :8080 entrypoint added. Compose merges a service
+      # `command` by replacement, so the override carries the full arg list.
 
       # --- Docker provider (via socket proxy — no direct socket mount) ---
       - --providers.docker=true
