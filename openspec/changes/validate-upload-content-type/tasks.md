@@ -30,8 +30,8 @@
 
 - [x] 541 backend tests pass (2 new A08 tests); flake8 clean. Image rebuilt
       with `libmagic1`; python-magic imports and sniffs correctly.
-- [ ] Update live `openspec/specs/backend/documents/spec.md` (File Type
-      Validation) and `openspec/specs/tooling/security/spec.md` on archive.
-- [ ] Update `docs/docs/backend/intro.md` (Documents / validation) if it
-      describes the mechanism.
-- [ ] Archive this change folder.
+- [x] Promote to live `openspec/specs/backend/documents/spec.md` (content-based
+      File Type Validation) and `openspec/specs/tooling/security/spec.md` (A08
+      spoofed-upload guard).
+- [x] Update `docs/docs/backend/intro.md` (content-based validation note).
+- [ ] Archive this change folder (deferred until merge).
