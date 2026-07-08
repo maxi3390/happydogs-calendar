@@ -172,13 +172,17 @@ Generate `.env` once with `make env` (interactive, idempotent, never overwrites)
 
 | Variable | Description | Default | Production override |
 |---|---|---|---|
-| `DEBUG` | Django debug mode | `True` (dev) | **Required** — set `False` |
-| `DJANGO_SECRET_KEY` | Django secret key | `dev-secret-key-change-in-production` | **Required** — generate via `python -c 'import secrets; print(secrets.token_urlsafe(50))'` |
+| `DEBUG` | Django debug mode. Settings **fail closed**: when `DEBUG=False` a missing `DJANGO_SECRET_KEY` aborts startup. | `False` (env-absent); the dev compose sets `True` | **Required** — keep `False` |
+| `DJANGO_SECRET_KEY` | Django secret key. No production fallback — required when `DEBUG=False`. | dev placeholder (only used when `DEBUG=True`) | **Required** — generate via `python -c 'import secrets; print(secrets.token_urlsafe(50))'` |
+| `ALLOWED_HOSTS` | Comma-separated hostnames Django serves. `*` added automatically only when `DEBUG=True`. | `localhost,127.0.0.1` | **Required** — set the public hostname(s) |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated origins allowed cross-origin when `DEBUG=False` (all origins allowed in dev). | empty | Set the frontend origin(s), or leave empty when served same-origin |
 | `POSTGRES_DB` | Database name | `nursery` | Optional |
 | `POSTGRES_USER` | Database user | `nursery` | Optional |
 | `POSTGRES_PASSWORD` | Database password | `nursery` | **Required** — committed default is public |
 | `POSTGRES_HOST` | Database host | `db` | Override only when pointing at an external Postgres |
 | `POSTGRES_PORT` | Database port | `5432` | Optional |
+
+The REST API defaults to `IsAuthenticated` (default-deny): any endpoint that forgets to declare permissions is closed to anonymous callers. Only login, register, token refresh, translations, and the public nursery-settings/logo read opt into `AllowAny`.
 
 ### Frontend
 

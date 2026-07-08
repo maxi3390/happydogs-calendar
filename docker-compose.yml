@@ -31,6 +31,11 @@ services:
       # public. ``DEBUG`` defaults to True for local dev; flip via
       # ``.env`` for any internet-facing deployment.
       - DEBUG=${DEBUG:-True}
+      # Comma-separated scoped host / CORS allow-lists. Only consulted by
+      # settings.py when DEBUG is False; harmless in dev (DEBUG=True opens
+      # both). Production sets these in .env to the public hostname / origin.
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-}
       - POSTGRES_DB=${POSTGRES_DB:-nursery}
       - POSTGRES_USER=${POSTGRES_USER:-nursery}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-nursery}
@@ -91,6 +96,8 @@ services:
       # Same defaults as the ``backend`` service above; both run the
       # same Django app and need to agree on db creds + secret key.
       - DEBUG=${DEBUG:-True}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-}
       - POSTGRES_DB=${POSTGRES_DB:-nursery}
       - POSTGRES_USER=${POSTGRES_USER:-nursery}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-nursery}

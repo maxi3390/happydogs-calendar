@@ -5,8 +5,13 @@ category and we run it from the orchestrator. This file holds the
 posture checks `check --deploy` doesn't cover or that we want to
 enforce stricter than its defaults.
 """
+import os
+import subprocess
+import sys
+
 from django.conf import settings
 from django.test import TestCase, override_settings
+from rest_framework.settings import api_settings
 
 
 class A05_DebugAndAllowedHostsHaveProductionPath(TestCase):
@@ -74,3 +79,29 @@ class A05_CorsIsNotPermissiveInProduction(TestCase):
             "defaults)."
         )
         self.assertIsInstance(settings.CORS_ALLOW_ALL_ORIGINS, bool)
+
+
+class A05_ProductionConfigFailsClosed(TestCase):
+    """Settings SHALL fail closed: with DEBUG=False a missing secret key
+    aborts startup, and the DRF default permission is authenticated-only."""
+
+    def test_missing_secret_key_aborts_when_debug_false(self):
+        # Import the settings module in a fresh interpreter with the secret
+        # key stripped and DEBUG=False. It must refuse to start.
+        env = {
+            k: v for k, v in os.environ.items()
+            if k not in ('DJANGO_SECRET_KEY', 'DEBUG')
+        }
+        env['DEBUG'] = 'False'
+        env['DJANGO_SETTINGS_MODULE'] = 'nursery.settings'
+        proc = subprocess.run(
+            [sys.executable, '-c', 'import django; django.setup()'],
+            env=env, capture_output=True, text=True,
+        )
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn('DJANGO_SECRET_KEY must be set', proc.stderr)
+
+    def test_default_permission_is_authenticated(self):
+        # Any endpoint that forgets permission_classes is closed by default.
+        names = [c.__name__ for c in api_settings.DEFAULT_PERMISSION_CLASSES]
+        self.assertEqual(names, ['IsAuthenticated'])

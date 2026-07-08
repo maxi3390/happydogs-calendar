@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.core.exceptions import ValidationError as DjangoValidationError
 from drf_spectacular.utils import extend_schema
@@ -17,6 +18,7 @@ from .serializers import NurserySettingSerializer
     tags=['settings']
 )
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def get_nursery_settings(request):
     """Get current nursery settings. Intentionally public so the login page can fetch the logo."""
     settings_obj = NurserySetting.load()

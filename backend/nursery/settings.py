@@ -3,13 +3,33 @@ import os
 from pathlib import Path
 from datetime import timedelta
 
+from django.core.exceptions import ImproperlyConfigured
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-dev-key-change-in-production')
+# Default to False: forgetting the env var yields a hardened server, not a
+# leaky one. The dev stack opts in via docker-compose.override.yml.
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+# Fail closed: a running-but-forgeable server is worse than one that refuses to
+# boot. Outside DEBUG a missing (or placeholder) key aborts startup at import
+# time, so it surfaces on the first deploy attempt rather than weeks later.
+_DEV_SECRET_KEY = 'django-insecure-dev-key-change-in-production'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+if not SECRET_KEY or SECRET_KEY == _DEV_SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = _DEV_SECRET_KEY
+    else:
+        raise ImproperlyConfigured('DJANGO_SECRET_KEY must be set when DEBUG is False')
 
-ALLOWED_HOSTS = ['*']
+# Scoped from env; the '*' wildcard is a dev-only convenience.
+ALLOWED_HOSTS = [
+    h.strip()
+    for h in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+    if h.strip()
+]
+if DEBUG:
+    ALLOWED_HOSTS.append('*')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -217,7 +237,15 @@ ALLOWED_DOCUMENT_TYPES = ALLOWED_IMAGE_TYPES + [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOW_ALL_ORIGINS = True
+# Cross-origin access is wide open only in dev. In production the SPA is
+# served same-origin behind Traefik, so the allow-list is empty unless the
+# operator sets CORS_ALLOWED_ORIGINS explicitly.
+CORS_ALLOW_ALL_ORIGINS = DEBUG
+CORS_ALLOWED_ORIGINS = [
+    o.strip()
+    for o in os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
+    if o.strip()
+]
 
 # ── Email ───────────────────────────────────────────────────────────────────
 # The notifications app uses Django's send_mail() for owner-staff
@@ -241,8 +269,11 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
+    # Default-deny: any endpoint that forgets to declare permissions is closed
+    # to anonymous callers. Genuinely public endpoints (login, register, token
+    # refresh, translations, public settings/logo) opt in with AllowAny.
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
