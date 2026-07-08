@@ -45,7 +45,10 @@ class OwnerSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'updated_at']
 
     def get_pet_count(self, obj):
-        return obj.pets.count()
+        # Prefer the list queryset's annotation (avoids a per-row COUNT);
+        # fall back to a query for detail/create paths that don't annotate.
+        annotated = getattr(obj, 'pet_count', None)
+        return annotated if annotated is not None else obj.pets.count()
 
     def get_profile_picture_url(self, obj):
         if obj.profile_picture:
@@ -113,7 +116,9 @@ class PetSerializer(serializers.ModelSerializer):
         return None
 
     def get_medical_notes_count(self, obj):
-        return obj.medical_notes.count()
+        # Prefer the list queryset's annotation; fall back for detail paths.
+        annotated = getattr(obj, 'medical_notes_count', None)
+        return annotated if annotated is not None else obj.medical_notes.count()
 
     def get_effective_vet_details(self, obj):
         vet = obj.effective_vet

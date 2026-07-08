@@ -1,10 +1,10 @@
-import { fetchApi } from '../_http/client';
+import { fetchApi, fetchList } from '../_http/client';
 import { MedicalNote, MedicalNoteFormData } from './types';
 
 export const medicalNotesApi = {
   list: (petId?: number) => {
     const query = petId ? `?pet_id=${petId}` : '';
-    return fetchApi<MedicalNote[]>(`/medical-notes/${query}`);
+    return fetchList<MedicalNote>(`/medical-notes/${query}`);
   },
   create: (data: MedicalNoteFormData) => fetchApi<MedicalNote>('/medical-notes/', {
     method: 'POST',

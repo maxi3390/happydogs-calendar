@@ -32,7 +32,7 @@ class UserViewSetTests(APITestCase):
         self._auth_admin()
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data['count'], 2)
 
     def test_regular_user_cannot_list_users(self):
         self._auth_user()

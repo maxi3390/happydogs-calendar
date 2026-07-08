@@ -1,4 +1,4 @@
-import { fetchApi } from '../_http/client';
+import { fetchApi, fetchList } from '../_http/client';
 import {
   Notification,
   NotificationPreference,
@@ -8,7 +8,7 @@ import {
 export const notificationsApi = {
   list: (opts?: { unreadOnly?: boolean }) => {
     const qs = opts?.unreadOnly ? '?unread_only=1' : '';
-    return fetchApi<Notification[]>(`/notifications/${qs}`);
+    return fetchList<Notification>(`/notifications/${qs}`);
   },
   markRead: (id: number) =>
     fetchApi<Notification>(`/notifications/${id}/mark_read/`, { method: 'POST' }),
@@ -30,7 +30,7 @@ export const notificationsApi = {
     }),
 
   listTemplates: () =>
-    fetchApi<NotificationTemplate[]>('/notification-templates/'),
+    fetchList<NotificationTemplate>('/notification-templates/'),
   updateTemplate: (
     scope: string,
     data: Partial<Pick<NotificationTemplate, 'email_subject' | 'email_body' | 'whatsapp_text'>>,

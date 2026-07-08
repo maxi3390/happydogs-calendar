@@ -48,7 +48,7 @@ class NotificationListAPITests(_BaseNotificationsTest):
         self._make(dismissed_at=timezone.now())
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        ids = {row['id'] for row in response.data}
+        ids = {row['id'] for row in response.data['results']}
         self.assertEqual(ids, {n1.id, n2.id})
 
     def test_unread_only_filter(self):
@@ -56,13 +56,13 @@ class NotificationListAPITests(_BaseNotificationsTest):
         from django.utils import timezone
         self._make(read_at=timezone.now())
         response = self.client.get(self.url, {'unread_only': '1'})
-        ids = {row['id'] for row in response.data}
+        ids = {row['id'] for row in response.data['results']}
         self.assertEqual(ids, {n_unread.id})
 
     def test_birthday_row_carries_forward_block(self):
         self._make()
         response = self.client.get(self.url)
-        row = response.data[0]
+        row = response.data['results'][0]
         self.assertIsNotNone(row['forward'])
         # treatment_due / pet_birthday templates start empty → falls
         # back to localised default key (frontend resolves it).
@@ -72,7 +72,7 @@ class NotificationListAPITests(_BaseNotificationsTest):
     def test_internal_only_kind_has_null_forward(self):
         self._make(kind=Notification.KIND_PET_ARRIVING_TODAY)
         response = self.client.get(self.url)
-        row = response.data[0]
+        row = response.data['results'][0]
         self.assertIsNone(row['forward'])
 
     def test_owner_without_email_clears_forward_to(self):
@@ -80,7 +80,7 @@ class NotificationListAPITests(_BaseNotificationsTest):
         self.owner.save()
         self._make()
         response = self.client.get(self.url)
-        row = response.data[0]
+        row = response.data['results'][0]
         self.assertIsNone(row['forward']['email']['to'])
         # Phone is still present — only the affected button hides.
         self.assertEqual(row['forward']['whatsapp']['phone'], '+5491165432109')
@@ -95,7 +95,7 @@ class NotificationListAPITests(_BaseNotificationsTest):
         )
         self._make()
         response = self.client.get(self.url)
-        row = response.data[0]
+        row = response.data['results'][0]
         self.assertEqual(row['forward']['email']['subject'], 'Happy birthday from us!')
         self.assertEqual(row['forward']['email']['body'], 'Hi, Luna is celebrating today!')
         self.assertEqual(row['forward']['whatsapp']['text'], '🎉 Luna 🎂')
@@ -107,7 +107,7 @@ class NotificationListAPITests(_BaseNotificationsTest):
         )
         self._make()
         response = self.client.get(self.url)
-        row = response.data[0]
+        row = response.data['results'][0]
         # Operator typo'd: '{nonexistent}' stays as literal, '{pet_name}' substituted.
         self.assertEqual(row['forward']['email']['body'], 'Hi {nonexistent}, Luna!')
 
@@ -291,10 +291,10 @@ class NotificationTemplateAPITests(_BaseNotificationsTest):
         self.assertFalse(NotificationTemplate.objects.exists())
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        scopes = sorted(row['scope'] for row in response.data)
+        scopes = sorted(row['scope'] for row in response.data['results'])
         self.assertEqual(scopes, ['pet_birthday', 'treatment_due'])
         # All fields empty by default.
-        for row in response.data:
+        for row in response.data['results']:
             self.assertEqual(row['email_subject'], '')
             self.assertEqual(row['email_body'], '')
             self.assertEqual(row['whatsapp_text'], '')

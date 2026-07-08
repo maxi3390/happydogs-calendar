@@ -1,4 +1,4 @@
-import { fetchApi } from '../_http/client';
+import { fetchApi, fetchList } from '../_http/client';
 import { User, UserFormData, UserCreateData, UserListFilters, DeletionImpact } from './types';
 import { changeOwnPassword, setUserPassword } from './passwordApi';
 
@@ -17,7 +17,7 @@ function buildListQuery(filters?: UserListFilters): string {
 }
 
 export const usersApi = {
-  list: (filters?: UserListFilters) => fetchApi<User[]>(`/users/${buildListQuery(filters)}`),
+  list: (filters?: UserListFilters) => fetchList<User>(`/users/${buildListQuery(filters)}`),
   get: (id: number) => fetchApi<User>(`/users/${id}/`),
   create: (data: UserCreateData) => fetchApi<User>('/users/', {
     method: 'POST',

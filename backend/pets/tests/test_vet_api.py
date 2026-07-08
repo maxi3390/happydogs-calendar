@@ -100,7 +100,7 @@ class VetAPITests(APITestCase):
         create_vet(name='Second Clinic')
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data['count'], 2)
 
     def test_list_requires_authentication(self):
         self.client.credentials()  # drop bearer token
@@ -305,8 +305,8 @@ class VetNestedDetailsSerializerTests(APITestCase):
 
         response = self.client.get(reverse('pet-list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        details = response.data[0]['vet_override_details']
+        self.assertEqual(response.data['count'], 1)
+        details = response.data['results'][0]['vet_override_details']
         self.assertIsNotNone(details)
         self.assertEqual(details['name'], 'Specialist Clinic')
 
@@ -353,8 +353,8 @@ class VetNestedDetailsSerializerTests(APITestCase):
 
         response = self.client.get(reverse('owner-list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        row = response.data[0]
+        self.assertEqual(response.data['count'], 1)
+        row = response.data['results'][0]
         self.assertIsNotNone(row['primary_vet_details'])
         self.assertIsNotNone(row['emergency_vet_details'])
         self.assertEqual(row['primary_vet_details']['name'], 'Primary Clinic')
@@ -463,6 +463,6 @@ class PetEmergencyAccessSerializerTests(APITestCase):
 
         response = self.client.get(reverse('pet-list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        row = response.data[0]
+        row = response.data['results'][0]
         self.assertEqual(row['effective_vet_details']['name'], 'Specialist Clinic')
         self.assertEqual(row['emergency_vet_details']['name'], 'Nightline Vet')

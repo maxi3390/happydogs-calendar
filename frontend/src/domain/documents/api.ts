@@ -1,4 +1,4 @@
-import { fetchApi, uploadFile } from '../_http/client';
+import { fetchApi, fetchList, uploadFile } from '../_http/client';
 import { DocumentItem } from './types';
 
 export const documentsApi = {
@@ -7,7 +7,7 @@ export const documentsApi = {
     if (params?.pet_id) searchParams.set('pet_id', params.pet_id.toString());
     if (params?.owner_id) searchParams.set('owner_id', params.owner_id.toString());
     const query = searchParams.toString();
-    return fetchApi<DocumentItem[]>(`/documents/${query ? `?${query}` : ''}`);
+    return fetchList<DocumentItem>(`/documents/${query ? `?${query}` : ''}`);
   },
   upload: (file: File, data: { pet?: number; owner?: number; description?: string }) => {
     const formData = new FormData();

@@ -94,10 +94,10 @@ class ListEndpointTests(APITestCase):
     def test_staff_user_sees_full_list(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        keys = {row['key'] for row in response.data}
+        keys = {row['key'] for row in response.data['results']}
         self.assertEqual(keys, SEEDED_KEYS)
         # The default ordering is alphabetical by key.
-        ordered_keys = [row['key'] for row in response.data]
+        ordered_keys = [row['key'] for row in response.data['results']]
         self.assertEqual(ordered_keys, sorted(ordered_keys))
 
 

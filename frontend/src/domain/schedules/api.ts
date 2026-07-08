@@ -1,4 +1,4 @@
-import { fetchApi } from '../_http/client';
+import { fetchApi, fetchList } from '../_http/client';
 import {
   Schedule,
   ScheduleFormData,
@@ -17,7 +17,9 @@ export const schedulesApi = {
     if (params?.end_date) searchParams.set('end_date', params.end_date);
     if (params?.pet_id) searchParams.set('pet_id', params.pet_id.toString());
     const query = searchParams.toString();
-    return fetchApi<Schedule[]>(`/schedules/${query ? `?${query}` : ''}`);
+    // fetchList follows pagination `next`, so the calendar still receives
+    // every schedule in the requested range.
+    return fetchList<Schedule>(`/schedules/${query ? `?${query}` : ''}`);
   },
   get: (id: number) => fetchApi<Schedule>(`/schedules/${id}/`),
   create: (data: ScheduleFormData) =>

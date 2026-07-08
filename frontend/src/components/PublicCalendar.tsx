@@ -46,34 +46,44 @@ export default function PublicCalendar({ selectedDate, onDateSelect }: PublicCal
       const startDate = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(currentMonth), 'yyyy-MM-dd');
 
-      const response = await fetch(
-        `${API_BASE}/schedules/?start_date=${startDate}&end_date=${endDate}`
-      );
-
-      if (response.ok) {
-        const schedules = await response.json();
-        const availabilityMap: Record<string, DayAvailability> = {};
-
-        // Count schedules per day
-        schedules.forEach((schedule: any) => {
-          const date = schedule.start_date;
-          if (!availabilityMap[date]) {
-            availabilityMap[date] = {
-              date,
-              totalSchedules: 0,
-              hasAvailability: true,
-            };
-          }
-          availabilityMap[date].totalSchedules++;
-        });
-
-        // Mark days with many schedules as less available
-        Object.keys(availabilityMap).forEach(date => {
-          availabilityMap[date].hasAvailability = availabilityMap[date].totalSchedules < 10;
-        });
-
-        setAvailability(availabilityMap);
+      // The list endpoint is paginated (`{count, next, previous, results}`);
+      // follow `next` so a busy month isn't truncated to the first page.
+      let url: string | null =
+        `${API_BASE}/schedules/?start_date=${startDate}&end_date=${endDate}`;
+      const schedules: { start_date: string }[] = [];
+      while (url) {
+        const response: Response = await fetch(url);
+        if (!response.ok) break;
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          schedules.push(...data);
+          url = null;
+        } else {
+          schedules.push(...(data.results ?? []));
+          url = data.next ?? null;
+        }
       }
+
+      const availabilityMap: Record<string, DayAvailability> = {};
+      // Count schedules per day
+      schedules.forEach((schedule) => {
+        const date = schedule.start_date;
+        if (!availabilityMap[date]) {
+          availabilityMap[date] = {
+            date,
+            totalSchedules: 0,
+            hasAvailability: true,
+          };
+        }
+        availabilityMap[date].totalSchedules++;
+      });
+
+      // Mark days with many schedules as less available
+      Object.keys(availabilityMap).forEach(date => {
+        availabilityMap[date].hasAvailability = availabilityMap[date].totalSchedules < 10;
+      });
+
+      setAvailability(availabilityMap);
     } catch (error) {
       console.error('Failed to fetch availability:', error);
     }

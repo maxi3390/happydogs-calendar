@@ -56,6 +56,58 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
   return res.json();
 }
 
+/** DRF's PageNumberPagination envelope. */
+interface Paginated<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+function isPaginated<T>(body: unknown): body is Paginated<T> {
+  return (
+    !!body &&
+    typeof body === 'object' &&
+    Array.isArray((body as Paginated<T>).results) &&
+    'count' in (body as object) &&
+    'next' in (body as object)
+  );
+}
+
+/**
+ * Fetch a list endpoint and return the full array of items. Transparently
+ * unwraps DRF's `{count, next, previous, results}` envelope and follows the
+ * `next` links to accumulate every page, so callers keep receiving a plain
+ * array regardless of server-side pagination. Endpoints that still return a
+ * bare array (custom actions like `/owners/dropdown/`) pass straight through.
+ */
+export async function fetchList<T>(endpoint: string, options?: RequestInit): Promise<T[]> {
+  const first = await fetchApi<T[] | Paginated<T>>(endpoint, options);
+  if (Array.isArray(first)) return first;
+  if (!isPaginated<T>(first)) return first as unknown as T[];
+
+  const items = [...first.results];
+  let next = first.next;
+  while (next) {
+    // `next` is an absolute URL built by DRF; fetch it directly (not via
+    // API_BASE) but with the same auth headers.
+    const res = await fetch(next, {
+      ...options,
+      headers: { ...getHeaders(), ...options?.headers },
+    });
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) {
+        handleAuthError();
+      }
+      throw new Error(`API Error: ${res.status}`);
+    }
+    const page = (await res.json()) as Paginated<T>;
+    items.push(...page.results);
+    next = page.next;
+  }
+  return items;
+}
+
 export async function uploadFile<T>(endpoint: string, formData: FormData): Promise<T> {
   const token = getAuthToken();
   const headers: Record<string, string> = {};

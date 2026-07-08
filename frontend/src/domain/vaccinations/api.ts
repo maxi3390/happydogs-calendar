@@ -1,8 +1,8 @@
-import { fetchApi } from '../_http/client';
+import { fetchApi, fetchList } from '../_http/client';
 import { VaccinationType } from './types';
 
 export const vaccinationTypesApi = {
-  list: () => fetchApi<VaccinationType[]>('/vaccination-types/'),
+  list: () => fetchList<VaccinationType>('/vaccination-types/'),
   create: (data: Omit<VaccinationType, 'id'>) => fetchApi<VaccinationType>('/vaccination-types/', {
     method: 'POST',
     body: JSON.stringify(data),
