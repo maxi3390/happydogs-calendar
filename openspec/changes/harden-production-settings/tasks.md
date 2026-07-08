@@ -44,9 +44,10 @@
 
 ## Phase 5 — Spec + docs + verify
 
-- [ ] Update live `openspec/specs/backend/auth/spec.md` (default-deny) and
-      `openspec/specs/tooling/security/spec.md` (deploy posture) on archive.
-- [ ] Update `docs/docs/deployment.md` + root `AGENTS.md` env table.
+- [x] Promote to live `openspec/specs/backend/auth/spec.md` (default-deny) and
+      `openspec/specs/tooling/security/spec.md` (fail-closed deploy posture).
+- [x] Update `docs/docs/deployment.md` env table (DEBUG/SECRET_KEY fail-closed,
+      new ALLOWED_HOSTS / CORS_ALLOWED_ORIGINS, default-deny note).
 - [x] `make test-backend` (539 passed) + `flake8` clean, run via one-off
       container (dev DB volume is on a stale pre-18 layout; SQLite test
       settings need no Postgres).
