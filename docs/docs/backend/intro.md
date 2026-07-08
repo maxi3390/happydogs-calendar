@@ -285,6 +285,8 @@ Validators are defined in `domain/files/validators.py`:
 - **`validate_image_type`**: Accepts JPEG, PNG, GIF, WEBP.
 - **`validate_document_type`**: Accepts images (JPEG, PNG, GIF, WEBP) plus PDF, DOC, DOCX.
 
+Type validation is **content-based**: the validators sniff the file's real MIME type from its magic bytes via `python-magic`/libmagic (a bounded 2048-byte read, rewound so the save still writes the file), rather than trusting the client-supplied `Content-Type`. A file whose bytes don't match an allowed type is rejected even if it claims to be an image; libmagic's generic container types are mapped back to the canonical Office MIMEs so genuine `.doc`/`.docx` uploads pass.
+
 Profile pictures (Owner and Pet) use `validate_image_type`. Documents use `validate_document_type`. The system logo also uses `validate_image_type`.
 
 ### Multipart Create/Update
