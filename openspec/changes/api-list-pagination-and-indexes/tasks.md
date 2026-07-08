@@ -43,7 +43,7 @@
 - [~] `make test-frontend` (Playwright e2e) not run in this environment
       (heavy image pulls); the frontend contract is verified by a clean
       production build. e2e is recommended before merge.
-- [ ] Update live `openspec/specs/backend/{pets,owners,schedules}/spec.md` and
-      the relevant `frontend/*` list specs on archive.
-- [ ] Update `docs/docs/backend/intro.md` (endpoints now paginated).
-- [ ] Archive this change folder.
+- [x] Promote to live `openspec/specs/backend/{pets,owners,schedules}/spec.md`
+      (paginated listing + query-efficiency + schedule indexes).
+- [x] Update `docs/docs/backend/intro.md` (new Pagination section).
+- [ ] Archive this change folder (deferred until merge).

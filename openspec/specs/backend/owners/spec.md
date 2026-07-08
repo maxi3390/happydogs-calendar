@@ -72,20 +72,28 @@ The system SHALL enforce the following attribute constraints for owner records:
 
 ### Requirement: Owner Listing
 
-The system SHALL allow authenticated users to retrieve a list of all owner records. Each owner in the list SHALL include a count of their associated pets.
+The system SHALL allow authenticated users to retrieve a paginated list of owner records using the standard pagination envelope `{count, next, previous, results}`, with a default page size of 50 overridable via a bounded `page_size` query parameter. Each owner in the list SHALL include a count of their associated pets.
+
+Listing SHALL be efficient: the query count SHALL NOT grow with the number of owners returned. `pet_count` SHALL be provided via a query annotation rather than a per-row `COUNT`, and `primary_vet` / `emergency_vet` SHALL be fetched with `select_related`.
 
 #### Scenario: List All Owners
 
 - Given an authenticated user requests the list of owners
 - When the system processes the request
-- Then the system SHALL return all owner records
+- Then the system SHALL return a paginated envelope with `count`, `next`, `previous`, and `results`
 - And each owner record SHALL include a pet count
+
+#### Scenario: Listing owners issues a constant number of queries
+
+- Given several owners exist, each with pets and vet references
+- When the list endpoint is queried
+- Then the number of SQL queries SHALL be independent of the number of owners
 
 #### Scenario: List Owners When No Owners Exist
 
 - Given an authenticated user requests the list of owners and no owner records exist
 - When the system processes the request
-- Then the system SHALL return an empty list
+- Then the system SHALL return an envelope with `count` 0 and an empty `results` list
 
 #### Scenario: Owner Pet Count Reflects Associated Pets
 

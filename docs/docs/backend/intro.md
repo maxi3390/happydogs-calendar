@@ -389,6 +389,16 @@ The same `Pet.profile_picture`, `Document.file`, `NurserySetting.logo`, etc. fie
 
 ## API Endpoints
 
+### Pagination
+
+List endpoints (the default `list` action of each ViewSet — pets, owners, schedules, vets, documents, medical notes, vaccination types, users, notifications, feature flags, etc.) are paginated with DRF's `PageNumberPagination` (`nursery.pagination.StandardPagination`). Responses use the envelope:
+
+```json
+{ "count": 123, "next": "…?page=2", "previous": null, "results": [ … ] }
+```
+
+The default page size is 50, overridable per request with `?page_size=N` up to a maximum of 200. Custom actions that return their own shapes (`/api/owners/dropdown/`, `/api/pets/{id}/compatibility/`, `/api/schedules/check_conflicts/`, the audit-log history/activity views, translations, etc.) are **not** paginated. The frontend's `fetchList` helper transparently unwraps the envelope and follows `next`, so UI callers still receive a full array.
+
 ### Owners — `/api/owners/`
 
 | Method | Path | Description |
