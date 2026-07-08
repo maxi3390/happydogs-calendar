@@ -1,10 +1,10 @@
 import json
 import os
 from rest_framework import viewsets, status
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.db.models import Q
 from django.conf import settings
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
@@ -797,6 +797,7 @@ class MedicalNoteViewSet(viewsets.ModelViewSet):
     tags=['translations']
 )
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def get_translations(request, language='en'):
     """
     Get translations for a specific language.
@@ -846,6 +847,7 @@ def get_translations(request, language='en'):
     tags=['translations']
 )
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def get_available_languages(request):
     """
     Get list of available languages.
