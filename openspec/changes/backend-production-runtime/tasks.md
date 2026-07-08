@@ -42,7 +42,8 @@
 
 ## Phase 5 — Spec + archive
 
-- [ ] Promote `specs/tooling/container-runtime/spec.md` into the live
-      `openspec/specs/tooling/container-runtime/` capability on archive.
-- [ ] Update root `AGENTS.md` Docker services table + `docs/docs/deployment.md`.
-- [ ] Archive this change folder.
+- [x] Promote `specs/tooling/container-runtime/spec.md` into the live
+      `openspec/specs/tooling/container-runtime/` capability (incl. the
+      dev-only Traefik dashboard requirement inherited from harden-settings).
+- [x] `docs/docs/deployment.md` updated (dev vs prod invocation, migrate step).
+- [ ] Archive this change folder (deferred until merge).
