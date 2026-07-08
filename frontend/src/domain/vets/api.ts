@@ -1,8 +1,8 @@
-import { fetchApi } from '../_http/client';
+import { fetchApi, fetchList } from '../_http/client';
 import { Vet, VetFormData } from './types';
 
 export const vetsApi = {
-  list: () => fetchApi<Vet[]>('/vets/'),
+  list: () => fetchList<Vet>('/vets/'),
   get: (id: number) => fetchApi<Vet>(`/vets/${id}/`),
   create: (data: VetFormData) => fetchApi<Vet>('/vets/', {
     method: 'POST',

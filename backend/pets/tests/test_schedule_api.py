@@ -23,7 +23,7 @@ class ScheduleCRUDTests(APITestCase):
     def test_list_schedules(self):
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data['count'], 1)
 
     def test_create_schedule(self):
         tomorrow = self.today + timedelta(days=1)
@@ -167,30 +167,30 @@ class ScheduleFilterTests(APITestCase):
 
     def test_filter_by_date(self):
         response = self.client.get(self.list_url, {'date': str(self.today)})
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data['count'], 1)
 
     def test_filter_by_date_no_match(self):
         response = self.client.get(self.list_url, {'date': str(self.tomorrow)})
-        self.assertEqual(len(response.data), 0)
+        self.assertEqual(response.data['count'], 0)
 
     def test_filter_by_date_range(self):
         response = self.client.get(self.list_url, {
             'start_date': str(self.today),
             'end_date': str(self.tomorrow),
         })
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data['count'], 1)
 
     def test_filter_by_pet_id(self):
         pet2 = create_pet()
         create_schedule(pet=pet2, start_date=self.tomorrow, end_date=self.tomorrow)
         response = self.client.get(self.list_url, {'pet_id': self.pet.id})
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data['count'], 1)
 
     def test_filter_by_status(self):
         create_schedule(pet=self.pet, start_date=self.tomorrow, end_date=self.tomorrow,
                         status='completed')
         response = self.client.get(self.list_url, {'status': 'scheduled'})
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data['count'], 1)
 
 
 class ConflictCheckAPITests(APITestCase):
@@ -448,7 +448,7 @@ class MultiDayScheduleTests(APITestCase):
         create_schedule(pet=self.pet, start_date=self.today, end_date=end_date)
         middle = self.today + timedelta(days=1)
         response = self.client.get(self.list_url, {'date': str(middle)})
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data['count'], 1)
 
     def test_multi_day_conflict_detection(self):
         aggressive = create_pet(temperament='aggressive', dominance_level=8, size='large')

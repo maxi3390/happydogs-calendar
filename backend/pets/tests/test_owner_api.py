@@ -30,13 +30,31 @@ class OwnerAPITests(APITestCase):
     def test_list_owners(self):
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data['count'], 1)
 
     def test_list_includes_pet_count(self):
         create_pet(owner=self.owner)
         create_pet(owner=self.owner)
         response = self.client.get(self.list_url)
-        self.assertEqual(response.data[0]['pet_count'], 2)
+        self.assertEqual(response.data['results'][0]['pet_count'], 2)
+
+    def test_list_query_count_is_constant(self):
+        """No N+1: the pet_count annotation + select_related keep the owner
+        list at a fixed query count regardless of how many owners exist."""
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        with CaptureQueriesContext(connection) as first:
+            self.client.get(self.list_url)
+
+        for i in range(5):
+            create_owner(first_name=f'Extra{i}', last_name='Person')
+
+        with CaptureQueriesContext(connection) as second:
+            resp = self.client.get(self.list_url)
+
+        self.assertEqual(resp.data['count'], 6)
+        self.assertEqual(len(first.captured_queries), len(second.captured_queries))
 
     # ── Create ─────────────────────────────────────────────────────────
 

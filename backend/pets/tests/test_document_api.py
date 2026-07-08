@@ -63,8 +63,8 @@ class DocumentAPITests(APITestCase):
         self.client.post(self.list_url, {'pet': other_pet.id, 'file': _make_test_image('b.png')}, format='multipart')
         response = self.client.get(self.list_url, {'pet_id': self.pet.id})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['pet'], self.pet.id)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['pet'], self.pet.id)
 
     def test_list_documents_filtered_by_owner(self):
         other_owner = create_owner()
@@ -80,7 +80,7 @@ class DocumentAPITests(APITestCase):
         )
         response = self.client.get(self.list_url, {'owner_id': self.owner.id})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data['count'], 1)
 
     def test_delete_document(self):
         upload = self.client.post(self.list_url, {'pet': self.pet.id, 'file': _make_test_image()}, format='multipart')

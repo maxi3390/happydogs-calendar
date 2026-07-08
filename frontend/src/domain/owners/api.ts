@@ -1,8 +1,8 @@
-import { fetchApi, uploadFile } from '../_http/client';
+import { fetchApi, fetchList, uploadFile } from '../_http/client';
 import { Owner, OwnerWithPets, OwnerFormData, OwnerListItem } from './types';
 
 export const ownersApi = {
-  list: () => fetchApi<Owner[]>('/owners/'),
+  list: () => fetchList<Owner>('/owners/'),
   get: (id: number) => fetchApi<OwnerWithPets>(`/owners/${id}/`),
   create: (data: OwnerFormData) => fetchApi<Owner>('/owners/', {
     method: 'POST',

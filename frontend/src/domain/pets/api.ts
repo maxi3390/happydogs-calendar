@@ -1,8 +1,8 @@
-import { fetchApi, uploadFile } from '../_http/client';
+import { fetchApi, fetchList, uploadFile } from '../_http/client';
 import { Pet, PetFormData, PetCompatibilityResult } from './types';
 
 export const petsApi = {
-  list: () => fetchApi<Pet[]>('/pets/'),
+  list: () => fetchList<Pet>('/pets/'),
   get: (id: number) => fetchApi<Pet>(`/pets/${id}/`),
   create: (data: PetFormData) => fetchApi<Pet>('/pets/', {
     method: 'POST',

@@ -17,7 +17,7 @@ class VaccinationTypeAPITests(APITestCase):
     def test_list(self):
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), self.initial_count + 1)
+        self.assertEqual(response.data['count'], self.initial_count + 1)
 
     def test_create(self):
         data = {'name': 'test_new_vax', 'label': 'New Vax', 'enabled': True, 'order': 99}

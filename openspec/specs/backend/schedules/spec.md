@@ -97,13 +97,21 @@ The system SHALL enforce the following attribute constraints for schedule record
 
 ### Requirement: Schedule Listing and Filtering
 
-The system SHALL allow authenticated users to retrieve a list of schedule records. The system SHALL support filtering the list by date, date range (start_date and end_date), pet identifier, and status.
+The system SHALL allow authenticated users to retrieve a paginated, filterable list of schedule records using the standard pagination envelope `{count, next, previous, results}`, with a default page size of 50 overridable via a bounded `page_size` query parameter. The system SHALL support filtering the list by date, date range (start_date and end_date), pet identifier, and status; filters scope the paginated result set.
+
+The `Schedule` model SHALL carry database indexes supporting its hot query paths: a composite index on `(start_date, end_date)` (serving both the calendar date-range query and the conflict-detection overlap query) and a composite index on `(pet, start_date)` (serving per-pet timelines).
 
 #### Scenario: List All Schedules
 
 - Given an authenticated user requests the list of schedules without any filters
 - When the system processes the request
-- Then the system SHALL return all schedule records
+- Then the system SHALL return a paginated envelope whose `results` hold the page of schedules
+
+#### Scenario: Range queries are index-backed
+
+- Given the schedules table
+- When a date-range or overlap query executes
+- Then it SHALL be able to use the `(start_date, end_date)` index rather than a full table scan
 
 #### Scenario: Filter Schedules by Specific Date
 

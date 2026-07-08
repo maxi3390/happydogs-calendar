@@ -207,7 +207,7 @@ class FilterTests(_Base):
         self._auth_admin()
         res = self.client.get(reverse('user-list'), {'role': 'admin'})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        ids = {u['id'] for u in res.data}
+        ids = {u['id'] for u in res.data['results']}
         self.assertEqual(ids, {self.admin.id, self.admin2.id})
 
     def test_filter_by_is_active(self):
@@ -216,7 +216,7 @@ class FilterTests(_Base):
         self._auth_admin()
         res = self.client.get(reverse('user-list'), {'is_active': 'false'})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual([u['id'] for u in res.data], [self.user.id])
+        self.assertEqual([u['id'] for u in res.data['results']], [self.user.id])
 
     def test_filter_last_login_within_days(self):
         # ``self.admin`` logged in just now via _auth_admin's token call;
@@ -228,7 +228,7 @@ class FilterTests(_Base):
         self._auth_admin()
         res = self.client.get(reverse('user-list'), {'last_login_within_days': '7'})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual([u['id'] for u in res.data], [self.admin.id])
+        self.assertEqual([u['id'] for u in res.data['results']], [self.admin.id])
 
     def test_filter_last_login_never(self):
         User.objects.filter(pk=self.user.id).update(last_login=None)
@@ -237,7 +237,7 @@ class FilterTests(_Base):
         self._auth_admin()
         res = self.client.get(reverse('user-list'), {'last_login_never': 'true'})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual([u['id'] for u in res.data], [self.user.id])
+        self.assertEqual([u['id'] for u in res.data['results']], [self.user.id])
 
 
 class BulkActionTests(_Base):

@@ -96,20 +96,35 @@ The system SHALL enforce the following attribute constraints for pet records:
 
 ### Requirement: Pet Listing
 
-The system SHALL allow authenticated users to retrieve a list of all pet records. Each pet in the list SHALL include a count of its associated medical notes.
+The system SHALL allow authenticated users to retrieve a paginated list of pet records. The list response SHALL use the standard pagination envelope `{count, next, previous, results}`, where `results` holds the page of serialized pets. The default page size SHALL be 50, overridable per request via a `page_size` query parameter up to a bounded maximum. Each pet in the list SHALL include a count of its associated medical notes.
+
+Listing SHALL be efficient: the number of database queries SHALL NOT grow with the number of pets returned. `medical_notes_count` SHALL be provided via a query annotation (not a per-row `COUNT`), and the owner / vet relations serialized in the list SHALL be fetched with `select_related`, with nested vaccinations `prefetch_related`.
 
 #### Scenario: List All Pets
 
 - Given an authenticated user requests the list of pets
 - When the system processes the request
-- Then the system SHALL return all pet records
+- Then the system SHALL return a paginated envelope with `count`, `next`, `previous`, and `results`
 - And each pet record SHALL include a medical notes count
+
+#### Scenario: Listing pets issues a constant number of queries
+
+- Given several pets exist, each with medical notes and a vet
+- When the list endpoint is queried
+- Then the number of SQL queries SHALL be independent of the number of pets
+
+#### Scenario: Page size can be overridden within bounds
+
+- Given more pets exist than the default page size
+- When the user requests the list with `page_size=10`
+- Then `results` SHALL contain at most 10 pets
+- And a `page_size` larger than the configured maximum SHALL be capped
 
 #### Scenario: List Pets When No Pets Exist
 
 - Given an authenticated user requests the list of pets and no pet records exist
 - When the system processes the request
-- Then the system SHALL return an empty list
+- Then the system SHALL return an envelope with `count` 0 and an empty `results` list
 
 ### Requirement: Pet Retrieval
 

@@ -5,7 +5,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.conf import settings
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
@@ -65,7 +65,15 @@ from .serializers import (
     ),
 )
 class OwnerViewSet(viewsets.ModelViewSet):
-    queryset = Owner.objects.all()
+    # Annotate pet_count and select the vet FKs the serializer renders so the
+    # list is a fixed number of queries regardless of how many owners exist.
+    queryset = (
+        Owner.objects
+        .annotate(pet_count=Count('pets'))
+        .select_related('primary_vet', 'emergency_vet')
+        # Stable order so pagination is deterministic across pages.
+        .order_by('last_name', 'first_name', 'id')
+    )
     serializer_class = OwnerSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser, MultiPartParser, FormParser]
@@ -167,7 +175,22 @@ class OwnerViewSet(viewsets.ModelViewSet):
     ),
 )
 class PetViewSet(viewsets.ModelViewSet):
-    queryset = Pet.objects.select_related('owner').all()
+    # Annotate medical_notes_count and select every FK the serializer walks:
+    # owner (+ its primary/emergency vet for effective/emergency vet details)
+    # and the pet's own vet_override. Keeps the list query count flat.
+    queryset = (
+        Pet.objects
+        .annotate(medical_notes_count=Count('medical_notes'))
+        .select_related(
+            'owner', 'vet_override',
+            'owner__primary_vet', 'owner__emergency_vet',
+        )
+        # Nested vaccinations are a reverse FK the serializer renders; prefetch
+        # them so the list stays flat instead of one query per pet.
+        .prefetch_related('vaccinations')
+        # Stable order so pagination is deterministic across pages.
+        .order_by('name', 'id')
+    )
     serializer_class = PetSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser, MultiPartParser, FormParser]

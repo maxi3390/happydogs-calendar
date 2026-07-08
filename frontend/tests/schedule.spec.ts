@@ -347,7 +347,9 @@ test.describe('Same-Pet Overlap Detection', () => {
       `${apiBase}/schedules/?pet_id=${pet.id}&start_date=${shiftIsoDate(start, -1)}&end_date=${shiftIsoDate(end, 1)}`,
       { headers: { Authorization: `Bearer ${access}` } },
     );
-    const list = await res.json();
-    expect(list.map((s: { id: number }) => s.id)).toEqual([existing.id]);
+    const body = await res.json();
+    // List endpoints are paginated: {count, next, previous, results}.
+    const list = body.results as { id: number }[];
+    expect(list.map((s) => s.id)).toEqual([existing.id]);
   });
 });

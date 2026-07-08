@@ -18,7 +18,7 @@ class MedicalNoteAPITests(APITestCase):
         response = self.client.get(self.list_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data['count'], 1)
 
     def test_filter_medical_notes_by_pet_id(self):
         other_pet = create_pet(name='Rocky')
@@ -28,8 +28,8 @@ class MedicalNoteAPITests(APITestCase):
         response = self.client.get(f"{self.list_url}?pet_id={self.pet.id}")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['pet'], self.pet.id)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['pet'], self.pet.id)
 
     def test_create_medical_note(self):
         payload = {

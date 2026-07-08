@@ -35,7 +35,35 @@ class PetAPITests(APITestCase):
     def test_list_pets(self):
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data['count'], 1)
+
+    def test_list_query_count_is_constant(self):
+        """The list must not issue a query per pet (no N+1). Query count is
+        measured with one pet, then re-measured after adding several more; the
+        two counts must match."""
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        with CaptureQueriesContext(connection) as first:
+            self.client.get(self.list_url)
+
+        for i in range(5):
+            create_pet(owner=self.owner, name=f'Extra {i}')
+
+        with CaptureQueriesContext(connection) as second:
+            resp = self.client.get(self.list_url)
+
+        self.assertEqual(resp.data['count'], 6)
+        self.assertEqual(len(first.captured_queries), len(second.captured_queries))
+
+    def test_list_page_size_override_is_bounded(self):
+        for i in range(4):
+            create_pet(owner=self.owner, name=f'Extra {i}')
+        # 5 pets total; a page_size of 2 returns 2 rows but count stays 5.
+        response = self.client.get(self.list_url, {'page_size': 2})
+        self.assertEqual(response.data['count'], 5)
+        self.assertEqual(len(response.data['results']), 2)
+        self.assertIsNotNone(response.data['next'])
 
     def test_retrieve_pet(self):
         response = self.client.get(self.detail_url)

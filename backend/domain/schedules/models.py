@@ -23,6 +23,13 @@ class Schedule(models.Model):
     class Meta:
         app_label = 'pets'
         ordering = ['start_date', 'start_time']
+        indexes = [
+            # Serves the calendar date-range query and the conflict-detection
+            # overlap query (start_date <= end / end_date >= start).
+            models.Index(fields=['start_date', 'end_date']),
+            # Serves per-pet timelines.
+            models.Index(fields=['pet', 'start_date']),
+        ]
 
     def __str__(self):
         if self.start_date == self.end_date:
