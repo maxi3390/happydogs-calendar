@@ -329,6 +329,21 @@ The project includes a comprehensive Makefile in the repository root for common 
 | `make lint` | Run `flake8` on the backend |
 | `make format` | Auto-format all code |
 | `make security` | OWASP-Top-10 suite: bandit + pip-audit + npm audit + Django `check --deploy` + gitleaks + opt-in OWASP ZAP baseline. Lands `security-reports/<timestamp>/REPORT.md`; `security-reports/latest/REPORT.md` symlinks the most recent. Exits non-zero on `critical` findings. Override retention via `SECURITY_REPORT_KEEP` (default 10). |
+| `make ci` | Run the full CI gate locally: `lint` → `test` → `security`. Fails on the first failing stage. |
+
+### Continuous Integration
+
+`make ci` is the canonical quality gate — it runs `make lint`, `make test`
+(backend + frontend), and `make security` in sequence, each inside the pinned
+container images. Because everything runs in Docker, a green `make ci` on a
+laptop predicts a green run anywhere.
+
+The target is deliberately **provider-agnostic**: whatever CI system is wired
+up (GitHub Actions, GitLab CI, a Jenkins job, or a server-side `post-receive`
+hook) only needs a Docker-capable runner that checks out the code and runs
+`make ci`. The `security` stage exits non-zero on any `critical` finding, so it
+is suitable as a required merge gate; `security-reports/latest/REPORT.md` is
+produced for a job to publish as an artefact.
 
 ### S3 / Object storage
 
