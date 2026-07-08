@@ -14,12 +14,18 @@ from __future__ import annotations
 
 import pathlib
 import re
+from io import BytesIO
 
+from django.urls import reverse
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
+from PIL import Image as PILImage
+from rest_framework.test import APITestCase
 
 from domain.documents.models import Document
 from domain.owners.models import Owner
 from domain.pets.models import Pet
+from tests.factories import create_and_auth_user, create_pet
 
 
 BACKEND_ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -90,3 +96,42 @@ class A08_FileUploadFieldsHaveValidators(TestCase):
         names = self._validators_for(Document, 'file')
         self.assertIn('validate_file_size', names)
         self.assertIn('validate_document_type', names)
+
+
+class A08_UploadTypeValidatedByContent(APITestCase):
+    """Upload validation SHALL trust the file's bytes, not the client-declared
+    Content-Type. A file whose bytes are not an allowed type is rejected even
+    when it claims to be an image; a genuine image whose declared type is
+    "wrong" is still accepted because the sniffed type is allowed."""
+
+    def setUp(self):
+        self.user = create_and_auth_user(self.client)
+        self.pet = create_pet()
+        self.url = reverse('document-list')
+
+    def _png_bytes(self):
+        buf = BytesIO()
+        PILImage.new('RGB', (10, 10), color='blue').save(buf, format='PNG')
+        return buf.getvalue()
+
+    def test_disguised_executable_is_rejected(self):
+        # ELF/script-ish bytes declared as image/jpeg.
+        evil = SimpleUploadedFile(
+            'payload.jpg',
+            b'\x7fELF\x02\x01\x01\x00' + b'\x00' * 64,
+            content_type='image/jpeg',
+        )
+        resp = self.client.post(
+            self.url, {'pet': self.pet.id, 'file': evil}, format='multipart',
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(Document.objects.count(), 0)
+
+    def test_genuine_image_with_wrong_declared_type_is_accepted(self):
+        # Real PNG bytes but the client lies about the type.
+        f = SimpleUploadedFile('photo.jpg', self._png_bytes(), content_type='image/jpeg')
+        resp = self.client.post(
+            self.url, {'pet': self.pet.id, 'file': f}, format='multipart',
+        )
+        self.assertEqual(resp.status_code, 201, resp.data)
+        self.assertEqual(Document.objects.count(), 1)

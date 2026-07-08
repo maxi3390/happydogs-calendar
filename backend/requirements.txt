@@ -8,4 +8,5 @@ drf-spectacular==0.28.0
 Pillow==11.1.0
 django-simple-history==3.11.0
 django-storages[s3]==1.14.4
+python-magic==0.4.27
 
