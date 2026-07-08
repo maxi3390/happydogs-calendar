@@ -1,4 +1,4 @@
-.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend test-frontend test-frontend-debug lint lint-backend clean rebuild create-admin seed-example-data env env-check init upgrade backup restore volume-ensure volume-ensure-s3 s3-init destroy-db notifications-run e2e-up e2e-down
+.PHONY: help build up down restart logs shell-backend shell-frontend migrate makemigrations test test-backend test-frontend test-frontend-debug lint lint-backend clean rebuild create-admin seed-example-data env env-check init upgrade backup restore volume-ensure volume-ensure-s3 s3-init destroy-db notifications-run e2e-up e2e-down ci
 
 POSTGRES_VOLUME_NAME := happy-calendar_postgres_data
 GARAGE_META_VOLUME_NAME := happy-calendar_garage_meta
@@ -57,6 +57,7 @@ help:
 	@echo "  make lint           - Run linters"
 	@echo "  make format         - Format code"
 	@echo "  make security       - Run OWASP-Top-10 security suite (writes security-reports/<timestamp>/REPORT.md; latest/ symlinks the most recent)"
+	@echo "  make ci             - Run the full CI gate locally: lint + test + security (mirrors the pipeline)"
 	@echo ""
 	@echo "Maintenance:"
 	@echo "  make env            - Create .env interactively from .env.example (idempotent)"
@@ -248,6 +249,13 @@ lint-backend:
 # for CI gating. See openspec/specs/tooling/security/spec.md.
 security:
 	@bash scripts/security/run-scans.sh
+
+# CI gate — the single command a pipeline runs on every proposed change.
+# Kept provider-agnostic and reproducible locally: whatever CI system is wired
+# up (GitHub Actions, GitLab CI, a Jenkins job, a server-side hook) only has to
+# check out the code and run `make ci`. `security` exits non-zero on any
+# `critical` finding, so a failing gate fails the whole target.
+ci: lint test security
 
 format:
 	docker compose exec backend python -m black .
